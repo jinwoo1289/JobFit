@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: jobfit-postgres
+    environment:
+      POSTGRES_DB: jobfit
+      POSTGRES_USER: jobfit
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - jobfit-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  jobfit-postgres-data:
