@@ -3,6 +3,7 @@ package com.jinwoo.jobfit.global.exception;
 import com.jinwoo.jobfit.domain.job.exception.DuplicateJobPostingException;
 import com.jinwoo.jobfit.domain.job.exception.JobPostingNotFoundException;
 import com.jinwoo.jobfit.domain.user.exception.InvalidEvaluationWeightException;
+import com.jinwoo.jobfit.domain.user.exception.UserProfileNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -39,5 +40,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleInvalidEvaluationWeight(InvalidEvaluationWeightException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(HttpStatus.BAD_REQUEST, e.getMessage()));
+    }
+
+    @ExceptionHandler(UserProfileNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUserProfileNotFound(UserProfileNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(HttpStatus.NOT_FOUND, e.getMessage()));
     }
 }
