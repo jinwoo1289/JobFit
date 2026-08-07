@@ -47,6 +47,14 @@ public class EvaluationWeight {
         this.certificateWeight = certificateWeight;
     }
 
+    public void changeWeights(int skillWeight, int experienceWeight, int preferenceWeight, int certificateWeight) {
+        validateTotal(skillWeight, experienceWeight, preferenceWeight, certificateWeight);
+        this.skillWeight = skillWeight;
+        this.experienceWeight = experienceWeight;
+        this.preferenceWeight = preferenceWeight;
+        this.certificateWeight = certificateWeight;
+    }
+
     private void validateTotal(int skillWeight, int experienceWeight, int preferenceWeight, int certificateWeight) {
         int total = skillWeight + experienceWeight + preferenceWeight + certificateWeight;
         if (total != TOTAL_WEIGHT) {
