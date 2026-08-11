@@ -34,4 +34,10 @@ public class UserProfileController {
                                                                     @Valid @RequestBody EvaluationWeightUpdateRequest request) {
         return ResponseEntity.ok(userProfileService.updateWeights(id, request));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        userProfileService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
 }

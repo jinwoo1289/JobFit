@@ -18,6 +18,7 @@ public record UserProfileCreateRequest(
         @NotNull EmploymentType employmentType,
         @NotEmpty List<@Valid UserSkillRequest> skills,
         List<@Valid UserProjectRequest> projects,
+        List<@Valid UserCertificateRequest> certificates,
         @NotNull @Valid EvaluationWeightRequest weights
 ) {
     public UserProfile toEntity() {

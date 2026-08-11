@@ -5,6 +5,9 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "user_profiles")
 @Getter
@@ -31,6 +34,18 @@ public class UserProfile {
     @Enumerated(EnumType.STRING)
     @Column(name = "employment_type", nullable = false, length = 30)
     private EmploymentType employmentType;
+
+    @OneToMany(mappedBy = "userProfile", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserSkill> skills = new ArrayList<>();
+
+    @OneToMany(mappedBy = "userProfile", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserProject> projects = new ArrayList<>();
+
+    @OneToMany(mappedBy = "userProfile", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserCertificate> certificates = new ArrayList<>();
+
+    @OneToOne(mappedBy = "userProfile", cascade = CascadeType.ALL, orphanRemoval = true)
+    private EvaluationWeight evaluationWeight;
 
     public UserProfile(String desiredJob,
                         CareerLevel careerLevel,
