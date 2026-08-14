@@ -38,10 +38,10 @@ JobFit은 공고의 요구사항을 구조화하고, 사용자가 직접 설정�
 ## 진행 상황
 
 - [x] 공고 도메인 (등록/조회 API, 중복 방지, 전역 예외 처리)
-- [x] 사용자 도메인 엔티티 (프로필, 보유 기술, 프로젝트 경험, 평가 가중치)
-- [ ] 사용자 프로필 등록/조회 API
-- [ ] 공고 데이터셋 구축
-- [ ] 필수 조건 판정 및 규칙 기반 점수 계산
+- [x] 사용자 도메인 (프로필·기술·프로젝트·자격증·가중치 엔티티 및 등록/조회 API)
+- [x] 공고 데이터셋 구축 (8건, 검증 케이스 포함)
+- [x] 필수 조건 판정 및 규칙 기반 점수 계산
+- [x] 평가 결과 조회 API
 - [ ] LLM 기반 공고 요구사항 구조화 및 근거 생성
 - [ ] 추천 목록 및 상세 분석 화면
 - [ ] 배포
@@ -57,6 +57,7 @@ JobPosting                    채용공고
 UserProfile                   사용자 프로필
 ├── UserSkill      (1:N)      보유 기술
 ├── UserProject    (1:N)      프로젝트 경험 (사용 기술 포함)
+├── UserCertificate (1:N)     자격증 (등급·취득일 포함)
 └── EvaluationWeight (1:1)    항목별 가중치 (합계 100 검증)
 ```
 
@@ -81,6 +82,12 @@ UserProfile                   사용자 프로필
 | POST | `/api/jobs` | 공고 등록 (중복 시 409) |
 | GET | `/api/jobs` | 공고 목록 조회 |
 | GET | `/api/jobs/{id}` | 공고 단건 조회 (없으면 404) |
+| POST | `/api/users/profile` | 프로필 등록 (기술·프로젝트·자격증·가중치 포함) |
+| GET | `/api/users/profile/{id}` | 프로필 조회 |
+| PUT | `/api/users/profile/{id}/weights` | 가중치 수정 |
+| DELETE | `/api/users/profile/{id}` | 프로필 삭제 |
+| POST | `/api/evaluations` | 전체 공고 평가 (적합도순 정렬) |
+| GET | `/api/evaluations/{userProfileId}/jobs/{jobPostingId}` | 단건 평가 |
 
 ## 실행 방법
 
@@ -95,9 +102,9 @@ docker compose up -d
 # 3. 애플리케이션 실행
 DB_PASSWORD=your_password ./gradlew bootRun
 
-> PostgreSQL이 로컬에 이미 설치되어 있다면 5432 포트가 충돌할 수 있습니다.
-> `docker-compose.yaml`의 포트 매핑과 `application.properties`의 접속 URL을
-> 함께 변경하면 분리해서 사용할 수 있습니다.
+> 로컬에 PostgreSQL이 설치되어 있는 경우 5432 포트가 충돌하므로,
+> Docker 컨테이너는 호스트의 **15432** 포트에 매핑되어 있습니다.
+> (`docker-compose.yaml`: `15432:5432`)
 
 ## 설계 결정 기록
 
