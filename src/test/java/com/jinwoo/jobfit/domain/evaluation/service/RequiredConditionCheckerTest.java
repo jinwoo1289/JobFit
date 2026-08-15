@@ -1,6 +1,8 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
 import com.jinwoo.jobfit.domain.evaluation.vo.ConditionCheckResult;
+import com.jinwoo.jobfit.domain.evaluation.vo.JobCategory;
+import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementExtraction;
 import com.jinwoo.jobfit.domain.job.entity.CloseType;
 import com.jinwoo.jobfit.domain.job.entity.JobPosting;
 import com.jinwoo.jobfit.domain.job.entity.JobSource;
@@ -11,6 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.List;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -33,7 +37,7 @@ class RequiredConditionCheckerTest {
     void check_seedJobPosting(String companyName, JobPosting jobPosting, boolean expectedPassed) {
         UserProfile userProfile = newGraduateFullTimeUser();
 
-        ConditionCheckResult result = checker.check(userProfile, jobPosting);
+        ConditionCheckResult result = checker.check(userProfile, jobPosting, defaultExtraction());
 
         assertThat(result.passed()).isEqualTo(expectedPassed);
     }
@@ -44,7 +48,7 @@ class RequiredConditionCheckerTest {
         JobPosting jobPosting = jobPosting(
                 "Backend Engineer (Agent Platform)", "경력 5년 이상(또는 이에 준하는 실력)", "2026-08-15T23:59:59");
 
-        ConditionCheckResult result = checker.check(userProfile, jobPosting);
+        ConditionCheckResult result = checker.check(userProfile, jobPosting, defaultExtraction());
 
         assertThat(result.passed()).isFalse();
         assertThat(result.failedReasons()).contains("경력 5년 이상 요구, 신입 지원 불가");
@@ -56,11 +60,51 @@ class RequiredConditionCheckerTest {
         JobPosting jobPosting = jobPosting(
                 "[인턴] Product Engineer_Backend (연계형)", "경력무관 / 인턴", "2026-08-15T23:59:59");
 
-        ConditionCheckResult result = checker.check(userProfile, jobPosting);
+        ConditionCheckResult result = checker.check(userProfile, jobPosting, defaultExtraction());
 
         assertThat(result.passed()).isFalse();
         assertThat(result.failedReasons())
                 .contains("희망 고용형태(FULL_TIME)와 공고 고용형태(INTERN) 불일치");
+    }
+
+    @Test
+    void check_yearsOfExperienceExceedsMaxYears_failsOnMaxYears() {
+        UserProfile userProfile = experiencedFullTimeUser(4);
+        JobPosting jobPosting = jobPosting(
+                "백엔드 개발자/디자인그룹 경력 및 신입사원 모집", "신입/경력 3년 이하", "2026-08-15T23:59:59");
+        JobRequirementExtraction extraction = extractionOf(null, 3, JobCategory.BACKEND_DEVELOPMENT);
+
+        ConditionCheckResult result = checker.check(userProfile, jobPosting, extraction);
+
+        assertThat(result.passed()).isFalse();
+        assertThat(result.failedReasons()).contains("경력 3년 이하 요구, 지원자 경력 4년 초과");
+    }
+
+    @Test
+    void check_jobCategoryOther_failsOnJobCategory() {
+        UserProfile userProfile = newGraduateFullTimeUser();
+        JobPosting jobPosting = jobPosting(
+                "보안 연구소 솔루션 개발자(신입)", "신입", "2026-08-26T23:59:59");
+        JobRequirementExtraction extraction = extractionOf(null, null, JobCategory.OTHER);
+
+        ConditionCheckResult result = checker.check(userProfile, jobPosting, extraction);
+
+        assertThat(result.passed()).isFalse();
+        assertThat(result.failedReasons())
+                .contains("공고 직무 카테고리(OTHER)가 희망 직무와 무관합니다.");
+    }
+
+    @Test
+    void check_jobCategoryNull_passesAsUndetermined() {
+        // 정규식 fallback은 jobCategory를 항상 null로 반환하므로, null은 "판정 불가"로 보고 통과시켜야 함
+        UserProfile userProfile = newGraduateFullTimeUser();
+        JobPosting jobPosting = jobPosting(
+                "보안 연구소 솔루션 개발자(신입)", "신입", "2026-08-26T23:59:59");
+        JobRequirementExtraction extraction = extractionOf(null, null, null);
+
+        ConditionCheckResult result = checker.check(userProfile, jobPosting, extraction);
+
+        assertThat(result.passed()).isTrue();
     }
 
     static Stream<Arguments> seedJobPostings() {
@@ -91,6 +135,26 @@ class RequiredConditionCheckerTest {
                 null,
                 "서울",
                 EmploymentType.FULL_TIME
+        );
+    }
+
+    private static UserProfile experiencedFullTimeUser(int yearsOfExperience) {
+        return new UserProfile(
+                "백엔드 개발자",
+                CareerLevel.EXPERIENCED,
+                yearsOfExperience,
+                "서울",
+                EmploymentType.FULL_TIME
+        );
+    }
+
+    private static JobRequirementExtraction defaultExtraction() {
+        return extractionOf(null, null, JobCategory.BACKEND_DEVELOPMENT);
+    }
+
+    private static JobRequirementExtraction extractionOf(Integer minYears, Integer maxYears, JobCategory jobCategory) {
+        return new JobRequirementExtraction(
+                List.of(), List.of(), minYears, maxYears, true, List.of(), jobCategory
         );
     }
 
