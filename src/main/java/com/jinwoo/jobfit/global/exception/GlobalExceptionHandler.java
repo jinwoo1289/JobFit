@@ -1,5 +1,6 @@
 package com.jinwoo.jobfit.global.exception;
 
+import com.jinwoo.jobfit.domain.evaluation.exception.LlmResponseException;
 import com.jinwoo.jobfit.domain.job.exception.DuplicateJobPostingException;
 import com.jinwoo.jobfit.domain.job.exception.JobPostingNotFoundException;
 import com.jinwoo.jobfit.domain.user.exception.InvalidEvaluationWeightException;
@@ -46,5 +47,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUserProfileNotFound(UserProfileNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ErrorResponse.of(HttpStatus.NOT_FOUND, e.getMessage()));
+    }
+
+    @ExceptionHandler(LlmResponseException.class)
+    public ResponseEntity<ErrorResponse> handleLlmResponse(LlmResponseException e) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(ErrorResponse.of(HttpStatus.BAD_GATEWAY, e.getMessage()));
     }
 }

@@ -1,8 +1,5 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
-import com.jinwoo.jobfit.domain.job.entity.CloseType;
-import com.jinwoo.jobfit.domain.job.entity.JobPosting;
-import com.jinwoo.jobfit.domain.job.entity.JobSource;
 import com.jinwoo.jobfit.domain.user.entity.CareerLevel;
 import com.jinwoo.jobfit.domain.user.entity.EmploymentType;
 import com.jinwoo.jobfit.domain.user.entity.UserProfile;
@@ -13,7 +10,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -27,9 +24,7 @@ class SkillScoreCalculatorTest {
     @ParameterizedTest(name = "[{index}] {0} - skillScore={2}")
     @MethodSource("seedJobPostings")
     void calculate_seedJobPosting(String companyName, String keywords, double expectedSkillScore) {
-        JobPosting jobPosting = jobPosting(keywords, "설명");
-
-        double actual = calculator.calculate(skills(), projects(), jobPosting);
+        double actual = calculator.calculate(skills(), projects(), skillsFrom(keywords));
 
         assertThat(actual).isCloseTo(expectedSkillScore, within(0.001));
     }
@@ -58,13 +53,11 @@ class SkillScoreCalculatorTest {
     @Test
     void calculate_kincosWithPostgresAndGitSkills_matchesProportionally() {
         UserProfile profile = profile();
-        JobPosting jobPosting = jobPosting(
-                "Python,FastAPI,PostgreSQL,SQLAlchemy,REST API,Git,Linux,React,Next.js", "설명");
 
         double actual = calculator.calculate(
                 List.of(new UserSkill(profile, "PostgreSQL"), new UserSkill(profile, "Git")),
                 List.of(),
-                jobPosting
+                skillsFrom("Python,FastAPI,PostgreSQL,SQLAlchemy,REST API,Git,Linux,React,Next.js")
         );
 
         // PostgreSQL, Git 두 개만 스킬로만 매칭(60점) → (60+60)/9
@@ -74,12 +67,11 @@ class SkillScoreCalculatorTest {
     @Test
     void calculate_keywordCaseDiffersFromSkillCase_stillMatches() {
         UserProfile profile = profile();
-        JobPosting jobPosting = jobPosting("postgresql,GIT", "설명");
 
         double actual = calculator.calculate(
                 List.of(new UserSkill(profile, "PostgreSQL"), new UserSkill(profile, "Git")),
                 List.of(),
-                jobPosting
+                skillsFrom("postgresql,GIT")
         );
 
         assertThat(actual).isCloseTo(60.0, within(0.001));
@@ -88,12 +80,11 @@ class SkillScoreCalculatorTest {
     @Test
     void calculate_skillOnlyNotInTechStack_scoresSixty() {
         UserProfile profile = profile();
-        JobPosting jobPosting = jobPosting("Kotlin", "설명");
 
         double actual = calculator.calculate(
                 List.of(new UserSkill(profile, "Kotlin")),
                 List.of(),
-                jobPosting
+                skillsFrom("Kotlin")
         );
 
         assertThat(actual).isCloseTo(60.0, within(0.001));
@@ -124,20 +115,13 @@ class SkillScoreCalculatorTest {
         return new UserProfile("백엔드 개발자", CareerLevel.NEW_GRADUATE, null, "서울", EmploymentType.FULL_TIME);
     }
 
-    private static JobPosting jobPosting(String keywords, String description) {
-        return new JobPosting(
-                JobSource.SARAMIN,
-                "test-external-id",
-                "테스트 회사",
-                "테스트 공고",
-                "https://example.com",
-                "서울",
-                "신입",
-                "학력무관",
-                keywords,
-                description,
-                CloseType.FIXED_DATE,
-                LocalDateTime.now().plusDays(10)
-        );
+    private static List<String> skillsFrom(String csv) {
+        if (csv == null || csv.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(csv.split(","))
+                .map(String::trim)
+                .filter(skill -> !skill.isEmpty())
+                .toList();
     }
 }

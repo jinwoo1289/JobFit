@@ -13,6 +13,8 @@ public record EvaluationResponse(
         double totalScore,
         double skillScore,
         double experienceScore,
+        double preferenceScore,
+        double certificateScore,
         EvaluationVerdict verdict,
         List<String> failedReasons
 ) {
@@ -24,6 +26,8 @@ public record EvaluationResponse(
                 result.totalScore(),
                 result.skillScore(),
                 result.experienceScore(),
+                result.preferenceScore(),
+                result.certificateScore(),
                 result.verdict(),
                 result.failedReasons()
         );

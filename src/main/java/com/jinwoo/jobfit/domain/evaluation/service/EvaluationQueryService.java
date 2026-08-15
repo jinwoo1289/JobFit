@@ -6,11 +6,13 @@ import com.jinwoo.jobfit.domain.job.entity.JobPosting;
 import com.jinwoo.jobfit.domain.job.exception.JobPostingNotFoundException;
 import com.jinwoo.jobfit.domain.job.repository.JobPostingRepository;
 import com.jinwoo.jobfit.domain.user.entity.EvaluationWeight;
+import com.jinwoo.jobfit.domain.user.entity.UserCertificate;
 import com.jinwoo.jobfit.domain.user.entity.UserProfile;
 import com.jinwoo.jobfit.domain.user.entity.UserProject;
 import com.jinwoo.jobfit.domain.user.entity.UserSkill;
 import com.jinwoo.jobfit.domain.user.exception.UserProfileNotFoundException;
 import com.jinwoo.jobfit.domain.user.repository.EvaluationWeightRepository;
+import com.jinwoo.jobfit.domain.user.repository.UserCertificateRepository;
 import com.jinwoo.jobfit.domain.user.repository.UserProfileRepository;
 import com.jinwoo.jobfit.domain.user.repository.UserProjectRepository;
 import com.jinwoo.jobfit.domain.user.repository.UserSkillRepository;
@@ -30,6 +32,7 @@ public class EvaluationQueryService {
     private final UserProfileRepository userProfileRepository;
     private final UserSkillRepository userSkillRepository;
     private final UserProjectRepository userProjectRepository;
+    private final UserCertificateRepository userCertificateRepository;
     private final EvaluationWeightRepository evaluationWeightRepository;
     private final JobPostingRepository jobPostingRepository;
 
@@ -37,10 +40,11 @@ public class EvaluationQueryService {
         UserProfile userProfile = getUserProfile(userProfileId);
         List<UserSkill> skills = userSkillRepository.findByUserProfileId(userProfileId);
         List<UserProject> projects = userProjectRepository.findByUserProfileId(userProfileId);
+        List<UserCertificate> certificates = userCertificateRepository.findByUserProfileId(userProfileId);
         EvaluationWeight evaluationWeight = getEvaluationWeight(userProfileId);
 
         return jobPostingRepository.findAll().stream()
-                .map(jobPosting -> evaluate(userProfile, skills, projects, evaluationWeight, jobPosting))
+                .map(jobPosting -> evaluate(userProfile, skills, projects, certificates, evaluationWeight, jobPosting))
                 .sorted(Comparator.comparingDouble(EvaluationResponse::totalScore).reversed())
                 .toList();
     }
@@ -49,19 +53,21 @@ public class EvaluationQueryService {
         UserProfile userProfile = getUserProfile(userProfileId);
         List<UserSkill> skills = userSkillRepository.findByUserProfileId(userProfileId);
         List<UserProject> projects = userProjectRepository.findByUserProfileId(userProfileId);
+        List<UserCertificate> certificates = userCertificateRepository.findByUserProfileId(userProfileId);
         EvaluationWeight evaluationWeight = getEvaluationWeight(userProfileId);
         JobPosting jobPosting = jobPostingRepository.findById(jobPostingId)
                 .orElseThrow(() -> new JobPostingNotFoundException("공고를 찾을 수 없습니다. id=" + jobPostingId));
 
-        return evaluate(userProfile, skills, projects, evaluationWeight, jobPosting);
+        return evaluate(userProfile, skills, projects, certificates, evaluationWeight, jobPosting);
     }
 
     private EvaluationResponse evaluate(UserProfile userProfile,
                                          List<UserSkill> skills,
                                          List<UserProject> projects,
+                                         List<UserCertificate> certificates,
                                          EvaluationWeight evaluationWeight,
                                          JobPosting jobPosting) {
-        EvaluationResult result = evaluationService.evaluate(userProfile, skills, projects, evaluationWeight, jobPosting);
+        EvaluationResult result = evaluationService.evaluate(userProfile, skills, projects, certificates, evaluationWeight, jobPosting);
         return EvaluationResponse.from(result, jobPosting);
     }
 
