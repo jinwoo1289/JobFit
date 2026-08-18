@@ -1,6 +1,7 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
 import com.jinwoo.jobfit.domain.evaluation.vo.ConditionCheckResult;
+import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationReasoning;
 import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationResult;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementExtraction;
 import com.jinwoo.jobfit.domain.evaluation.vo.ScoreResult;
@@ -24,6 +25,7 @@ public class EvaluationService {
     private final RequiredConditionChecker requiredConditionChecker;
     private final ScoreCalculator scoreCalculator;
     private final JobRequirementExtractor jobRequirementExtractor;
+    private final EvaluationReasoningGenerator evaluationReasoningGenerator;
 
     public EvaluationResult evaluate(UserProfile userProfile,
                                       List<UserSkill> skills,
@@ -35,14 +37,16 @@ public class EvaluationService {
 
         ConditionCheckResult conditionCheckResult = requiredConditionChecker.check(userProfile, jobPosting, extraction);
         ScoreResult scoreResult = scoreCalculator.calculate(skills, projects, certificates, jobPosting, extraction);
+        EvaluationReasoning reasoning = evaluationReasoningGenerator.generate(
+                jobPosting, extraction, userProfile, skills, projects, certificates, scoreResult);
 
         if (!conditionCheckResult.passed()) {
-            return EvaluationResult.unfit(jobPosting.getId(), scoreResult, conditionCheckResult.failedReasons());
+            return EvaluationResult.unfit(jobPosting.getId(), scoreResult, conditionCheckResult.failedReasons(), reasoning);
         }
 
         double totalScore = calculateTotalScore(scoreResult, evaluationWeight);
 
-        return EvaluationResult.fit(jobPosting.getId(), totalScore, scoreResult);
+        return EvaluationResult.fit(jobPosting.getId(), totalScore, scoreResult, reasoning);
     }
 
     private double calculateTotalScore(ScoreResult scoreResult, EvaluationWeight evaluationWeight) {

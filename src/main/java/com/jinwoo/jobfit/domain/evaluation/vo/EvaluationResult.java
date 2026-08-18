@@ -10,21 +10,24 @@ public record EvaluationResult(
         double preferenceScore,
         double certificateScore,
         EvaluationVerdict verdict,
-        List<String> failedReasons
+        List<String> failedReasons,
+        EvaluationReasoning reasoning
 ) {
-    public static EvaluationResult unfit(Long jobPostingId, ScoreResult scoreResult, List<String> failedReasons) {
+    public static EvaluationResult unfit(Long jobPostingId, ScoreResult scoreResult, List<String> failedReasons,
+                                          EvaluationReasoning reasoning) {
         return new EvaluationResult(
                 jobPostingId, 0, scoreResult.skillScore(), scoreResult.experienceScore(),
                 scoreResult.preferenceScore(), scoreResult.certificateScore(),
-                EvaluationVerdict.UNFIT, failedReasons
+                EvaluationVerdict.UNFIT, failedReasons, reasoning
         );
     }
 
-    public static EvaluationResult fit(Long jobPostingId, double totalScore, ScoreResult scoreResult) {
+    public static EvaluationResult fit(Long jobPostingId, double totalScore, ScoreResult scoreResult,
+                                        EvaluationReasoning reasoning) {
         return new EvaluationResult(
                 jobPostingId, totalScore, scoreResult.skillScore(), scoreResult.experienceScore(),
                 scoreResult.preferenceScore(), scoreResult.certificateScore(),
-                EvaluationVerdict.FIT, List.of()
+                EvaluationVerdict.FIT, List.of(), reasoning
         );
     }
 }

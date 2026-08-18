@@ -1,5 +1,6 @@
 package com.jinwoo.jobfit.domain.evaluation.dto;
 
+import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationReasoning;
 import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationResult;
 import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationVerdict;
 import com.jinwoo.jobfit.domain.job.entity.JobPosting;
@@ -16,7 +17,8 @@ public record EvaluationResponse(
         double preferenceScore,
         double certificateScore,
         EvaluationVerdict verdict,
-        List<String> failedReasons
+        List<String> failedReasons,
+        EvaluationReasoning reasoning
 ) {
     public static EvaluationResponse from(EvaluationResult result, JobPosting jobPosting) {
         return new EvaluationResponse(
@@ -29,7 +31,8 @@ public record EvaluationResponse(
                 result.preferenceScore(),
                 result.certificateScore(),
                 result.verdict(),
-                result.failedReasons()
+                result.failedReasons(),
+                result.reasoning()
         );
     }
 }

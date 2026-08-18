@@ -14,6 +14,7 @@ public class CertificateScoreCalculator {
     private static final double MATCH_SCORE = 100;
     private static final double NO_MATCH_SCORE = 0;
 
+    // 공고의 자격증 요구는 대부분 "A 또는 B" 형태이므로, 하나라도 보유하면 충족으로 본다.
     public double calculate(List<UserCertificate> certificates, List<String> requiredCertificates) {
         if (requiredCertificates.isEmpty()) {
             return NO_MATCH_SCORE;
@@ -24,12 +25,11 @@ public class CertificateScoreCalculator {
                 .map(this::normalize)
                 .collect(Collectors.toSet());
 
-        long matchedCount = requiredCertificates.stream()
+        boolean hasAnyRequiredCertificate = requiredCertificates.stream()
                 .map(this::normalize)
-                .filter(userCertificateNames::contains)
-                .count();
+                .anyMatch(userCertificateNames::contains);
 
-        return (matchedCount * MATCH_SCORE) / requiredCertificates.size();
+        return hasAnyRequiredCertificate ? MATCH_SCORE : NO_MATCH_SCORE;
     }
 
     private String normalize(String value) {
