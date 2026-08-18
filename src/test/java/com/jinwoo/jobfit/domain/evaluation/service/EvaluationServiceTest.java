@@ -59,10 +59,13 @@ class EvaluationServiceTest {
             neverCachedExtractionRepository()
     );
 
+    // FakeLlmClient는 근거 생성 프롬프트에도 재사용되지만, requiredSkills 스키마를 반환하므로
+    // EvaluationReasoning 파싱에는 항상 실패해 규칙 기반 fallback 경로를 타게 된다.
     private final EvaluationService evaluationService = new EvaluationService(
             new RequiredConditionChecker(new JobRequirementParser(), FIXED_CLOCK),
             new ScoreCalculator(new SkillScoreCalculator(), new ExperienceScoreCalculator(), new CertificateScoreCalculator()),
-            jobRequirementExtractor
+            jobRequirementExtractor,
+            new EvaluationReasoningGenerator(new FakeLlmClient(REQUIRED_SKILLS_BY_TITLE), new ObjectMapper())
     );
 
     @ParameterizedTest(name = "[{index}] {0} - verdict={2}")

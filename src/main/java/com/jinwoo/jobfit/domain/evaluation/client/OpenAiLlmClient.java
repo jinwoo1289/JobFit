@@ -14,7 +14,8 @@ import java.util.Map;
 public class OpenAiLlmClient implements LlmClient {
 
     private static final String CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
-    private static final String MODEL = "gpt-4o-mini";
+    // 근거 생성 시 지시 준수율이 낮아 matchedPoints/gapPoints 분류가 반복적으로 뒤바뀌는 문제가 있어 상향했다.
+    private static final String MODEL = "gpt-4o";
     private static final int MAX_TOKENS = 2000;
 
     private final RestClient restClient;
