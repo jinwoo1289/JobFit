@@ -1,0 +1,75 @@
+import { useState } from 'react'
+import { evaluateAll, updateWeights } from './api'
+import JobCard from './components/JobCard'
+import WeightSliders from './components/WeightSliders'
+import type { EvaluationResponse, Weights } from './types'
+import './App.css'
+
+const USER_PROFILE_ID = 11
+
+const DEFAULT_WEIGHTS: Weights = {
+  skillWeight: 25,
+  experienceWeight: 25,
+  preferenceWeight: 25,
+  certificateWeight: 25,
+}
+
+function App() {
+  const [weights, setWeights] = useState<Weights>(DEFAULT_WEIGHTS)
+  const [results, setResults] = useState<EvaluationResponse[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const totalWeight =
+    weights.skillWeight + weights.experienceWeight + weights.preferenceWeight + weights.certificateWeight
+  const isWeightValid = totalWeight === 100
+
+  function handleWeightChange(key: keyof Weights, value: number) {
+    setWeights((prev) => ({ ...prev, [key]: value }))
+  }
+
+  async function handleEvaluate() {
+    setIsLoading(true)
+    setError(null)
+    try {
+      await updateWeights(USER_PROFILE_ID, weights)
+      const evaluations = await evaluateAll(USER_PROFILE_ID)
+      const sorted = [...evaluations].sort((a, b) => b.totalScore - a.totalScore)
+      setResults(sorted)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '평가 요청 중 오류가 발생했습니다.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <div className="app">
+      <header className="app-header">
+        <h1>JobFit</h1>
+        <p>가중치를 조정하고 재평가하여 추천 공고를 확인하세요.</p>
+      </header>
+
+      <WeightSliders weights={weights} onChange={handleWeightChange} />
+
+      <div className="evaluate-bar">
+        <button className="evaluate-button" onClick={handleEvaluate} disabled={!isWeightValid || isLoading}>
+          {isLoading ? '평가 중...' : '재평가'}
+        </button>
+        {!isWeightValid && <span className="evaluate-warning">가중치 합계가 100이 되어야 합니다.</span>}
+        {error && <span className="evaluate-error">{error}</span>}
+      </div>
+
+      <section className="results">
+        {results.length === 0 && !isLoading && <p className="results-empty">재평가 버튼을 눌러 추천 공고를 확인하세요.</p>}
+        <div className="results-grid">
+          {results.map((result) => (
+            <JobCard key={result.jobPostingId} result={result} />
+          ))}
+        </div>
+      </section>
+    </div>
+  )
+}
+
+export default App
