@@ -95,7 +95,7 @@ class EvaluationServiceTest {
         assertThat(result.failedReasons()).isNotEmpty();
         assertThat(result.totalScore()).isEqualTo(0.0);
         assertThat(result.skillScore()).isCloseTo(100.0 / 13, within(0.001));
-        assertThat(result.experienceScore()).isCloseTo(100.0 / 6, within(0.001));
+        assertThat(result.experienceScore()).isCloseTo(100.0 / 13, within(0.001));
     }
 
     @Test
@@ -131,25 +131,25 @@ class EvaluationServiceTest {
                         "Python,Django,Docker,Linux,PostgreSQL,Redis,FastAPI,SQL",
                         "[주요업무]\n- AI 기반 개발 환경을 활용한 서비스 설계 및 구현\n- 보안 솔루션 및 백엔드 시스템 개발\n- AI를 활용한 코드 분석, 테스트 자동화 및 품질 개선\n- 외부 시스템 및 보안 도구 연동\n- 고객사 요구사항 분석 및 신규 기능·커스터마이징 개발\n- 신규 기술 검토 및 AI 기반 개발 프로세스 개선\n\n[자격요건]\n- Python 또는 백엔드 개발 경험\n- AI 개발 도구를 활용한 개발에 관심이 있고 적극적으로 활용할 수 있는 분\n- 웹 서비스 및 RESTful API에 대한 기본 이해\n- SQL 및 관계형 데이터베이스에 대한 기본 이해\n- 새로운 기술을 빠르게 학습하고 적용할 수 있는 분\n- 원활한 커뮤니케이션 및 협업이 가능한 분\n\n[우대사항]\n- AI 개발 도구(Claude, ChatGPT, GitHub Copilot, Cursor 등) 활용 경험\n- Python 및 FastAPI, Django 등 백엔드 프레임워크 개발 경험\n- PostgreSQL, Redis, Docker, Linux 등 개발 환경 경험\n- Git 기반 협업 및 형상관리 경험\n- AI를 활용한 개발 프로세스 개선 또는 자동화 경험",
                         "2026-08-26T23:59:59"
-                ), EvaluationVerdict.FIT, 20.0, 25.0, 200.0 / 6),
+                ), EvaluationVerdict.FIT, 13.75, 25.0, 12.5),
                 Arguments.of("킨코스코리아", jobPosting(
                         "백엔드 개발자/디자인그룹 경력 및 신입사원 모집", "신입/경력 3년 이하",
                         "Python,FastAPI,PostgreSQL,SQLAlchemy,REST API,Git,Linux,React,Next.js",
                         "[담당업무]\n- Python·FastAPI 기반 사내 업무시스템 개발 및 유지보수\n- PostgreSQL 데이터 조회·처리 및 API 개발\n- 기능 개선, 버그 수정 및 테스트\n- 외부 시스템 데이터 연동 및 장애 분석\n- 현업 요구사항 분석 및 업무 프로세스 개선\n\n[자격요건]\n- 신입 또는 경력 3년 이하\n- Python 또는 Java 개발 경험\n- SQL 및 관계형 데이터베이스 기본 이해\n- REST API, HTTP, JSON 기본 이해\n- Git 사용 경험\n\n[우대사항]\n- FastAPI, Django, Spring Boot 경험\n- PostgreSQL, MySQL 사용 경험\n- React·TypeScript 또는 API 연동 경험\n- Docker·Linux 환경 경험\n- 업무 자동화 또는 사내 시스템 개발 경험\n- AI 개발도구 활용 경험 및 코드 검증 역량\n\n[주요 기술]\n- Python, FastAPI\n- PostgreSQL\n- SQLAlchemy\n- REST API\n- Git\n- Linux\n- React, Next.js (기본 이해 수준)",
                         "2026-08-07T23:59:59"
-                ), EvaluationVerdict.FIT, 15.0, 0.0, 50.0),
+                ), EvaluationVerdict.FIT, 0.0, 0.0, 0.0),
                 Arguments.of("OCI정보통신", jobPosting(
                         "[OCI계열사] OCI정보통신 사내 솔루션 개발 및 기능 개선 담당", "신입/경력 2년 이하",
                         "React,Java,Spring Boot,Generative AI,AI Coding Assistant,Jira,Bitbucket,Confluence",
                         "[업무 내용]\n- AI 기반 ERP 시스템 개발\n- React 및 Java Spring Boot 기반 ERP 기능 개선 및 고도화\n- AI 코딩(Copilot, Claude Code)을 활용한 빠른 단위 기능 구현 및 코드 리팩토링\n- 장애 대응, 데이터 처리 및 프로젝트 지원 및 외주 업체와 협업\n- 신규 외부 프로젝트 지원 및 기술 소통 및 소스/품질 관리\n\n[학력 / 전공]\n- 대졸 이상 (컴퓨터 소프트웨어 관련 전공자)\n\n[자격 및 우대사항]\n- Web 프론트엔드(React) 및 백엔드(Java/Spring Boot) 기초 지식 보유자\n- AI 도구를 활용해 코드 작성, 오류 수정, 학습을 적극적으로 수행하는 태도\n- 외부 협력사 및 내부 담당자와의 원활한 커뮤니케이션 능력\n- IT 국비지원 부트캠프(6개월 이상) 이수자\n- Generative AI / AI Coding Assistant 실무·프로젝트 적용 경험자\n- 프로젝트 리더로서 팀 프로젝트를 완수한 경험이 있는 분\n- Jira, Bitbucket, Confluence 등 협업/프로젝트 관리 도구 활용 경험자\n- OPIC 또는 TOEIC Speaking 점수 제출 필수 (2년 내)",
                         "2026-09-04T23:59:59"
-                ), EvaluationVerdict.FIT, 20.0, 25.0, 200.0 / 6),
+                ), EvaluationVerdict.FIT, 17.5, 25.0, 25.0),
                 Arguments.of("링크알파코리아", jobPosting(
                         "Backend Engineer (Agent Platform)", "경력 5년 이상(또는 이에 준하는 실력)",
                         "Python,TypeScript,LLM,AI Agent,MCP,Claude Code,Cursor,PostgreSQL,AWS,Azure,GCP,React,Next.js",
                         "[주요업무]\n- AI 에이전트를 설계, 구현, 운영. 멀티스텝 추론, 도구 호출 루프, 컨텍스트와 메모리 관리, 토큰, 비용, 지연 시간 최적화까지 담당\n- 에이전트가 사용하는 도구 레이어를 설계하고 구현. MCP 도구, 실패 처리, 재시도, 관측 가능성까지 책임\n- 멀티 프로바이더 LLM 호출을 스트리밍, 캐싱, 폴백 구조와 함께 안정적으로 운영\n- 에이전트의 품질과 실패를 추적하고 디버깅. 트레이싱, 평가, 재현 가능한 테스트를 통해 프로덕션 회귀 없이 개선\n- 에이전트를 떠받치는 백엔드 API, 비동기 잡, 서비스 간 통신 구조 설계\n- 필요할 경우 React / Next.js 기반 제품 화면까지 직접 다루며 기능을 end-to-end로 완성\n- Claude Code, Cursor 등 coding agent를 적극 활용해 본인과 팀의 개발 속도를 높임\n\n[자격요건]\n- 백엔드 개발 경력 5년 이상 또는 이에 준하는 실력을 갖춘 분\n- Python과 TypeScript를 활용해 백엔드를 만들 수 있는 분\n- Python과 TypeScript 중 하나에 능숙하고, 나머지 언어를 학습하고 사용하는 데 거리낌이 없는 분\n- LLM 또는 AI 에이전트를 실제 프로덕션 환경에서 빌드하고 운영해본 분\n- 데모나 토이 프로젝트가 아니라, 실사용자 트래픽을 받는 에이전트를 운영해본 경험이 있는 분\n- 도구 호출 루프, 컨텍스트 관리, 토큰과 비용, 스트리밍, 실패 모드 등 에이전트 동작 원리를 깊이 이해하는 분\n- Claude Code, Cursor 등 Coding agent를 깊이 사용해본 분\n- 무엇을 에이전트에 위임할 수 있고, 어디서 사람이 개입해야 하는지 체득한 분\n- PostgreSQL 등 RDBMS와 비동기 처리, 큐 기반 아키텍처에 대한 실무 이해가 있는 분\n- AWS, Azure, GCP 중 하나 이상에서 프로덕션 서비스를 배포하고 운영해본 분\n- 문제를 주도적으로 발견하고 해결하며, 타 직군과 원활하게 협업할 수 있는 분",
                         "2026-08-15T23:59:59"
-                ), EvaluationVerdict.UNFIT, 0.0, 100.0 / 13, 100.0 / 6),
+                ), EvaluationVerdict.UNFIT, 0.0, 100.0 / 13, 100.0 / 13),
                 Arguments.of("엔에이치엔클라우드", jobPosting(
                         "[NHN Cloud]스토리지 엔진 개발", "경력무관(신입포함)",
                         "C,C++,Go,Python",
@@ -167,7 +167,7 @@ class EvaluationServiceTest {
                         "Kotlin,Spring Boot,Spring Batch,QueryDSL,JPA,Node.js,JavaScript(ES6+),Nest.js,TypeORM,Python,PostgreSQL,MySQL,Redis,Apache Kafka,Airflow,AWS,Github,Slack,Jira,Notion",
                         "[주요업무]\n- 제품의 특정 문제 영역을 정의하고 해결하는 End-to-End Ownership을 가지고 문제 정의부터 실험·구현·배포·개선까지 전 과정을 책임\n- 제품의 흐름과 상호작용, 기능 구조를 설계하고 사용자가 실제로 경험하는 제품 경험 전반을 개선\n- AI가 제품 개발 과정에서 최고의 속도로 문제를 해결할 수 있도록 개발 환경과 시스템을 설계하고 불필요한 마찰을 제거\n- 가설을 빠르게 세우고 다양한 방식으로 해법을 실험하며, 실험 결과와 사용자 피드백을 기반으로 제품을 지속적으로 개선\n- PM, 디자이너와 협업하여 문제를 정의하고 해결 방향을 함께 설계\n\n[자격요건]\n- 경력 무관 / 인턴\n- 백엔드 또는 풀스택 개발 경험이 있으신 분\n- 기술 자체보다 제품 문제를 해결하는 과정에 더 큰 흥미를 느끼는 분\n- 문제를 구조적으로 분석하고 빠르게 실험하며 해결할 수 있는 분\n- 새로운 도구와 기술을 빠르게 학습하고 실제 제품 개발에 적용할 수 있는 분\n- 빠르게 만들고, 실험하고, 개선하는 제품 중심 개발 사이클에 익숙한 분\n- AI가 개발 과정에서 효과적으로 활용될 수 있도록 개발 환경과 워크플로우를 개선하는 데 관심이 있는 분\n\n[기술환경]\n- Kotlin, Spring boot, Spring Batch, QueryDSL, JPA, Node.js, Javascript(ES6+), Nest.js, TypeORM, Python\n- PostgreSQL, MySQL, Redis\n- Apache Kafka, Airflow, AWS\n- Github, Slack, Jira, Notion",
                         "2026-08-15T23:59:59"
-                ), EvaluationVerdict.UNFIT, 0.0, 23.0, 500.0 / 6),
+                ), EvaluationVerdict.UNFIT, 0.0, 23.0, 20.0),
                 Arguments.of("토스뱅크", jobPosting(
                         "Server Developer(여신)", "신입/경력",
                         "Java,Kotlin,Spring Boot,MSA,코어뱅킹,MDD",

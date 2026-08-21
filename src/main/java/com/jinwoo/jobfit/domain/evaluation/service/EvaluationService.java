@@ -36,7 +36,7 @@ public class EvaluationService {
         JobRequirementExtraction extraction = jobRequirementExtractor.extract(jobPosting);
 
         ConditionCheckResult conditionCheckResult = requiredConditionChecker.check(userProfile, jobPosting, extraction);
-        ScoreResult scoreResult = scoreCalculator.calculate(skills, projects, certificates, jobPosting, extraction);
+        ScoreResult scoreResult = scoreCalculator.calculate(skills, projects, certificates, extraction);
         EvaluationReasoning reasoning = evaluationReasoningGenerator.generate(
                 jobPosting, extraction, userProfile, skills, projects, certificates, scoreResult);
 
