@@ -1,6 +1,5 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
-import com.jinwoo.jobfit.domain.job.entity.JobPosting;
 import com.jinwoo.jobfit.domain.user.entity.UserProject;
 import org.springframework.stereotype.Component;
 
@@ -12,25 +11,33 @@ import java.util.stream.Collectors;
 @Component
 public class ExperienceScoreCalculator {
 
-    private static final double NO_MENTION_SCORE = 0;
+    private static final double NO_MATCH_SCORE = 0;
 
-    public double calculate(List<UserProject> projects, JobPosting jobPosting) {
-        Set<String> techStacks = projects.stream()
-                .flatMap(project -> project.getTechStack().stream())
+    public double calculate(List<UserProject> projects, List<String> requiredSkills) {
+        if (requiredSkills.isEmpty() || projects.isEmpty()) {
+            return NO_MATCH_SCORE;
+        }
+
+        Set<String> normalizedRequiredSkills = requiredSkills.stream()
                 .map(this::normalize)
                 .collect(Collectors.toSet());
 
-        if (techStacks.isEmpty()) {
-            return NO_MENTION_SCORE;
-        }
+        return projects.stream()
+                .mapToDouble(project -> matchRatio(project, normalizedRequiredSkills))
+                .max()
+                .orElse(NO_MATCH_SCORE);
+    }
 
-        String description = normalize(jobPosting.getDescription());
+    private double matchRatio(UserProject project, Set<String> normalizedRequiredSkills) {
+        Set<String> techStack = project.getTechStack().stream()
+                .map(this::normalize)
+                .collect(Collectors.toSet());
 
-        long mentionedCount = techStacks.stream()
-                .filter(techStack -> !techStack.isEmpty() && description.contains(techStack))
+        long matchedCount = normalizedRequiredSkills.stream()
+                .filter(techStack::contains)
                 .count();
 
-        return (mentionedCount * 100.0) / techStacks.size();
+        return (matchedCount * 100.0) / normalizedRequiredSkills.size();
     }
 
     private String normalize(String value) {
