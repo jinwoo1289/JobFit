@@ -33,6 +33,7 @@ public class OpenAiLlmClient implements LlmClient {
         Map<String, Object> requestBody = Map.of(
                 "model", MODEL,
                 "max_tokens", MAX_TOKENS,
+                "temperature", 0,
                 "messages", List.of(
                         Map.of("role", "system", "content", systemPrompt),
                         Map.of("role", "user", "content", userPrompt)
