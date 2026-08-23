@@ -5,7 +5,7 @@ import WeightSliders from './components/WeightSliders'
 import type { EvaluationResponse, Weights } from './types'
 import './App.css'
 
-const USER_PROFILE_ID = 11
+const USER_PROFILE_ID = 1
 
 const DEFAULT_WEIGHTS: Weights = {
   skillWeight: 25,
