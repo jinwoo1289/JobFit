@@ -5,6 +5,7 @@ WORKDIR /app
 ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx400m -Dorg.gradle.daemon=false"
 
 COPY . .
+RUN chmod +x ./gradlew
 RUN ./gradlew clean build -x test
 
 # --- Run stage ---
