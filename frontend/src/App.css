@@ -14,6 +14,37 @@
   color: #666;
 }
 
+/* Cold start notice */
+
+.cold-start-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 10px 14px;
+  background: #eef4ff;
+  border: 1px solid #cddcf7;
+  border-radius: 8px;
+  color: #2f4f8f;
+  font-size: 13px;
+}
+
+.cold-start-notice-close {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: #2f4f8f;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.cold-start-notice-close:hover {
+  opacity: 0.7;
+}
+
 /* Weight sliders */
 
 .weights-panel {
@@ -101,6 +132,27 @@
   cursor: not-allowed;
 }
 
+.evaluate-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.button-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .evaluate-warning {
   color: #c0392b;
   font-size: 14px;
@@ -136,11 +188,35 @@
   gap: 14px;
 }
 
+.job-card-unfit {
+  background: #fafafa;
+  border-color: #e8e2e2;
+  opacity: 0.72;
+}
+
+.job-card-unfit:hover {
+  opacity: 1;
+}
+
 .job-card-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.job-card-rank {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #2f6feb;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .job-card-company {
@@ -249,4 +325,65 @@
 
 .job-card-link:hover {
   text-decoration: underline;
+}
+
+/* Skeleton loading */
+
+.job-card-skeleton {
+  gap: 12px;
+}
+
+.skeleton-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.skeleton-line {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #eceef1 25%, #f6f7f9 37%, #eceef1 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+.skeleton-line-sm {
+  width: 40%;
+  height: 10px;
+}
+
+.skeleton-line-lg {
+  width: 70%;
+  height: 16px;
+}
+
+.skeleton-badge {
+  width: 52px;
+  height: 22px;
+  border-radius: 999px;
+}
+
+.skeleton-total {
+  height: 40px;
+  border-radius: 8px;
+}
+
+.skeleton-score {
+  height: 44px;
+  border-radius: 8px;
+}
+
+.skeleton-line-full {
+  width: 100%;
+  height: 12px;
 }

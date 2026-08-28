@@ -5,24 +5,24 @@ interface ScoreItem {
   value: number
 }
 
-function JobCard({ result }: { result: EvaluationResponse }) {
+function JobCard({ result, rank }: { result: EvaluationResponse; rank?: number }) {
   const scoreItems: ScoreItem[] = [
     { label: '기술', value: result.skillScore },
     { label: '경험', value: result.experienceScore },
     { label: '우대', value: result.preferenceScore },
     { label: '자격증', value: result.certificateScore },
   ]
+  const isUnfit = result.verdict === 'UNFIT'
 
   return (
-    <article className="job-card">
+    <article className={`job-card ${isUnfit ? 'job-card-unfit' : ''}`}>
       <header className="job-card-header">
+        {rank !== undefined && <span className="job-card-rank">{rank}</span>}
         <div>
           <p className="job-card-company">{result.companyName}</p>
           <h3 className="job-card-title">{result.title}</h3>
         </div>
-        <span className={`badge ${result.verdict === 'FIT' ? 'badge-fit' : 'badge-unfit'}`}>
-          {result.verdict}
-        </span>
+        <span className={`badge ${isUnfit ? 'badge-unfit' : 'badge-fit'}`}>{result.verdict}</span>
       </header>
 
       {result.verdict === 'UNFIT' && result.failedReasons.length > 0 && (
