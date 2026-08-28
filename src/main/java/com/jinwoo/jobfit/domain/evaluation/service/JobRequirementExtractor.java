@@ -40,10 +40,21 @@ public class JobRequirementExtractor {
               예: "Python 또는 백엔드 개발 경험" (X) → "Python" (O)
               예: "웹 서비스 및 RESTful API에 대한 기본 이해" (X) → "REST API" (O)
             - 방법론·개념·아키텍처 스타일 용어는 구체적인 기술/도구 이름이 아니므로 절대 포함하지 마라.
-              절대 금지 목록(원문에 그대로 등장하더라도 출력에 포함하면 안 됨): MDD, MSA, Microservices, 마이크로서비스, 모놀리식, Monolithic, DDD, 도메인 주도 설계, 이벤트 기반 아키텍처, Event-Driven, TDD, BDD, 애자일, Agile, 스크럼, Scrum, 워터폴, CI/CD, DevOps
+              절대 금지 목록(원문에 그대로 등장하더라도 출력에 포함하면 안 됨): MDD, MSA, Microservices, 마이크로서비스, 모놀리식, Monolithic, DDD, 도메인 주도 설계, 이벤트 기반 아키텍처, Event-Driven, TDD, BDD, 애자일, Agile, 스크럼, Scrum, 워터폴, CI/CD, DevOps,
+              비동기 처리, 큐 기반 아키텍처, RDBMS, 관계형 데이터베이스, 객체지향
               (같은 개념의 한글/영문 표기, 축약어/풀네임 모두 동일하게 제외 대상이다. 프로그래밍 언어, 프레임워크, 라이브러리, 데이터베이스, 클라우드 서비스, 자격증, 협업 툴이 아니라면 넣지 마라)
+            - 여러 기술을 묶어 지칭하는 카테고리 표현도 절대 포함하지 마라. (예: AI 개발도구, 협업 도구, 클라우드) 카테고리가 아니라 그 안에 언급된 구체적인 제품명만 추출하라.
+              예: "AI 개발도구" (X) → 제외, "GitHub Copilot" (O) → 포함
+            - 범용 프로토콜·데이터 포맷 이름은 절대 포함하지 마라: HTTP, JSON, XML (단, REST API는 실무에서 스킬로 통용되므로 예외적으로 유지한다)
             - 원문이 한글로 표기되어 있어도 기술명은 영문 표기로 통일하라. (예: "스프링 부트" → "Spring Boot", "자바" → "Java")
-            - requiredSkills와 preferredSkills를 채운 뒤, 목록에 방법론/개념어가 섞여 있지 않은지 다시 한번 스스로 검토하고 있다면 제거한 뒤 최종 JSON을 출력하라.
+            - requiredSkills와 preferredSkills를 채운 뒤, 목록에 방법론/개념어/카테고리 표현/범용 프로토콜이 섞여 있지 않은지 다시 한번 스스로 검토하고 있다면 제거한 뒤 최종 JSON을 출력하라.
+
+            [requiredCertificates 규칙]
+            - 자격증·어학성적 요구는 원문 내 섹션 위치(우대사항, 필수 자격 등)와 무관하게, 문구 자체의 표현을 기준으로 필수 여부를 판단하라.
+            - "필수", "제출 필수", "반드시"처럼 필수임을 나타내는 표현이 붙어 있다면, "우대사항" 섹션에 있더라도 requiredCertificates에 포함하라.
+            - 자격증/어학성적의 명칭만 추출하고, 기간·점수 제출 방식 등 부가 설명은 제외하라.
+              예: "[자격 및 우대사항]" 섹션의 "OPIC 또는 TOEIC Speaking 점수 제출 필수(2년 내)"
+                  → requiredCertificates: ["OPIC", "TOEIC Speaking"]
 
             [minYears / maxYears 규칙]
             - "경력 N년 이상"처럼 하한만 명시된 경우에만 minYears에 N을 넣어라.
