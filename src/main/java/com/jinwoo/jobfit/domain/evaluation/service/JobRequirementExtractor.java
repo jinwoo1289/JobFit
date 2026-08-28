@@ -35,6 +35,11 @@ public class JobRequirementExtractor {
             }
 
             [requiredSkills / preferredSkills 규칙]
+            - requiredSkills와 preferredSkills는 오직 원문 섹션 위치로만 구분하라.
+              "자격요건", "필수 요건", "주요업무"처럼 필수 자격/업무를 다루는 섹션에 명시된 기술만 requiredSkills에 넣어라.
+              "우대사항", "자격 및 우대사항", "~하면 좋음", "~우대"처럼 우대를 다루는 섹션에 나열된 기술은, 그 문구에 "필수"라는 표현이 붙어 있더라도 requiredSkills로 옮기지 말고 preferredSkills로 분류하라.
+              (requiredCertificates의 "필수 표기 시 섹션 무관하게 필수로 판단" 규칙은 자격증·어학성적에만 적용되며, 스킬 분류에는 적용하지 않는다.)
+              예: "[자격 및 우대사항]" 섹션에 "GitHub Copilot, Claude Code, Jira, Bitbucket, Confluence" 도구 목록과 "OPIC 제출 필수" 문구가 함께 있어도, 도구 목록은 preferredSkills로 분류하고 requiredSkills로 옮기지 마라.
             - 반드시 기술·도구·언어·프레임워크의 이름만 담아라. 단어 또는 짧은 고유명사여야 한다.
             - 요구사항을 설명하는 문장이나 서술을 절대 넣지 마라.
               예: "Python 또는 백엔드 개발 경험" (X) → "Python" (O)
@@ -50,6 +55,7 @@ public class JobRequirementExtractor {
             - requiredSkills와 preferredSkills를 채운 뒤, 목록에 방법론/개념어/카테고리 표현/범용 프로토콜이 섞여 있지 않은지 다시 한번 스스로 검토하고 있다면 제거한 뒤 최종 JSON을 출력하라.
 
             [requiredCertificates 규칙]
+            - 이 규칙은 자격증·어학성적에만 적용된다. requiredSkills / preferredSkills 분류에는 영향을 주지 않는다.
             - 자격증·어학성적 요구는 원문 내 섹션 위치(우대사항, 필수 자격 등)와 무관하게, 문구 자체의 표현을 기준으로 필수 여부를 판단하라.
             - "필수", "제출 필수", "반드시"처럼 필수임을 나타내는 표현이 붙어 있다면, "우대사항" 섹션에 있더라도 requiredCertificates에 포함하라.
             - 자격증/어학성적의 명칭만 추출하고, 기간·점수 제출 방식 등 부가 설명은 제외하라.
