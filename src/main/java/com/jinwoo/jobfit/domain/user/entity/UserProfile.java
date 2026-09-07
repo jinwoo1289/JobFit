@@ -58,4 +58,13 @@ public class UserProfile {
         this.desiredLocation = desiredLocation;
         this.employmentType = employmentType;
     }
+
+    public void updateBasicInfo(String desiredJob, CareerLevel careerLevel, Integer yearsOfExperience,
+                             String desiredLocation, EmploymentType employmentType) {
+    this.desiredJob = desiredJob;
+    this.careerLevel = careerLevel;
+    this.yearsOfExperience = yearsOfExperience;
+    this.desiredLocation = desiredLocation;
+    this.employmentType = employmentType;
+}
 }

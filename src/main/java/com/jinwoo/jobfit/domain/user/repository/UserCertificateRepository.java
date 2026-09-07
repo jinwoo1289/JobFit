@@ -8,4 +8,5 @@ import java.util.List;
 public interface UserCertificateRepository extends JpaRepository<UserCertificate, Long> {
 
     List<UserCertificate> findByUserProfileId(Long userProfileId);
+    void deleteAllByUserProfileId(Long userProfileId);
 }

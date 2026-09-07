@@ -74,6 +74,53 @@ public class UserProfileService {
     }
 
     @Transactional
+    public UserProfileResponse update(Long id, UserProfileCreateRequest request) {
+        UserProfile userProfile = getUserProfile(id);
+        userProfile.updateBasicInfo(
+            request.desiredJob(),
+            request.careerLevel(),
+            request.yearsOfExperience(),
+            request.desiredLocation(),
+            request.employmentType()
+         );
+
+        userSkillRepository.deleteAllByUserProfileId(id);
+        List<UserSkill> skills = userSkillRepository.saveAll(
+            request.skills().stream()
+                    .map(skill -> skill.toEntity(userProfile))
+                    .toList()
+        );
+
+         userProjectRepository.deleteAllByUserProfileId(id);
+        List<UserProject> projects = request.projects() == null
+            ? List.of()
+            : userProjectRepository.saveAll(
+                    request.projects().stream()
+                            .map(project -> project.toEntity(userProfile))
+                            .toList()
+            );
+
+        userCertificateRepository.deleteAllByUserProfileId(id);
+        List<UserCertificate> certificates = request.certificates() == null
+            ? List.of()
+            : userCertificateRepository.saveAll(
+                    request.certificates().stream()
+                            .map(certificate -> certificate.toEntity(userProfile))
+                            .toList()
+            );
+
+    EvaluationWeight evaluationWeight = getEvaluationWeight(id);
+    evaluationWeight.changeWeights(
+            request.weights().skillWeight(),
+            request.weights().experienceWeight(),
+            request.weights().preferenceWeight(),
+            request.weights().certificateWeight()
+    );
+
+    return UserProfileResponse.from(userProfile, skills, projects, certificates, evaluationWeight);
+    }
+
+    @Transactional
     public EvaluationWeightResponse updateWeights(Long id, EvaluationWeightUpdateRequest request) {
         getUserProfile(id);
         EvaluationWeight evaluationWeight = getEvaluationWeight(id);
