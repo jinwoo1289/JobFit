@@ -1,20 +1,20 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
+import java.io.InputStream;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
 import com.jinwoo.jobfit.domain.evaluation.client.OpenAiLlmClient;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementExtraction;
 import com.jinwoo.jobfit.domain.job.dto.JobPostingCreateRequest;
 import com.jinwoo.jobfit.domain.job.entity.JobPosting;
 import com.jinwoo.jobfit.domain.job.repository.JobPostingRepository;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+
 import tools.jackson.databind.ObjectMapper;
-
-import java.io.InputStream;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * seed/jobs.json 8건에 대해 실제 OpenAI API를 호출한다.
@@ -44,8 +44,9 @@ class JobRequirementExtractorIntegrationTest {
     void extract_seedJobPostings() throws Exception {
         assertThat(openAiLlmClient).isNotNull();
 
-        List<JobPosting> jobPostings = loadOrPersistSeedJobPostings();
-        assertThat(jobPostings).hasSize(8);
+        List<JobPostingCreateRequest> seedRequests = loadSeedRequests();
+        List<JobPosting> jobPostings = seedRequests.stream().map(this::findOrSave).toList();
+        assertThat(jobPostings).hasSize(seedRequests.size());
 
         for (JobPosting jobPosting : jobPostings) {
             JobRequirementExtraction extraction = extractor.extract(jobPosting);
@@ -65,6 +66,14 @@ class JobRequirementExtractorIntegrationTest {
             assertThat(extraction).isNotNull();
         }
     }
+    private List<JobPostingCreateRequest> loadSeedRequests() throws Exception {
+    try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("seed/jobs.json")) {
+        return objectMapper.readValue(
+                inputStream,
+                objectMapper.getTypeFactory().constructCollectionType(List.class, JobPostingCreateRequest.class)
+        );
+    }
+}
 
     private List<JobPosting> loadOrPersistSeedJobPostings() throws Exception {
         try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("seed/jobs.json")) {
