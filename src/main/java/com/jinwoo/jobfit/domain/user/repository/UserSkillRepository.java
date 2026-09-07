@@ -8,4 +8,5 @@ import java.util.List;
 public interface UserSkillRepository extends JpaRepository<UserSkill, Long> {
 
     List<UserSkill> findByUserProfileId(Long userProfileId);
+    void deleteAllByUserProfileId(Long userProfileId);
 }

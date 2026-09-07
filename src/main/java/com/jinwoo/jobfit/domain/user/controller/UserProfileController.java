@@ -35,6 +35,11 @@ public class UserProfileController {
         return ResponseEntity.ok(userProfileService.updateWeights(id, request));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<UserProfileResponse> update(@PathVariable Long id, @RequestBody UserProfileCreateRequest request) {
+    return ResponseEntity.ok(userProfileService.update(id, request));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         userProfileService.delete(id);

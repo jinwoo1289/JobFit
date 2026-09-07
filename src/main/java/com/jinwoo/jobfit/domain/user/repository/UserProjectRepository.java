@@ -8,4 +8,5 @@ import java.util.List;
 public interface UserProjectRepository extends JpaRepository<UserProject, Long> {
 
     List<UserProject> findByUserProfileId(Long userProfileId);
+    void deleteAllByUserProfileId(Long userProfileId);
 }
