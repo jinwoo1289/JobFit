@@ -75,6 +75,12 @@ public class JobRequirementExtractor {
               예: "MDD 기반 Java 모놀리식 시스템에서 Kotlin, Spring Boot 기반 MSA로 전환"
               → 추출 대상: Java, Kotlin, Spring Boot (MDD, 모놀리식, MSA는 제외)
               → 이 문장이 [주요업무] 섹션에 있다면 Java, Kotlin, Spring Boot는 requiredSkills로 분류
+              [예시]
+              입력 문장(주요업무 섹션): "MDD 기반 Java 모놀리식 코어뱅킹 시스템을 유지하면서,
+              Kotlin + Spring Boot 기반 MSA 구조로 단계적으로 전환"
+              → requiredSkills: ["Java", "Kotlin", "Spring Boot"] (MDD, 모놀리식, MSA는 제외)
+              → 이유: 방법론/아키텍처 용어만 금지 목록이며, 전환 시점과 무관하게 [주요업무]
+              섹션에 있는 기술명은 모두 requiredSkills로 분류한다.
 
             [requiredCertificates 규칙]
             - 이 규칙은 자격증·어학성적에만 적용된다. requiredSkills / preferredSkills 분류에는 영향을 주지 않는다.
