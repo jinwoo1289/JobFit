@@ -1,19 +1,21 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
+import java.util.List;
+
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.jinwoo.jobfit.domain.evaluation.client.LlmClient;
 import com.jinwoo.jobfit.domain.evaluation.entity.JobRequirementExtractionEntity;
 import com.jinwoo.jobfit.domain.evaluation.repository.JobRequirementExtractionRepository;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirement;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementExtraction;
 import com.jinwoo.jobfit.domain.job.entity.JobPosting;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
-
-import java.util.List;
 
 @Slf4j
 @Component
@@ -64,6 +66,9 @@ public class JobRequirementExtractor {
             - 범용 프로토콜·데이터 포맷 이름은 절대 포함하지 마라: HTTP, JSON, XML (단, REST API는 실무에서 스킬로 통용되므로 예외적으로 유지한다)
             - 원문이 한글로 표기되어 있어도 기술명은 영문 표기로 통일하라. (예: "스프링 부트" → "Spring Boot", "자바" → "Java")
             - requiredSkills와 preferredSkills를 채운 뒤, 목록에 방법론/개념어/카테고리 표현/범용 프로토콜이 섞여 있지 않은지 다시 한번 스스로 검토하고 있다면 제거한 뒤 최종 JSON을 출력하라.
+            - [주요업무] 섹션 문장 안에 "~로 전환", "~로 이전 예정", "향후 ~ 도입" 같은 로드맵/전환 계획을
+              서술하는 문구가 있더라도, 그 문장에 언급된 기술이 [주요업무] 섹션에 있다면 requiredSkills로
+              분류하라. 현재/미래 여부와 무관하게 섹션 위치 규칙을 우선한다.
 
             [requiredCertificates 규칙]
             - 이 규칙은 자격증·어학성적에만 적용된다. requiredSkills / preferredSkills 분류에는 영향을 주지 않는다.
