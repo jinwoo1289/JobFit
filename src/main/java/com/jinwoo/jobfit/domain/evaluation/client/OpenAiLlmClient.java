@@ -1,6 +1,7 @@
 package com.jinwoo.jobfit.domain.evaluation.client;
 
 import com.jinwoo.jobfit.domain.evaluation.exception.LlmResponseException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -10,6 +11,7 @@ import org.springframework.web.client.RestClient;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Component
 public class OpenAiLlmClient implements LlmClient {
 
@@ -50,6 +52,7 @@ public class OpenAiLlmClient implements LlmClient {
         }
 
         String content = response.choices().get(0).message().content();
+        log.info("OpenAI raw content: {}", content); // 임시
         if (content == null || content.isBlank()) {
             throw new LlmResponseException("OpenAI 응답 content가 비어 있습니다.");
         }
