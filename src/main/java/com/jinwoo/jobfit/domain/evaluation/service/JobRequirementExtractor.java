@@ -69,6 +69,12 @@ public class JobRequirementExtractor {
             - [주요업무] 섹션 문장 안에 "~로 전환", "~로 이전 예정", "향후 ~ 도입" 같은 로드맵/전환 계획을
               서술하는 문구가 있더라도, 그 문장에 언급된 기술이 [주요업무] 섹션에 있다면 requiredSkills로
               분류하라. 현재/미래 여부와 무관하게 섹션 위치 규칙을 우선한다.
+            - 한 문장에 절대 금지 목록의 방법론/아키텍처 용어(MDD, MSA, 모놀리식 등)와
+              실제 기술명(프로그래밍 언어, 프레임워크 등)이 함께 등장하는 경우, 방법론/아키텍처
+              용어만 제외하고 기술명은 그대로 추출 대상에 포함하라.
+              예: "MDD 기반 Java 모놀리식 시스템에서 Kotlin, Spring Boot 기반 MSA로 전환"
+              → 추출 대상: Java, Kotlin, Spring Boot (MDD, 모놀리식, MSA는 제외)
+              → 이 문장이 [주요업무] 섹션에 있다면 Java, Kotlin, Spring Boot는 requiredSkills로 분류
 
             [requiredCertificates 규칙]
             - 이 규칙은 자격증·어학성적에만 적용된다. requiredSkills / preferredSkills 분류에는 영향을 주지 않는다.
