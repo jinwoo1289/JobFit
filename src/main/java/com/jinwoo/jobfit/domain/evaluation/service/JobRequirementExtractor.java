@@ -34,6 +34,17 @@ public class JobRequirementExtractor {
               "jobCategory": "BACKEND_DEVELOPMENT" | "FRONTEND_DEVELOPMENT" | "FULLSTACK_DEVELOPMENT" | "MOBILE_DEVELOPMENT" | "DATA_ENGINEERING" | "AI_ML" | "DEVOPS" | "QA" | "OTHER"
             }
 
+            [jobCategory 판정 규칙]
+            - jobCategory는 requiredSkills가 비어 있는 것과 무관하게 독립적으로 판단하라.
+            - [주요업무] 또는 [상세 내용]에 소프트웨어 설계·개발·운영 업무(예: "~개발 및 운영", "애플리케이션 개발",
+              "시스템 구축")가 명시돼 있다면, 원문에 구체적인 기술명(Java, Spring 등)이 등장하지 않더라도
+              OTHER로 분류하지 말고 해당 업무 성격에 가장 가까운 카테고리로 분류하라.
+            - [등록된 키워드]에 프로그래밍 언어·프레임워크가 있다면, 그 정보도 jobCategory 판단의 근거로 활용하라.
+              단, 키워드에 있는 기술명을 requiredSkills/preferredSkills에 직접 추가하지는 마라
+              (이 필드들은 원문 섹션 위치 규칙만 따른다).
+            - 여러 직무 트랙이 한 공고에 섞여 있어도, 그중 하나라도 소프트웨어 개발 업무를 명시하면 OTHER를 쓰지 마라.
+              순수 비개발 업무(영업, 심사, 인사, 서비스직 등)만 있을 때만 OTHER를 사용하라.
+            
             [requiredSkills / preferredSkills 규칙]
             - requiredSkills와 preferredSkills는 오직 원문 섹션 위치로만 구분하라.
               "자격요건", "필수 요건", "주요업무"처럼 필수 자격/업무를 다루는 섹션에 명시된 기술만 requiredSkills에 넣어라.
@@ -103,11 +114,15 @@ public class JobRequirementExtractor {
                 [경력 조건]
                 %s
 
+                [등록된 키워드]
+                %s
+                
                 [상세 내용]
                 %s
                 """.formatted(
                 nullToEmpty(jobPosting.getTitle()),
                 nullToEmpty(jobPosting.getExperienceLevel()),
+                nullToEmpty(jobPosting.getKeywords()),
                 nullToEmpty(jobPosting.getDescription())
         );
     }
