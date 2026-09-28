@@ -194,5 +194,47 @@
     "description": "요구사항 상세 미확인 — 목록 정보 기반",
     "closeType": "FIXED_DATE",
     "expirationAt": "2026-09-27T23:59:59"
+  },
+    {
+    "source": "SARAMIN",
+    "externalId": "55112954",
+    "companyName": "셀트리온",
+    "title": "서버/Cloud 엔지니어",
+    "originalUrl": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=55112954",
+    "location": "충북 청주, 경기 과천",
+    "experienceLevel": "경력",
+    "educationLevel": "대졸(4년) 이상",
+    "keywords": "Windows Server,Linux,RHEL,CentOS,Ubuntu,AWS,Azure,Active Directory",
+    "description": "[주요업무]\n- Windows Server 및 Linux(RHEL, CentOS, Ubuntu 등) 기반의 물리/가상화 서버 운영, 패치 관리, OS 트러블슈팅\n- On-prem 서버 Life-Cycle 관리(HW, OS의 EOS, EOL 등)\n- AWS 자원(인스턴스, 스토리지, 네트워크 등) 프로비저닝 및 최적화\n- On-prem & Cloud(AWS) 하이브리드 환경의 네트워크 및 보안 설정, 성능/장애 모니터링, 비용 최적화\n- Local AD - Azure Entra ID 기반 SSO 관리\n\n[자격요건]\n- 학사 이상 학위 소지자\n- 컴퓨터 공학 등 관련 전공자\n- 5년 이상 서버 및 Cloud 운영 경험자\n- IDC 운영 및 서버(OS, HW) 유지보수 경험자\n- 토익 700점에 상응하는 영어공인성적 보유자\n\n[우대사항]\n- 정보처리기사 자격증 보유자\n- 클라우드(AWS, Azure) 자격증 보유자\n- Red Hat 계열(RHCSA, RHCE) 또는 리눅스 자격증 보유자",
+    "closeType": "FIXED_DATE",
+    "expirationAt": "2026-10-05T23:59:59"
+  },
+  {
+    "source": "SARAMIN",
+    "externalId": "55101818",
+    "companyName": "(주)씨제이이엔엠",
+    "title": "백엔드개발",
+    "originalUrl": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=55101818",
+    "location": "서울 서초구",
+    "experienceLevel": "신입",
+    "educationLevel": "대졸(4년) 이상",
+    "keywords": "Java,AWS,API",
+    "description": "[주요업무]\n- APP/Web 상품·콘텐츠·기획전 등 주요 서비스 백엔드 개발\n- 상품, 카테고리, 콘텐츠, 라이브 등 커머스 데이터 연동 및 API 개발\n- 전시·기획전 운영을 위한 관리자 시스템 개발\n- 라이브 커머스, 검색·추천 등 서비스 개발 및 연동\n- AWS 기반 서비스 운영 및 개선 활동\n\n[우대사항]\n- Java 등 프로그래밍 언어 활용한 개발 프로젝트 경험\n- 이커머스 서비스 및 상품·콘텐츠·검색·추천 등 커머스 도메인에 대한 관심",
+    "closeType": "FIXED_DATE",
+    "expirationAt": "2026-09-30T23:59:59"
+  },
+  {
+    "source": "SARAMIN",
+    "externalId": "54907242",
+    "companyName": "NHN Cloud",
+    "title": "[NHN Cloud]스토리지 엔진 개발",
+    "originalUrl": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=54907242",
+    "location": "경기 성남시 판교 삼평동",
+    "experienceLevel": "경력",
+    "educationLevel": null,
+    "keywords": "C,C++,Go,Python,OpenStack,NVMe,Ceph,GlusterFS",
+    "description": "[주요업무]\n- 고성능 분산 스토리지 엔진 설계 및 구현\n- 오픈소스 분산 스토리지 엔진 분석 및 퍼블릭 클라우드 요구사항 반영\n\n[자격요건]\n- 컴퓨터 과학 기본 지식(컴퓨터구조, 네트워크, 운영체제, 알고리즘)을 보유하신 분\n- C/C++, Go, Python 등 프로그래밍 언어 사용이 능숙하신 분\n- 분산 시스템 및 클라우드 환경 이해도가 있으신 분\n\n[우대사항]\n- 컴퓨터 구조 및 운영체제, 네트워크에 대한 깊은 이해가 있으신 분\n- 가상화, 클라우드(Openstack등) 기술에 대한 이해가 있으신 분\n- NVMe 스토리지 시스템 연구개발 경험을 보유하신 분\n- Ceph, GlusterFS 등 오픈소스 스토리지 활용 경험을 보유하신 분\n- 분산시스템 연구개발 경험을 보유하신 분\n- 시스템 개발 경험을 보유하신 분 (리눅스 커널, 파일시스템 등)\n- 연구경험/역량을 보유하신 분 (문제 정의 / 관련 연구 조사 및 분석 / 가설 설정 및 실험 검증 / 개선 및 최적화 / 문서화 및 발표 역량)",
+    "closeType": "UNTIL_FILLED",
+    "expirationAt": "2026-09-30T23:59:59"
   }
 ]
