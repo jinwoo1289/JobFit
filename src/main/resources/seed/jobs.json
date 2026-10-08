@@ -236,5 +236,19 @@
     "description": "[주요업무]\n- 고성능 분산 스토리지 엔진 설계 및 구현\n- 오픈소스 분산 스토리지 엔진 분석 및 퍼블릭 클라우드 요구사항 반영\n\n[자격요건]\n- 컴퓨터 과학 기본 지식(컴퓨터구조, 네트워크, 운영체제, 알고리즘)을 보유하신 분\n- C/C++, Go, Python 등 프로그래밍 언어 사용이 능숙하신 분\n- 분산 시스템 및 클라우드 환경 이해도가 있으신 분\n\n[우대사항]\n- 컴퓨터 구조 및 운영체제, 네트워크에 대한 깊은 이해가 있으신 분\n- 가상화, 클라우드(Openstack등) 기술에 대한 이해가 있으신 분\n- NVMe 스토리지 시스템 연구개발 경험을 보유하신 분\n- Ceph, GlusterFS 등 오픈소스 스토리지 활용 경험을 보유하신 분\n- 분산시스템 연구개발 경험을 보유하신 분\n- 시스템 개발 경험을 보유하신 분 (리눅스 커널, 파일시스템 등)\n- 연구경험/역량을 보유하신 분 (문제 정의 / 관련 연구 조사 및 분석 / 가설 설정 및 실험 검증 / 개선 및 최적화 / 문서화 및 발표 역량)",
     "closeType": "UNTIL_HIRED",
     "expirationAt": "2026-09-30T23:59:59"
-  }
+  },
+  {
+  "source": "SARAMIN",
+  "externalId": "hansolpns-2026h2-web",
+  "companyName": "한솔PNS",
+  "title": "IT서비스 웹개발자 (AI서비스) 신입",
+  "originalUrl": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=55098189",
+  "location": "서울",
+  "experienceLevel": "신입",
+  "educationLevel": "대졸",
+  "keywords": "Java,Spring,React,Vue,Node.js,Python,Golang,RESTful API,RDBMS,NoSQL,VectorDB,MLOps",
+  "description": "[주요업무]\n- 노코드 에이전트 플랫폼(I'MFACTO AI Atlas) 및 MLOps 플랫폼의 웹 프론트엔드 또는 백엔드 개발\n- 전사 AX 전환을 위한 사내 포털(대시보드, 권한관리, 미터링, 관리자 웹 등) 기능 구현\n- 사내표준 AI 인프라(VectorDB 등) 연동을 위한 웹 기반 서비스 개발 및 운영 지원\n- R&D 기술 검증 및 내재화된 솔루션의 대내외 프로젝트 적용 참여\n\n[자격요건]\n- 학사 이상의 학위 취득자\n- 기 졸업자 또는 '27.2월 이전 졸업 예정자(26년 12월 입사 가능한 자)\n- 해외여행에 결격사유가 없는 자\n- 웹 동작 원리(HTTP, RESTful API 등)와 프로그래밍 기본 이해\n- 프론트엔드(React, Vue 등) / 백엔드(Spring, Node.js, Python, Golang 등) 프레임워크 활용 개발 경험\n- 데이터베이스(RDBMS, NoSQL 등)에 대한 기본 지식 및 쿼리 작성 역량",
+  "closeType": "FIXED_DATE",
+  "expirationAt": "2026-10-11T23:59:59"
+}
 ]
