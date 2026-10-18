@@ -6,7 +6,7 @@ import WeightSliders from './components/WeightSliders'
 import type { EvaluationResponse, Weights } from './types'
 import './App.css'
 
-const USER_PROFILE_ID = 1
+const USER_PROFILE_ID = 2
 const NOTICE_DISMISSED_KEY = 'jobfit-cold-start-notice-dismissed'
 const SKELETON_COUNT = 6
 
