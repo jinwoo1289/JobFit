@@ -41,7 +41,11 @@ function JobCard({ result, rank }: { result: EvaluationResponse; rank?: number }
         <strong>{result.totalScore.toFixed(1)}</strong>
       </div>
 
-      <div className="job-card-scores">
+      <div className="job-card-scores-header">
+        <span className="job-card-scores-title">세부 점수</span>
+        {isUnfit && <span className="score-reference-label">참고용</span>}
+      </div>
+      <div className={`job-card-scores ${isUnfit ? 'job-card-scores-unfit' : ''}`}>
         {scoreItems.map((item) => (
           <div key={item.label} className="score-item">
             <span className="score-item-label">{item.label}</span>
