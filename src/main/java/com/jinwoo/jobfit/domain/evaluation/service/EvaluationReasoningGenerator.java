@@ -4,6 +4,7 @@ import com.jinwoo.jobfit.domain.evaluation.client.LlmClient;
 import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationReasoning;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementExtraction;
 import com.jinwoo.jobfit.domain.evaluation.vo.ScoreResult;
+import com.jinwoo.jobfit.domain.evaluation.vo.SkillMatchResult;
 import com.jinwoo.jobfit.domain.job.entity.JobPosting;
 import com.jinwoo.jobfit.domain.user.entity.UserCertificate;
 import com.jinwoo.jobfit.domain.user.entity.UserProfile;
@@ -14,10 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -41,34 +40,30 @@ public class EvaluationReasoningGenerator {
               명시된 내용만 사용하라. 구체적인 배포판·버전·도구명 등 프로필에 없는 세부 정보를 추가하지 마라.
               예: 프로필에 "Linux"만 있으면 "Ubuntu 22.04"처럼 구체적인 배포판명을 지어내지 마라.
               예: 프로필에 "Docker"만 있으면 "Docker 24.0"처럼 구체적인 버전을 지어내지 마라.
-            - matchedPoints, gapPoints의 각 항목은 "공고 요구 → 사용자 근거" 형태로 연결해서 작성하라.
-              예: "Spring Boot 충족 — HopeTail-BE에서 REST API 및 인증 기능 구현"
-            - matchedPoints: 공고가 요구하는 조건 중 지원자가 충족하는 항목.
-            - gapPoints: 공고가 요구하는 조건 중 지원자가 충족하지 못하는 항목.
             - checkPoints: 공고 원문이나 추출 정보만으로는 충족 여부를 단정하기 어려워 지원자가 직접 확인해야 하는 항목.
+              필수 기술의 일치/불일치는 이미 시스템이 판정했으므로 checkPoints에서 다루지 마라. 자격증·경력 등
+              시스템이 판정하지 않은 항목 중 애매한 것만 다루어라.
             - 근거가 없는 항목은 만들어내지 말고 빈 배열로 두어라.
-
-            [matchedPoints 판정 규칙 — 반드시 지켜라]
-            - 사용자 프롬프트 맨 앞의 [지원자 보유 기술 목록]을 항상 먼저 확인하라.
-            - 보유 기술 목록에 있고 [지원자 프로젝트]에서 실제로 사용한 기술은 반드시 matchedPoints에 포함하라. 누락하지 마라.
-            - 보유 기술 목록에 없는 기술은 절대 matchedPoints에 넣지 마라.
-            - 유사하거나 대체 가능하다는 이유로 충족으로 판정하지 마라.
-              예: Git 경험을 Jira/Confluence 충족 근거로 쓰지 마라.
-              예: Java 경험을 Python 충족 근거로 쓰지 마라.
-            - matchedPoints 각 항목에는 근거가 된 프로젝트명을 포함해서 작성하라. 단, 해당 기술을 사용한 프로젝트가 없다면
-              프로젝트명을 지어내지 말고 "보유 기술 목록에 포함" 정도로만 서술하라.
-            - 추출된 요구사항의 필수 기술(requiredSkills)이 비어 있으면, 판정할 기술 요구 자체가 없는 것이므로
-              matchedPoints는 반드시 빈 배열로 출력하라.
             - requiredCertificates(필수 자격증)는 "또는" 관계로 해석하라. 여러 개 중 하나라도 보유하면 그 요구는 충족된 것으로 판단하라.
 
-            [gapPoints 판정 규칙 — 반드시 지켜라]
-            - gapPoints에는 추출된 요구사항의 필수 기술(requiredSkills) 중 [지원자 보유 기술 목록]에 없는 기술만 넣어라.
-            - 공고가 요구하지 않은 기술, 즉 requiredSkills에 없는 기술은 gapPoints에 절대 언급하지 마라.
-            - gapPoints 항목에는 "충족"이라는 표현을 쓰지 마라. "미보유", "부족" 등 결핍을 나타내는 표현만 사용하라.
+            [matchedPoints 작성 규칙 — 반드시 지켜라]
+            - matchedPoints의 일치 여부는 네가 판단하는 것이 아니라 [시스템이 판정한 필수 기술 일치 목록]을 그대로 따라야 한다.
+              그 목록에 있는 기술만 matchedPoints로 작성하고, 목록에 없는 기술을 스스로 일치로 판단해서 추가하지 마라.
+            - 목록의 각 기술에 대해 [지원자 프로젝트]에서 실제로 사용한 프로젝트가 있다면
+              "기술명 충족 — 프로젝트명에서 사용" 형태로 작성하라.
+            - 사용한 프로젝트가 없다면 프로젝트명을 지어내지 말고 "기술명 충족 — 보유 기술 목록에 포함" 정도로만 서술하라.
+            - [시스템이 판정한 필수 기술 일치 목록]이 비어 있으면 matchedPoints는 반드시 빈 배열로 출력하라.
+
+            [gapPoints 작성 규칙 — 반드시 지켜라]
+            - gapPoints의 불일치 여부도 네가 판단하는 것이 아니라 [시스템이 판정한 필수 기술 불일치 목록]을 그대로 따라야 한다.
+              그 목록에 있는 기술만 gapPoints로 작성하고, 목록에 없는 기술(공고가 요구하지 않은 기술)은 절대 넣지 마라.
+            - 각 항목은 "기술명 미보유" 형태로 작성하라. "충족"이라는 표현을 쓰지 마라.
+            - [시스템이 판정한 필수 기술 불일치 목록]이 비어 있으면 gapPoints는 반드시 빈 배열로 출력하라.
             """;
 
     private final LlmClient llmClient;
     private final ObjectMapper objectMapper;
+    private final SkillScoreCalculator skillScoreCalculator;
 
     public EvaluationReasoning generate(JobPosting jobPosting,
                                          JobRequirementExtraction extraction,
@@ -77,13 +72,14 @@ public class EvaluationReasoningGenerator {
                                          List<UserProject> projects,
                                          List<UserCertificate> certificates,
                                          ScoreResult scoreResult) {
+        SkillMatchResult matchResult = skillScoreCalculator.matchDetail(skills, projects, extraction.requiredSkills());
         try {
             String response = llmClient.complete(SYSTEM_PROMPT,
-                    buildUserPrompt(jobPosting, extraction, userProfile, skills, projects, certificates, scoreResult));
+                    buildUserPrompt(jobPosting, extraction, userProfile, skills, projects, certificates, scoreResult, matchResult));
             return objectMapper.readValue(response, EvaluationReasoning.class);
         } catch (RuntimeException e) {
             log.warn("LLM 근거 생성 실패, 규칙 기반 fallback 사용: {}", e.getMessage(), e);
-            return fallback(skills, projects, extraction);
+            return fallback(projects, matchResult);
         }
     }
 
@@ -93,11 +89,18 @@ public class EvaluationReasoningGenerator {
                                     List<UserSkill> skills,
                                     List<UserProject> projects,
                                     List<UserCertificate> certificates,
-                                    ScoreResult scoreResult) {
+                                    ScoreResult scoreResult,
+                                    SkillMatchResult matchResult) {
         return """
                 [지원자 보유 기술 목록]
                 %s
                 ※ 이 목록에 없는 기술은 절대 matchedPoints에 넣지 마라.
+
+                [시스템이 판정한 필수 기술 일치 목록]
+                %s
+
+                [시스템이 판정한 필수 기술 불일치 목록]
+                %s
 
                 [공고 제목]
                 %s
@@ -110,6 +113,7 @@ public class EvaluationReasoningGenerator {
                 - 우대 기술: %s
                 - 요구 경력: %s ~ %s 년 (신입 지원 가능: %s)
                 - 필수 자격증: %s
+                - 우대 자격증: %s
 
                 [지원자 희망 조건]
                 - 희망 직무: %s
@@ -128,12 +132,15 @@ public class EvaluationReasoningGenerator {
                 - 자격증 점수: %.1f
                 """.formatted(
                 describeSkills(skills),
+                joinOrNone(matchResult.matchedSkills()),
+                joinOrNone(matchResult.unmatchedSkills()),
                 nullToEmpty(jobPosting.getTitle()),
                 nullToEmpty(jobPosting.getDescription()),
                 joinOrNone(extraction.requiredSkills()),
                 joinOrNone(extraction.preferredSkills()),
                 nullToText(extraction.minYears()), nullToText(extraction.maxYears()), extraction.newGraduateAllowed(),
                 joinOrNone(extraction.requiredCertificates()),
+                joinOrNone(extraction.preferredCertificates()),
                 nullToEmpty(userProfile.getDesiredJob()),
                 userProfile.getCareerLevel(), nullToText(userProfile.getYearsOfExperience()),
                 describeProjects(projects),
@@ -170,32 +177,25 @@ public class EvaluationReasoningGenerator {
         return certificates.stream().map(UserCertificate::getCertificateName).collect(Collectors.joining(", "));
     }
 
-    private EvaluationReasoning fallback(List<UserSkill> skills, List<UserProject> projects, JobRequirementExtraction extraction) {
-        Set<String> userSkillNames = skills.stream()
-                .map(UserSkill::getSkillName)
-                .map(this::normalize)
-                .collect(Collectors.toSet());
-
-        List<String> matchedPoints = new ArrayList<>();
-        List<String> gapPoints = new ArrayList<>();
-
-        for (String requiredSkill : extraction.requiredSkills()) {
-            String normalized = normalize(requiredSkill);
-            if (!userSkillNames.contains(normalized)) {
-                gapPoints.add(requiredSkill + " 미보유");
-                continue;
-            }
-
-            List<String> projectNames = projects.stream()
-                    .filter(project -> project.getTechStack().contains(normalized))
-                    .map(UserProject::getProjectName)
-                    .toList();
-            matchedPoints.add(projectNames.isEmpty()
-                    ? requiredSkill + " 충족"
-                    : requiredSkill + " 충족 — " + String.join(", ", projectNames) + "에서 사용");
-        }
-
+    private EvaluationReasoning fallback(List<UserProject> projects, SkillMatchResult matchResult) {
+        List<String> matchedPoints = matchResult.matchedSkills().stream()
+                .map(skill -> describeMatchedSkill(skill, projects))
+                .toList();
+        List<String> gapPoints = matchResult.unmatchedSkills().stream()
+                .map(skill -> skill + " 미보유")
+                .toList();
         return new EvaluationReasoning(matchedPoints, gapPoints, List.of());
+    }
+
+    private String describeMatchedSkill(String skill, List<UserProject> projects) {
+        String normalized = normalize(skill);
+        List<String> projectNames = projects.stream()
+                .filter(project -> project.getTechStack().contains(normalized))
+                .map(UserProject::getProjectName)
+                .toList();
+        return projectNames.isEmpty()
+                ? skill + " 충족"
+                : skill + " 충족 — " + String.join(", ", projectNames) + "에서 사용";
     }
 
     private String normalize(String value) {

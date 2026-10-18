@@ -30,7 +30,7 @@ class EvaluationReasoningGeneratorTest {
         LlmClient llmClient = (systemPrompt, userPrompt) -> """
                 {"matchedPoints": ["Spring Boot 충족 — HopeTail-BE에서 REST API 구현"], "gapPoints": ["AWS 미보유"], "checkPoints": ["재택근무 가능 여부 확인 필요"]}
                 """;
-        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(llmClient, objectMapper);
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(llmClient, objectMapper, skillScoreCalculator());
 
         EvaluationReasoning reasoning = generator.generate(
                 jobPosting(), extraction(), userProfile(), skills(), projects(), List.of(), scoreResult());
@@ -45,7 +45,7 @@ class EvaluationReasoningGeneratorTest {
         LlmClient failingLlmClient = (systemPrompt, userPrompt) -> {
             throw new RuntimeException("LLM 장애");
         };
-        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper);
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper, skillScoreCalculator());
 
         EvaluationReasoning reasoning = generator.generate(
                 jobPosting(), extraction(), userProfile(), skills(), projects(), List.of(), scoreResult());
@@ -62,15 +62,36 @@ class EvaluationReasoningGeneratorTest {
         LlmClient failingLlmClient = (systemPrompt, userPrompt) -> {
             throw new RuntimeException("LLM 장애");
         };
-        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper);
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper, skillScoreCalculator());
         JobRequirementExtraction jpaOnlyExtraction = new JobRequirementExtraction(
-                List.of("JPA"), List.of(), null, null, true, List.of(), JobCategory.BACKEND_DEVELOPMENT);
+                List.of("JPA"), List.of(), null, null, true, List.of(), List.of(), JobCategory.BACKEND_DEVELOPMENT);
 
         EvaluationReasoning reasoning = generator.generate(
                 jobPosting(), jpaOnlyExtraction, userProfile(), skills(), List.of(), List.of(), scoreResult());
 
         assertThat(reasoning.matchedPoints()).containsExactly("JPA 충족");
         assertThat(reasoning.gapPoints()).isEmpty();
+    }
+
+    // matchedPoints/gapPoints의 일치 여부 판정은 더 이상 LLM에 맡기지 않고, SkillScoreCalculator가 계산한
+    // 결과를 프롬프트에 그대로 넘겨 LLM은 문장만 작성하도록 한다. 프롬프트에 그 결과가 실제로 전달되는지 확인한다.
+    @Test
+    void generate_passesSystemComputedMatchResultIntoPrompt() {
+        StringBuilder capturedUserPrompt = new StringBuilder();
+        LlmClient capturingLlmClient = (systemPrompt, userPrompt) -> {
+            capturedUserPrompt.append(userPrompt);
+            return """
+                    {"matchedPoints": [], "gapPoints": [], "checkPoints": []}
+                    """;
+        };
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(capturingLlmClient, objectMapper, skillScoreCalculator());
+
+        generator.generate(jobPosting(), extraction(), userProfile(), skills(), projects(), List.of(), scoreResult());
+
+        // extraction()의 필수 기술은 Spring Boot, AWS. skills()/projects()에는 Spring Boot만 있다.
+        assertThat(capturedUserPrompt.toString())
+                .contains("[시스템이 판정한 필수 기술 일치 목록]\nSpring Boot")
+                .contains("[시스템이 판정한 필수 기술 불일치 목록]\nAWS");
     }
 
     private JobPosting jobPosting() {
@@ -84,13 +105,17 @@ class EvaluationReasoningGeneratorTest {
 
     private JobRequirementExtraction extraction() {
         return new JobRequirementExtraction(
-                List.of("Spring Boot", "AWS"), List.of(), null, null, true, List.of(),
+                List.of("Spring Boot", "AWS"), List.of(), null, null, true, List.of(), List.of(),
                 JobCategory.BACKEND_DEVELOPMENT
         );
     }
 
     private ScoreResult scoreResult() {
         return new ScoreResult(50.0, 0.0, 0.0, 0.0);
+    }
+
+    private SkillScoreCalculator skillScoreCalculator() {
+        return new SkillScoreCalculator(new SkillAliasNormalizer());
     }
 
     private UserProfile userProfile() {
