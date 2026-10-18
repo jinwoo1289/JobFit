@@ -248,6 +248,11 @@
   color: #c0392b;
 }
 
+.badge-insufficient {
+  background: #f1f3f5;
+  color: #6c757d;
+}
+
 .job-card-total {
   display: flex;
   align-items: baseline;
@@ -311,6 +316,15 @@
 .score-item-value {
   font-size: 15px;
   font-weight: 600;
+}
+
+.score-item-value-excluded {
+  color: #b5b9c0;
+}
+
+.score-item-excluded-note {
+  font-size: 10px;
+  color: #b5b9c0;
 }
 
 .reasoning-block ul {
