@@ -107,6 +107,26 @@ class RequiredConditionCheckerTest {
         assertThat(result.passed()).isTrue();
     }
 
+    // 회귀 테스트: application-dev.properties에 2026-08-06로 고정된 clock이 방치되어, 실제로는
+    // 지난 마감일(킨코스코리아, 2026-08-07 마감)이 "아직 안 지남"으로 오판정되어 FIT 1위로 노출된 적이 있다.
+    // "오늘"을 기준으로 한 clock이 주입되면 마감 지난 공고는 반드시 마감 사유로 UNFIT 처리되어야 한다.
+    @Test
+    void check_kincos_pastDeadlineAsOfToday_failsOnDeadlineWithReason() {
+        Clock today = Clock.fixed(
+                LocalDateTime.of(2026, 10, 18, 0, 0, 0).atZone(ZoneId.systemDefault()).toInstant(),
+                ZoneId.systemDefault()
+        );
+        RequiredConditionChecker todayChecker = new RequiredConditionChecker(new JobRequirementParser(), today);
+        UserProfile userProfile = newGraduateFullTimeUser();
+        JobPosting jobPosting = jobPosting(
+                "백엔드 개발자/디자인그룹 경력 및 신입사원 모집", "신입/경력 3년 이하", "2026-08-07T23:59:59");
+
+        ConditionCheckResult result = todayChecker.check(userProfile, jobPosting, defaultExtraction());
+
+        assertThat(result.passed()).isFalse();
+        assertThat(result.failedReasons()).contains("마감일이 지난 공고입니다.");
+    }
+
     static Stream<Arguments> seedJobPostings() {
         return Stream.of(
                 Arguments.of("위드네트웍스", jobPosting(
