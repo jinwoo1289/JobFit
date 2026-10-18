@@ -9,6 +9,7 @@ public record JobRequirementExtraction(
         Integer maxYears,
         boolean newGraduateAllowed,
         List<String> requiredCertificates,
+        List<String> preferredCertificates,
         JobCategory jobCategory
 ) {
 }

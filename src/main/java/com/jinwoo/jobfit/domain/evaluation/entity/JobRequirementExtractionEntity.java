@@ -43,6 +43,9 @@ public class JobRequirementExtractionEntity {
     @Column(name = "required_certificates", length = 1000)
     private String requiredCertificates;
 
+    @Column(name = "preferred_certificates", length = 1000)
+    private String preferredCertificates;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "job_category", length = 30)
     private JobCategory jobCategory;
@@ -55,6 +58,7 @@ public class JobRequirementExtractionEntity {
         this.maxYears = extraction.maxYears();
         this.newGraduateAllowed = extraction.newGraduateAllowed();
         this.requiredCertificates = join(extraction.requiredCertificates());
+        this.preferredCertificates = join(extraction.preferredCertificates());
         this.jobCategory = extraction.jobCategory();
     }
 
@@ -66,6 +70,7 @@ public class JobRequirementExtractionEntity {
                 maxYears,
                 newGraduateAllowed,
                 split(requiredCertificates),
+                split(preferredCertificates),
                 jobCategory
         );
     }

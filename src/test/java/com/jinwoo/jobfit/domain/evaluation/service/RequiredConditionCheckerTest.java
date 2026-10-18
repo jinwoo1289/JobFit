@@ -154,7 +154,7 @@ class RequiredConditionCheckerTest {
 
     private static JobRequirementExtraction extractionOf(Integer minYears, Integer maxYears, JobCategory jobCategory) {
         return new JobRequirementExtraction(
-                List.of(), List.of(), minYears, maxYears, true, List.of(), jobCategory
+                List.of(), List.of(), minYears, maxYears, true, List.of(), List.of(), jobCategory
         );
     }
 
