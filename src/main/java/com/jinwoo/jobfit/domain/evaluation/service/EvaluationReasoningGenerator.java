@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
-import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -66,6 +66,7 @@ public class EvaluationReasoningGenerator {
     private final LlmClient llmClient;
     private final ObjectMapper objectMapper;
     private final SkillScoreCalculator skillScoreCalculator;
+    private final SkillAliasNormalizer skillAliasNormalizer;
 
     public EvaluationReasoning generate(JobPosting jobPosting,
                                          JobRequirementExtraction extraction,
@@ -189,10 +190,12 @@ public class EvaluationReasoningGenerator {
         return new EvaluationReasoning(matchedPoints, gapPoints, List.of());
     }
 
+    // 스킬 점수·경험 점수와 동일하게 SkillAliasNormalizer를 거쳐 판정해야, "Spring Framework"처럼
+    // 별칭으로 표기된 기술도 실제 사용한 프로젝트를 근거로 제시할 수 있다.
     private String describeMatchedSkill(String skill, List<UserProject> projects) {
-        String normalized = normalize(skill);
+        String normalized = skillAliasNormalizer.normalize(skill);
         List<String> projectNames = projects.stream()
-                .filter(project -> project.getTechStack().contains(normalized))
+                .filter(project -> matchesTechStack(normalized, project))
                 .map(UserProject::getProjectName)
                 .toList();
         return projectNames.isEmpty()
@@ -200,8 +203,11 @@ public class EvaluationReasoningGenerator {
                 : skill + " 충족 — " + String.join(", ", projectNames) + "에서 사용";
     }
 
-    private String normalize(String value) {
-        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    private boolean matchesTechStack(String normalizedSkill, UserProject project) {
+        Set<String> normalizedTechStack = project.getTechStack().stream()
+                .map(skillAliasNormalizer::normalize)
+                .collect(Collectors.toSet());
+        return skillAliasNormalizer.matches(normalizedSkill, normalizedTechStack);
     }
 
     private String joinOrNone(List<String> values) {
