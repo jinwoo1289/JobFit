@@ -94,6 +94,29 @@ class EvaluationReasoningGeneratorTest {
                 .contains("[시스템이 판정한 필수 기술 불일치 목록]\nAWS");
     }
 
+    // matchedPoints는 기술 단위로 묶여, 해당 기술을 사용한 모든 프로젝트를 쉼표로 나열해 한 줄로 출력되어야 한다.
+    @Test
+    void generate_llmFails_skillUsedInMultipleProjects_bundlesAllProjectNamesOnOneLine() {
+        LlmClient failingLlmClient = (systemPrompt, userPrompt) -> {
+            throw new RuntimeException("LLM 장애");
+        };
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper, skillScoreCalculator());
+        JobRequirementExtraction javaOnlyExtraction = new JobRequirementExtraction(
+                List.of("Java"), List.of(), null, null, true, List.of(), List.of(), JobCategory.BACKEND_DEVELOPMENT);
+        UserProfile profile = userProfile();
+        List<UserSkill> skills = List.of(new UserSkill(profile, "Java"));
+        List<UserProject> javaProjects = List.of(
+                new UserProject(profile, "HopeTail-BE", "채용 매칭 서비스", List.of("Java", "Spring Boot")),
+                new UserProject(profile, "KakaoMCP", "MCP 연동 프로젝트", List.of("Java", "Docker")),
+                new UserProject(profile, "JobFit", "적합도 평가 서비스", List.of("Java", "Spring Boot", "PostgreSQL"))
+        );
+
+        EvaluationReasoning reasoning = generator.generate(
+                jobPosting(), javaOnlyExtraction, userProfile(), skills, javaProjects, List.of(), scoreResult());
+
+        assertThat(reasoning.matchedPoints()).containsExactly("Java 충족 — HopeTail-BE, KakaoMCP, JobFit에서 사용");
+    }
+
     private JobPosting jobPosting() {
         return new JobPosting(
                 JobSource.SARAMIN, "test-external-id", "테스트 회사", "백엔드 개발자 채용",
@@ -111,7 +134,7 @@ class EvaluationReasoningGeneratorTest {
     }
 
     private ScoreResult scoreResult() {
-        return new ScoreResult(50.0, 0.0, 0.0, 0.0);
+        return new ScoreResult(50.0, false, 0.0, false, 0.0, false, 0.0, false);
     }
 
     private SkillScoreCalculator skillScoreCalculator() {

@@ -42,7 +42,11 @@ public class EvaluationService {
             return EvaluationResult.unfit(jobPosting.getId(), scoreResult, conditionCheckResult.failedReasons(), reasoning);
         }
 
-        double totalScore = scoreCalculator.calculateTotalScore(scoreResult, extraction, evaluationWeight);
+        if (scoreResult.allExcluded()) {
+            return EvaluationResult.insufficientInfo(jobPosting.getId(), scoreResult, reasoning);
+        }
+
+        double totalScore = scoreCalculator.calculateTotalScore(scoreResult, evaluationWeight);
 
         return EvaluationResult.fit(jobPosting.getId(), totalScore, scoreResult, reasoning);
     }

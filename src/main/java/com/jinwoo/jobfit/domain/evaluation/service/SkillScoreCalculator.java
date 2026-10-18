@@ -78,15 +78,15 @@ public class SkillScoreCalculator {
     }
 
     private boolean matches(String normalizedTarget, Set<String> userSkillNames, Set<String> userTechStacks) {
-        if (skillAliasNormalizer.isRdbmsAlias(normalizedTarget)) {
-            return skillAliasNormalizer.containsRdbmsEquivalent(userSkillNames);
+        if (skillAliasNormalizer.isCategoryAlias(normalizedTarget)) {
+            return skillAliasNormalizer.matchesCategoryEquivalent(normalizedTarget, userSkillNames);
         }
         return userSkillNames.contains(normalizedTarget);
     }
 
     private boolean matchesTechStack(String normalizedTarget, Set<String> userTechStacks) {
-        if (skillAliasNormalizer.isRdbmsAlias(normalizedTarget)) {
-            return skillAliasNormalizer.containsRdbmsEquivalent(userTechStacks);
+        if (skillAliasNormalizer.isCategoryAlias(normalizedTarget)) {
+            return skillAliasNormalizer.matchesCategoryEquivalent(normalizedTarget, userTechStacks);
         }
         return userTechStacks.contains(normalizedTarget);
     }
