@@ -29,7 +29,7 @@ class FakeLlmClient implements LlmClient {
 
         String requiredSkillsJson = toJsonArray(csv);
         return """
-                {"requiredSkills": %s, "preferredSkills": [], "minYears": null, "maxYears": null, "newGraduateAllowed": true, "requiredCertificates": [], "jobCategory": "BACKEND_DEVELOPMENT"}
+                {"requiredSkills": %s, "preferredSkills": [], "minYears": null, "maxYears": null, "newGraduateAllowed": true, "requiredCertificates": [], "preferredCertificates": [], "jobCategory": "BACKEND_DEVELOPMENT"}
                 """.formatted(requiredSkillsJson);
     }
 

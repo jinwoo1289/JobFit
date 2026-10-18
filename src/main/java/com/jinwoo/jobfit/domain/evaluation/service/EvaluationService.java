@@ -20,8 +20,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EvaluationService {
 
-    private static final int TOTAL_WEIGHT = 100;
-
     private final RequiredConditionChecker requiredConditionChecker;
     private final ScoreCalculator scoreCalculator;
     private final JobRequirementExtractor jobRequirementExtractor;
@@ -44,16 +42,8 @@ public class EvaluationService {
             return EvaluationResult.unfit(jobPosting.getId(), scoreResult, conditionCheckResult.failedReasons(), reasoning);
         }
 
-        double totalScore = calculateTotalScore(scoreResult, evaluationWeight);
+        double totalScore = scoreCalculator.calculateTotalScore(scoreResult, extraction, evaluationWeight);
 
         return EvaluationResult.fit(jobPosting.getId(), totalScore, scoreResult, reasoning);
-    }
-
-    private double calculateTotalScore(ScoreResult scoreResult, EvaluationWeight evaluationWeight) {
-        return (scoreResult.skillScore() * evaluationWeight.getSkillWeight()
-                + scoreResult.experienceScore() * evaluationWeight.getExperienceWeight()
-                + scoreResult.preferenceScore() * evaluationWeight.getPreferenceWeight()
-                + scoreResult.certificateScore() * evaluationWeight.getCertificateWeight())
-                / TOTAL_WEIGHT;
     }
 }
