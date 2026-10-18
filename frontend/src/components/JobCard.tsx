@@ -3,26 +3,34 @@ import type { EvaluationResponse } from '../types'
 interface ScoreItem {
   label: string
   value: number
+  excluded: boolean
 }
 
 function JobCard({ result, rank }: { result: EvaluationResponse; rank?: number }) {
   const scoreItems: ScoreItem[] = [
-    { label: '기술', value: result.skillScore },
-    { label: '경험', value: result.experienceScore },
-    { label: '우대', value: result.preferenceScore },
-    { label: '자격증', value: result.certificateScore },
+    { label: '기술', value: result.skillScore, excluded: result.skillExcluded },
+    { label: '경험', value: result.experienceScore, excluded: result.experienceExcluded },
+    { label: '우대', value: result.preferenceScore, excluded: result.preferenceExcluded },
+    { label: '자격증', value: result.certificateScore, excluded: result.certificateExcluded },
   ]
   const isUnfit = result.verdict === 'UNFIT'
+  const isInsufficientInfo = result.verdict === 'INSUFFICIENT_INFO'
+  // 총점에 반영되지 않는(UNFIT) 또는 비교할 정보 자체가 부족한(INSUFFICIENT_INFO) 경우, 세부 점수는 참고용임을 표시한다.
+  const isReferenceOnly = isUnfit || isInsufficientInfo
 
   return (
-    <article className={`job-card ${isUnfit ? 'job-card-unfit' : ''}`}>
+    <article className={`job-card ${isReferenceOnly ? 'job-card-unfit' : ''}`}>
       <header className="job-card-header">
         {rank !== undefined && <span className="job-card-rank">{rank}</span>}
         <div>
           <p className="job-card-company">{result.companyName}</p>
           <h3 className="job-card-title">{result.title}</h3>
         </div>
-        <span className={`badge ${isUnfit ? 'badge-unfit' : 'badge-fit'}`}>{result.verdict}</span>
+        <span
+          className={`badge ${isUnfit ? 'badge-unfit' : isInsufficientInfo ? 'badge-insufficient' : 'badge-fit'}`}
+        >
+          {isInsufficientInfo ? '정보 부족' : result.verdict}
+        </span>
       </header>
 
       {result.verdict === 'UNFIT' && result.failedReasons.length > 0 && (
@@ -43,13 +51,20 @@ function JobCard({ result, rank }: { result: EvaluationResponse; rank?: number }
 
       <div className="job-card-scores-header">
         <span className="job-card-scores-title">세부 점수</span>
-        {isUnfit && <span className="score-reference-label">참고용</span>}
+        {isReferenceOnly && <span className="score-reference-label">참고용</span>}
       </div>
-      <div className={`job-card-scores ${isUnfit ? 'job-card-scores-unfit' : ''}`}>
+      <div className={`job-card-scores ${isReferenceOnly ? 'job-card-scores-unfit' : ''}`}>
         {scoreItems.map((item) => (
           <div key={item.label} className="score-item">
             <span className="score-item-label">{item.label}</span>
-            <span className="score-item-value">{item.value.toFixed(1)}</span>
+            {item.excluded ? (
+              <>
+                <span className="score-item-value score-item-value-excluded">-</span>
+                <span className="score-item-excluded-note">평가 제외</span>
+              </>
+            ) : (
+              <span className="score-item-value">{item.value.toFixed(1)}</span>
+            )}
           </div>
         ))}
       </div>

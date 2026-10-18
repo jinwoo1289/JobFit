@@ -5,7 +5,7 @@ export interface Weights {
   certificateWeight: number
 }
 
-export type EvaluationVerdict = 'FIT' | 'UNFIT'
+export type EvaluationVerdict = 'FIT' | 'UNFIT' | 'INSUFFICIENT_INFO'
 
 export interface EvaluationReasoning {
   matchedPoints: string[]
@@ -20,9 +20,13 @@ export interface EvaluationResponse {
   originalUrl: string
   totalScore: number
   skillScore: number
+  skillExcluded: boolean
   experienceScore: number
+  experienceExcluded: boolean
   preferenceScore: number
+  preferenceExcluded: boolean
   certificateScore: number
+  certificateExcluded: boolean
   verdict: EvaluationVerdict
   failedReasons: string[]
   reasoning: EvaluationReasoning
