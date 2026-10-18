@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.within;
 
 class ExperienceScoreCalculatorTest {
 
-    private final ExperienceScoreCalculator calculator = new ExperienceScoreCalculator();
+    private final ExperienceScoreCalculator calculator = new ExperienceScoreCalculator(new SkillAliasNormalizer());
 
     // 프로젝트별 (techStack ∩ requiredSkills) / requiredSkills 크기 중 최댓값 = experienceScore
     @ParameterizedTest(name = "[{index}] {0} - experienceScore={2}")
@@ -95,6 +95,36 @@ class ExperienceScoreCalculatorTest {
 
         assertThat(tossBankScore).isCloseTo(200.0 / 3, within(0.001));
         assertThat(kincosScore).isCloseTo(60.0, within(0.001));
+    }
+
+    // 파수에이아이(55234023) [주요 기술]: "Java, Spring Framework, RDBMS/SQL, React.js, ...".
+    // 기술 점수(SkillScoreCalculator)와 동일하게 SkillAliasNormalizer를 거쳐, "Spring Framework"는
+    // 보유한 "Spring Boot"와, "RDBMS"/"SQL"은 보유한 "PostgreSQL"과 일치로 인정되어야 한다.
+    @Test
+    void calculate_pasuAi_springFrameworkAndRdbmsSqlAliasesMatchViaTechStack() {
+        UserProfile profile = profile();
+        List<UserProject> projects = List.of(
+                new UserProject(profile, "HopeTail-BE", "채용 매칭 서비스", List.of("Java", "Spring Boot", "PostgreSQL"))
+        );
+
+        double actual = calculator.calculate(projects, List.of("Java", "Spring Framework", "RDBMS", "SQL", "React.js"));
+
+        // Java, Spring Framework(→Spring Boot), RDBMS(→PostgreSQL), SQL(→PostgreSQL) 4개 일치 / 5개 요구 → 80.0
+        assertThat(actual).isCloseTo(80.0, within(0.001));
+    }
+
+    // 기술 스택에 MySQL/PostgreSQL이 전혀 없으면, RDBMS/SQL 범주 별칭이라도 일치로 인정하지 않는다.
+    @Test
+    void calculate_pasuAi_rdbmsSqlAliasWithoutMysqlOrPostgresqlInTechStack_doesNotMatch() {
+        UserProfile profile = profile();
+        List<UserProject> projects = List.of(
+                new UserProject(profile, "HopeTail-BE", "채용 매칭 서비스", List.of("Java", "Spring Boot"))
+        );
+
+        double actual = calculator.calculate(projects, List.of("Java", "RDBMS/SQL"));
+
+        // Java만 일치 / 2개 요구 → 50.0
+        assertThat(actual).isCloseTo(50.0, within(0.001));
     }
 
     private static List<UserProject> projects() {

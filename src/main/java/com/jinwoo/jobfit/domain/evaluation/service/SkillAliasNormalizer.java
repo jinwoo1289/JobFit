@@ -57,4 +57,13 @@ public class SkillAliasNormalizer {
                 .filter(category -> category.isAlias(normalizedSkill))
                 .anyMatch(category -> category.matches(normalizedUserSkills));
     }
+
+    // 정규화된 기술명이 정규화된 후보 목록(보유 스킬, 프로젝트 기술 스택 등)과 일치하는지 범주 별칭까지
+    // 고려해 판정한다. 스킬 점수·경험 점수·근거 문구 생성이 모두 동일한 기준으로 매칭하도록 공유된다.
+    public boolean matches(String normalizedSkill, Set<String> normalizedCandidates) {
+        if (isCategoryAlias(normalizedSkill)) {
+            return matchesCategoryEquivalent(normalizedSkill, normalizedCandidates);
+        }
+        return normalizedCandidates.contains(normalizedSkill);
+    }
 }

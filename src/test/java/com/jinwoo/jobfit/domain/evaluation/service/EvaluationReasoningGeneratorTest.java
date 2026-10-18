@@ -30,7 +30,7 @@ class EvaluationReasoningGeneratorTest {
         LlmClient llmClient = (systemPrompt, userPrompt) -> """
                 {"matchedPoints": ["Spring Boot 충족 — HopeTail-BE에서 REST API 구현"], "gapPoints": ["AWS 미보유"], "checkPoints": ["재택근무 가능 여부 확인 필요"]}
                 """;
-        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(llmClient, objectMapper, skillScoreCalculator());
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(llmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer());
 
         EvaluationReasoning reasoning = generator.generate(
                 jobPosting(), extraction(), userProfile(), skills(), projects(), List.of(), scoreResult());
@@ -45,7 +45,7 @@ class EvaluationReasoningGeneratorTest {
         LlmClient failingLlmClient = (systemPrompt, userPrompt) -> {
             throw new RuntimeException("LLM 장애");
         };
-        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper, skillScoreCalculator());
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer());
 
         EvaluationReasoning reasoning = generator.generate(
                 jobPosting(), extraction(), userProfile(), skills(), projects(), List.of(), scoreResult());
@@ -62,7 +62,7 @@ class EvaluationReasoningGeneratorTest {
         LlmClient failingLlmClient = (systemPrompt, userPrompt) -> {
             throw new RuntimeException("LLM 장애");
         };
-        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper, skillScoreCalculator());
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer());
         JobRequirementExtraction jpaOnlyExtraction = new JobRequirementExtraction(
                 List.of("JPA"), List.of(), null, null, true, List.of(), List.of(), JobCategory.BACKEND_DEVELOPMENT);
 
@@ -84,7 +84,7 @@ class EvaluationReasoningGeneratorTest {
                     {"matchedPoints": [], "gapPoints": [], "checkPoints": []}
                     """;
         };
-        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(capturingLlmClient, objectMapper, skillScoreCalculator());
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(capturingLlmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer());
 
         generator.generate(jobPosting(), extraction(), userProfile(), skills(), projects(), List.of(), scoreResult());
 
@@ -100,7 +100,7 @@ class EvaluationReasoningGeneratorTest {
         LlmClient failingLlmClient = (systemPrompt, userPrompt) -> {
             throw new RuntimeException("LLM 장애");
         };
-        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper, skillScoreCalculator());
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer());
         JobRequirementExtraction javaOnlyExtraction = new JobRequirementExtraction(
                 List.of("Java"), List.of(), null, null, true, List.of(), List.of(), JobCategory.BACKEND_DEVELOPMENT);
         UserProfile profile = userProfile();
@@ -115,6 +115,29 @@ class EvaluationReasoningGeneratorTest {
                 jobPosting(), javaOnlyExtraction, userProfile(), skills, javaProjects, List.of(), scoreResult());
 
         assertThat(reasoning.matchedPoints()).containsExactly("Java 충족 — HopeTail-BE, KakaoMCP, JobFit에서 사용");
+    }
+
+    // matchedPoints의 프로젝트 근거 판정도 스킬/경험 점수와 동일하게 SkillAliasNormalizer를 거쳐야 한다.
+    // 요구 기술이 "Spring Framework"로 표기되어 있어도, 사용자가 "Spring Boot"를 사용한 프로젝트를
+    // 근거로 제시할 수 있어야 한다.
+    @Test
+    void generate_llmFails_aliasedSkillMatchesProjectUsingCanonicalName() {
+        LlmClient failingLlmClient = (systemPrompt, userPrompt) -> {
+            throw new RuntimeException("LLM 장애");
+        };
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer());
+        JobRequirementExtraction springFrameworkExtraction = new JobRequirementExtraction(
+                List.of("Spring Framework"), List.of(), null, null, true, List.of(), List.of(), JobCategory.BACKEND_DEVELOPMENT);
+        UserProfile profile = userProfile();
+        List<UserSkill> skills = List.of(new UserSkill(profile, "Spring Framework"));
+        List<UserProject> projects = List.of(
+                new UserProject(profile, "HopeTail-BE", "채용 매칭 서비스", List.of("Spring Boot", "JPA"))
+        );
+
+        EvaluationReasoning reasoning = generator.generate(
+                jobPosting(), springFrameworkExtraction, userProfile(), skills, projects, List.of(), scoreResult());
+
+        assertThat(reasoning.matchedPoints()).containsExactly("Spring Framework 충족 — HopeTail-BE에서 사용");
     }
 
     private JobPosting jobPosting() {
@@ -138,7 +161,11 @@ class EvaluationReasoningGeneratorTest {
     }
 
     private SkillScoreCalculator skillScoreCalculator() {
-        return new SkillScoreCalculator(new SkillAliasNormalizer());
+        return new SkillScoreCalculator(skillAliasNormalizer());
+    }
+
+    private SkillAliasNormalizer skillAliasNormalizer() {
+        return new SkillAliasNormalizer();
     }
 
     private UserProfile userProfile() {

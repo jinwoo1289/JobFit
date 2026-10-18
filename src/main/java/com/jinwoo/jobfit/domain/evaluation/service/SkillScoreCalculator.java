@@ -41,13 +41,12 @@ public class SkillScoreCalculator {
     // 이미 계산된 결과를 그대로 문장 작성에만 사용하도록 하기 위한 상세 매칭 결과.
     public SkillMatchResult matchDetail(List<UserSkill> skills, List<UserProject> projects, List<String> targetSkills) {
         Set<String> userSkillNames = userSkillNames(skills);
-        Set<String> userTechStacks = userTechStacks(projects);
 
         List<String> matchedSkills = new ArrayList<>();
         List<String> unmatchedSkills = new ArrayList<>();
         for (String targetSkill : targetSkills) {
             String normalized = skillAliasNormalizer.normalize(targetSkill);
-            if (matches(normalized, userSkillNames, userTechStacks)) {
+            if (skillAliasNormalizer.matches(normalized, userSkillNames)) {
                 matchedSkills.add(targetSkill);
             } else {
                 unmatchedSkills.add(targetSkill);
@@ -71,23 +70,9 @@ public class SkillScoreCalculator {
     }
 
     private double scoreOf(String normalizedTarget, Set<String> userSkillNames, Set<String> userTechStacks) {
-        if (!matches(normalizedTarget, userSkillNames, userTechStacks)) {
+        if (!skillAliasNormalizer.matches(normalizedTarget, userSkillNames)) {
             return NO_MATCH_SCORE;
         }
-        return matchesTechStack(normalizedTarget, userTechStacks) ? FULL_MATCH_SCORE : SKILL_ONLY_SCORE;
-    }
-
-    private boolean matches(String normalizedTarget, Set<String> userSkillNames, Set<String> userTechStacks) {
-        if (skillAliasNormalizer.isCategoryAlias(normalizedTarget)) {
-            return skillAliasNormalizer.matchesCategoryEquivalent(normalizedTarget, userSkillNames);
-        }
-        return userSkillNames.contains(normalizedTarget);
-    }
-
-    private boolean matchesTechStack(String normalizedTarget, Set<String> userTechStacks) {
-        if (skillAliasNormalizer.isCategoryAlias(normalizedTarget)) {
-            return skillAliasNormalizer.matchesCategoryEquivalent(normalizedTarget, userTechStacks);
-        }
-        return userTechStacks.contains(normalizedTarget);
+        return skillAliasNormalizer.matches(normalizedTarget, userTechStacks) ? FULL_MATCH_SCORE : SKILL_ONLY_SCORE;
     }
 }

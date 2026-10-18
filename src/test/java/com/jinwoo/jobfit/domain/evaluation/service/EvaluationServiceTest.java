@@ -63,10 +63,11 @@ class EvaluationServiceTest {
     // EvaluationReasoning 파싱에는 항상 실패해 규칙 기반 fallback 경로를 타게 된다.
     private final EvaluationService evaluationService = new EvaluationService(
             new RequiredConditionChecker(new JobRequirementParser(), FIXED_CLOCK),
-            new ScoreCalculator(new SkillScoreCalculator(new SkillAliasNormalizer()), new ExperienceScoreCalculator(), new CertificateScoreCalculator()),
+            new ScoreCalculator(new SkillScoreCalculator(new SkillAliasNormalizer()),
+                    new ExperienceScoreCalculator(new SkillAliasNormalizer()), new CertificateScoreCalculator()),
             jobRequirementExtractor,
             new EvaluationReasoningGenerator(new FakeLlmClient(REQUIRED_SKILLS_BY_TITLE), new ObjectMapper(),
-                    new SkillScoreCalculator(new SkillAliasNormalizer()))
+                    new SkillScoreCalculator(new SkillAliasNormalizer()), new SkillAliasNormalizer())
     );
 
     @ParameterizedTest(name = "[{index}] {0} - verdict={2}")

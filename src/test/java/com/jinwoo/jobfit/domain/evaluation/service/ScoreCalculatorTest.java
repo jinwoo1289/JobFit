@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.within;
 class ScoreCalculatorTest {
 
     private final ScoreCalculator scoreCalculator = new ScoreCalculator(
-            new SkillScoreCalculator(new SkillAliasNormalizer()), new ExperienceScoreCalculator(), new CertificateScoreCalculator());
+            new SkillScoreCalculator(new SkillAliasNormalizer()), new ExperienceScoreCalculator(new SkillAliasNormalizer()), new CertificateScoreCalculator());
 
     @Test
     void calculate_tossBank_combinesAllFourScores() {
