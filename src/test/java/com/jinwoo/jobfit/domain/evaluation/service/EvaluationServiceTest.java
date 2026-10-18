@@ -63,9 +63,10 @@ class EvaluationServiceTest {
     // EvaluationReasoning 파싱에는 항상 실패해 규칙 기반 fallback 경로를 타게 된다.
     private final EvaluationService evaluationService = new EvaluationService(
             new RequiredConditionChecker(new JobRequirementParser(), FIXED_CLOCK),
-            new ScoreCalculator(new SkillScoreCalculator(), new ExperienceScoreCalculator(), new CertificateScoreCalculator()),
+            new ScoreCalculator(new SkillScoreCalculator(new SkillAliasNormalizer()), new ExperienceScoreCalculator(), new CertificateScoreCalculator()),
             jobRequirementExtractor,
-            new EvaluationReasoningGenerator(new FakeLlmClient(REQUIRED_SKILLS_BY_TITLE), new ObjectMapper())
+            new EvaluationReasoningGenerator(new FakeLlmClient(REQUIRED_SKILLS_BY_TITLE), new ObjectMapper(),
+                    new SkillScoreCalculator(new SkillAliasNormalizer()))
     );
 
     @ParameterizedTest(name = "[{index}] {0} - verdict={2}")
@@ -94,8 +95,9 @@ class EvaluationServiceTest {
         assertThat(result.verdict()).isEqualTo(EvaluationVerdict.UNFIT);
         assertThat(result.failedReasons()).isNotEmpty();
         assertThat(result.totalScore()).isEqualTo(0.0);
-        assertThat(result.skillScore()).isCloseTo(100.0 / 13, within(0.001));
-        assertThat(result.experienceScore()).isCloseTo(100.0 / 13, within(0.001));
+        // requiredSkills에 있던 "LLM"은 분야명 블록리스트로 걸러져 분모가 13→12로 줄어든다.
+        assertThat(result.skillScore()).isCloseTo(100.0 / 12, within(0.001));
+        assertThat(result.experienceScore()).isCloseTo(100.0 / 12, within(0.001));
     }
 
     @Test
@@ -130,8 +132,10 @@ class EvaluationServiceTest {
                         "보안 연구소 솔루션 개발자(신입)", "신입",
                         "Python,Django,Docker,Linux,PostgreSQL,Redis,FastAPI,SQL",
                         "[주요업무]\n- AI 기반 개발 환경을 활용한 서비스 설계 및 구현\n- 보안 솔루션 및 백엔드 시스템 개발\n- AI를 활용한 코드 분석, 테스트 자동화 및 품질 개선\n- 외부 시스템 및 보안 도구 연동\n- 고객사 요구사항 분석 및 신규 기능·커스터마이징 개발\n- 신규 기술 검토 및 AI 기반 개발 프로세스 개선\n\n[자격요건]\n- Python 또는 백엔드 개발 경험\n- AI 개발 도구를 활용한 개발에 관심이 있고 적극적으로 활용할 수 있는 분\n- 웹 서비스 및 RESTful API에 대한 기본 이해\n- SQL 및 관계형 데이터베이스에 대한 기본 이해\n- 새로운 기술을 빠르게 학습하고 적용할 수 있는 분\n- 원활한 커뮤니케이션 및 협업이 가능한 분\n\n[우대사항]\n- AI 개발 도구(Claude, ChatGPT, GitHub Copilot, Cursor 등) 활용 경험\n- Python 및 FastAPI, Django 등 백엔드 프레임워크 개발 경험\n- PostgreSQL, Redis, Docker, Linux 등 개발 환경 경험\n- Git 기반 협업 및 형상관리 경험\n- AI를 활용한 개발 프로세스 개선 또는 자동화 경험",
+                        // FakeLlmClient는 preferredSkills를 항상 비워 반환하므로 preference 가중치(20)가
+                        // skill(40)/experience(30)/certificate(10)에 비례 배분(스케일 100/80=1.25)된다.
                         "2026-08-26T23:59:59"
-                ), EvaluationVerdict.FIT, 13.75, 25.0, 12.5),
+                ), EvaluationVerdict.FIT, 17.1875, 25.0, 12.5),
                 Arguments.of("킨코스코리아", jobPosting(
                         "백엔드 개발자/디자인그룹 경력 및 신입사원 모집", "신입/경력 3년 이하",
                         "Python,FastAPI,PostgreSQL,SQLAlchemy,REST API,Git,Linux,React,Next.js",
@@ -143,13 +147,14 @@ class EvaluationServiceTest {
                         "React,Java,Spring Boot,Generative AI,AI Coding Assistant,Jira,Bitbucket,Confluence",
                         "[업무 내용]\n- AI 기반 ERP 시스템 개발\n- React 및 Java Spring Boot 기반 ERP 기능 개선 및 고도화\n- AI 코딩(Copilot, Claude Code)을 활용한 빠른 단위 기능 구현 및 코드 리팩토링\n- 장애 대응, 데이터 처리 및 프로젝트 지원 및 외주 업체와 협업\n- 신규 외부 프로젝트 지원 및 기술 소통 및 소스/품질 관리\n\n[학력 / 전공]\n- 대졸 이상 (컴퓨터 소프트웨어 관련 전공자)\n\n[자격 및 우대사항]\n- Web 프론트엔드(React) 및 백엔드(Java/Spring Boot) 기초 지식 보유자\n- AI 도구를 활용해 코드 작성, 오류 수정, 학습을 적극적으로 수행하는 태도\n- 외부 협력사 및 내부 담당자와의 원활한 커뮤니케이션 능력\n- IT 국비지원 부트캠프(6개월 이상) 이수자\n- Generative AI / AI Coding Assistant 실무·프로젝트 적용 경험자\n- 프로젝트 리더로서 팀 프로젝트를 완수한 경험이 있는 분\n- Jira, Bitbucket, Confluence 등 협업/프로젝트 관리 도구 활용 경험자\n- OPIC 또는 TOEIC Speaking 점수 제출 필수 (2년 내)",
                         "2026-09-04T23:59:59"
-                ), EvaluationVerdict.FIT, 17.5, 25.0, 25.0),
+                ), EvaluationVerdict.FIT, 21.875, 25.0, 25.0),
                 Arguments.of("링크알파코리아", jobPosting(
                         "Backend Engineer (Agent Platform)", "경력 5년 이상(또는 이에 준하는 실력)",
                         "Python,TypeScript,LLM,AI Agent,MCP,Claude Code,Cursor,PostgreSQL,AWS,Azure,GCP,React,Next.js",
                         "[주요업무]\n- AI 에이전트를 설계, 구현, 운영. 멀티스텝 추론, 도구 호출 루프, 컨텍스트와 메모리 관리, 토큰, 비용, 지연 시간 최적화까지 담당\n- 에이전트가 사용하는 도구 레이어를 설계하고 구현. MCP 도구, 실패 처리, 재시도, 관측 가능성까지 책임\n- 멀티 프로바이더 LLM 호출을 스트리밍, 캐싱, 폴백 구조와 함께 안정적으로 운영\n- 에이전트의 품질과 실패를 추적하고 디버깅. 트레이싱, 평가, 재현 가능한 테스트를 통해 프로덕션 회귀 없이 개선\n- 에이전트를 떠받치는 백엔드 API, 비동기 잡, 서비스 간 통신 구조 설계\n- 필요할 경우 React / Next.js 기반 제품 화면까지 직접 다루며 기능을 end-to-end로 완성\n- Claude Code, Cursor 등 coding agent를 적극 활용해 본인과 팀의 개발 속도를 높임\n\n[자격요건]\n- 백엔드 개발 경력 5년 이상 또는 이에 준하는 실력을 갖춘 분\n- Python과 TypeScript를 활용해 백엔드를 만들 수 있는 분\n- Python과 TypeScript 중 하나에 능숙하고, 나머지 언어를 학습하고 사용하는 데 거리낌이 없는 분\n- LLM 또는 AI 에이전트를 실제 프로덕션 환경에서 빌드하고 운영해본 분\n- 데모나 토이 프로젝트가 아니라, 실사용자 트래픽을 받는 에이전트를 운영해본 경험이 있는 분\n- 도구 호출 루프, 컨텍스트 관리, 토큰과 비용, 스트리밍, 실패 모드 등 에이전트 동작 원리를 깊이 이해하는 분\n- Claude Code, Cursor 등 Coding agent를 깊이 사용해본 분\n- 무엇을 에이전트에 위임할 수 있고, 어디서 사람이 개입해야 하는지 체득한 분\n- PostgreSQL 등 RDBMS와 비동기 처리, 큐 기반 아키텍처에 대한 실무 이해가 있는 분\n- AWS, Azure, GCP 중 하나 이상에서 프로덕션 서비스를 배포하고 운영해본 분\n- 문제를 주도적으로 발견하고 해결하며, 타 직군과 원활하게 협업할 수 있는 분",
                         "2026-08-15T23:59:59"
-                ), EvaluationVerdict.UNFIT, 0.0, 100.0 / 13, 100.0 / 13),
+                        // requiredSkills의 "LLM"은 분야명 블록리스트로 걸러져 분모가 13→12로 줄어든다.
+                ), EvaluationVerdict.UNFIT, 0.0, 100.0 / 12, 100.0 / 12),
                 Arguments.of("엔에이치엔클라우드", jobPosting(
                         "[NHN Cloud]스토리지 엔진 개발", "경력무관(신입포함)",
                         "C,C++,Go,Python",
@@ -173,7 +178,7 @@ class EvaluationServiceTest {
                         "Java,Kotlin,Spring Boot,MSA,코어뱅킹,MDD",
                         "[주요업무]\n- 토스뱅크의 모든 여신 상품(신용, 기업, 전세 등)에 대한 신청·심사·금리 산출·실행·상환·사후관리 도메인을 각 파트별로 전담\n- MDD(Model Driven Development) + Java 기반 모놀리식 코어뱅킹 시스템을 안정적으로 유지하면서, Kotlin + Spring Boot 기반의 MSA 구조로 단계적으로 전환\n- 영업점 없는 환경에서 대출 시스템 전체 흐름이 사람 없이 이루어질 수 있도록 프로세스를 설계하고 자동화\n- 정책 중심 로직을 도메인 기반 구조로 재해석하고 리팩토링하며, 법령 변화·정책 변경·운영 요구까지 아우를 수 있는 지속 가능한 설계 구조로 발전\n- 고정밀 수치 계산과 실시간 처리 요구를 만족시키는 환경 속에서, 데이터 정합성·트랜잭션 처리·이벤트 연계 등 마이크로서비스 설계의 핵심 요소들을 직접 설계하고 구현\n- 반복되는 정책 분기와 다양한 케이스를 기준화하여 팀 내 설계 기준을 세우고, 확장 가능한 고가용성 구조를 직접 구축\n\n[자격요건]\n- 복잡한 비즈니스 흐름이나 경험해보지 못한 기술 스택도 빠르게 학습하고 흡수하려는 태도를 갖춘 분\n- 문제의 본질을 파악하고, 실질적인 해결에 집중하는 분. 주어진 요구를 그대로 구현하기보다, 스스로 기준을 세우고 마주한 문제를 해결하는 분\n- 유관부서와의 협업에서 소통에 책임감을 가지고, 함께 해법을 만들어가는 분. 변화를 두려워하지 않고 지속적인 성장을 원하는 분\n- 금융권이나 복잡한 정책 기반 시스템에서의 운영·개발 경험이 있다면 더욱 좋음",
                         "2026-08-15T23:59:59"
-                ), EvaluationVerdict.FIT, 82.0 / 3, 260.0 / 6, 200.0 / 6)
+                ), EvaluationVerdict.FIT, 205.0 / 6, 260.0 / 6, 200.0 / 6)
         );
     }
 
