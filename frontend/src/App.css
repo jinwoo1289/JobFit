@@ -262,10 +262,35 @@
   font-size: 20px;
 }
 
+.job-card-scores-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.job-card-scores-title {
+  font-size: 12px;
+  color: #888;
+  font-weight: 600;
+}
+
+.score-reference-label {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f4f1e6;
+  color: #9a7b1f;
+  font-size: 11px;
+  font-weight: 700;
+}
+
 .job-card-scores {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
+}
+
+.job-card-scores-unfit {
+  opacity: 0.5;
 }
 
 .score-item {
