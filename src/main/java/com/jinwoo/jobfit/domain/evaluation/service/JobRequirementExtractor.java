@@ -1,6 +1,7 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -33,6 +34,7 @@ public class JobRequirementExtractor {
               "maxYears": number | null,
               "newGraduateAllowed": boolean,
               "requiredCertificates": string[],
+              "preferredCertificates": string[],
               "jobCategory": "BACKEND_DEVELOPMENT" | "FRONTEND_DEVELOPMENT" | "FULLSTACK_DEVELOPMENT" | "MOBILE_DEVELOPMENT" | "DATA_ENGINEERING" | "AI_ML" | "DEVOPS" | "QA" | "OTHER"
             }
 
@@ -82,19 +84,35 @@ public class JobRequirementExtractor {
               → 이유: 방법론/아키텍처 용어만 금지 목록이며, 전환 시점과 무관하게 [주요업무]
               섹션에 있는 기술명은 모두 requiredSkills로 분류한다.
 
-            [requiredCertificates 규칙]
+            [requiredCertificates / preferredCertificates 규칙]
             - 이 규칙은 자격증·어학성적에만 적용된다. requiredSkills / preferredSkills 분류에는 영향을 주지 않는다.
             - 자격증·어학성적 요구는 원문 내 섹션 위치(우대사항, 필수 자격 등)와 무관하게, 문구 자체의 표현을 기준으로 필수 여부를 판단하라.
             - "필수", "제출 필수", "반드시"처럼 필수임을 나타내는 표현이 붙어 있다면, "우대사항" 섹션에 있더라도 requiredCertificates에 포함하라.
+            - 그 외의 자격증·어학성적(필수 표현 없이 보유를 권장하는 수준, 주로 "우대사항" 섹션)은 preferredCertificates에 포함하라.
             - 자격증/어학성적의 명칭만 추출하고, 기간·점수 제출 방식 등 부가 설명은 제외하라.
               예: "[자격 및 우대사항]" 섹션의 "OPIC 또는 TOEIC Speaking 점수 제출 필수(2년 내)"
                   → requiredCertificates: ["OPIC", "TOEIC Speaking"]
+              예: "[우대사항]" 섹션의 "정보처리기사, AWS 자격증 보유자"
+                  → preferredCertificates: ["정보처리기사", "AWS"]
 
             [minYears / maxYears 규칙]
             - "경력 N년 이상"처럼 하한만 명시된 경우에만 minYears에 N을 넣어라.
             - "N년 이하"처럼 상한이 명시된 경우 maxYears에 N을 넣어라. 이 경우 minYears는 null로 둬라.
             - 범위가 명시되지 않으면 해당 필드를 null로 둬라.
             """;
+
+    // LLM이 구체적 기술명이 아닌 개념어/서술어를 requiredSkills/preferredSkills에 섞어 넣는 경우가 있어
+    // 프롬프트 규칙만으로 막히지 않는 잔여 케이스를 후처리로 한 번 더 제거한다.
+    private static final Set<String> CONCEPT_SKILL_BLOCKLIST = Set.of(
+            "비동기 프로그래밍",
+            "동시성 프로그래밍",
+            "데이터 시각화",
+            "네트워크 통신 프로그래밍",
+            "웹 보안",
+            "LLM",
+            "AI",
+            "생성형 AI"
+    );
 
     private final LlmClient llmClient;
     private final JobRequirementParser jobRequirementParser;
@@ -107,13 +125,15 @@ public class JobRequirementExtractor {
     public JobRequirementExtraction extract(JobPosting jobPosting) {
         return jobRequirementExtractionRepository.findByJobPostingId(jobPosting.getId())
                 .map(JobRequirementExtractionEntity::toExtraction)
+                // 블록리스트 추가 이전에 캐시된 결과에도 동일한 필터가 적용되도록, 조회 시에도 다시 거른다.
+                .map(this::removeConceptSkills)
                 .orElseGet(() -> callLlmAndCache(jobPosting));
     }
 
     private JobRequirementExtraction callLlmAndCache(JobPosting jobPosting) {
         try {
             String response = llmClient.complete(SYSTEM_PROMPT, buildUserPrompt(jobPosting));
-            JobRequirementExtraction extraction = objectMapper.readValue(response, JobRequirementExtraction.class);
+            JobRequirementExtraction extraction = removeConceptSkills(objectMapper.readValue(response, JobRequirementExtraction.class));
             jobRequirementExtractionRepository.save(new JobRequirementExtractionEntity(jobPosting, extraction));
             return extraction;
         } catch (RuntimeException e) {
@@ -153,8 +173,28 @@ public class JobRequirementExtractor {
                 requirement.maxYears(),
                 requirement.newGraduateAllowed(),
                 List.of(),
+                List.of(),
                 null
         );
+    }
+
+    private JobRequirementExtraction removeConceptSkills(JobRequirementExtraction extraction) {
+        return new JobRequirementExtraction(
+                filterConceptSkills(extraction.requiredSkills()),
+                filterConceptSkills(extraction.preferredSkills()),
+                extraction.minYears(),
+                extraction.maxYears(),
+                extraction.newGraduateAllowed(),
+                extraction.requiredCertificates(),
+                extraction.preferredCertificates(),
+                extraction.jobCategory()
+        );
+    }
+
+    private List<String> filterConceptSkills(List<String> skills) {
+        return skills.stream()
+                .filter(skill -> !CONCEPT_SKILL_BLOCKLIST.contains(skill))
+                .toList();
     }
 
     private String nullToEmpty(String value) {
