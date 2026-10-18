@@ -159,6 +159,66 @@ class SkillScoreCalculatorTest {
         assertThat(actual.value()).isCloseTo(60.0, within(0.001));
     }
 
+    // 한솔PNS [등록된 키워드]: "Java,Spring,React,Vue,Node.js,Python,Golang,RESTful API,RDBMS,NoSQL,VectorDB,MLOps"
+    // "Spring" 단독 표기도 사용자가 보유한 "Spring Boot"와 동일 기술로 인식해야 한다.
+    @Test
+    void calculate_hansolPns_springAliasMatchesSpringBootSkillAndTechStack() {
+        SkillScore actual = calculator.calculate(skills(), projects(), List.of("Spring"));
+
+        assertThat(actual.value()).isCloseTo(100.0, within(0.001));
+    }
+
+    // OCI정보통신(54660418) [등록된 키워드]: "...,Generative AI,AI Coding Assistant,..."
+    // 사용자가 Claude Code/Copilot/Cursor 중 하나를 보유하면 범주형 별칭으로 일치 처리해야 한다.
+    @Test
+    void calculate_ociJeongbotong_generativeAiAliasMatchesWhenUserHoldsClaudeCode_scoresSixty() {
+        UserProfile profile = profile();
+
+        SkillScore actual = calculator.calculate(
+                List.of(new UserSkill(profile, "Claude Code")),
+                List.of(),
+                List.of("Generative AI")
+        );
+
+        assertThat(actual.value()).isCloseTo(60.0, within(0.001));
+    }
+
+    // "AI Coding Assistant"도 같은 범주 별칭이며, "GitHub Copilot"처럼 제품명에 수식어가 붙어도 일치해야 한다.
+    @Test
+    void calculate_ociJeongbotong_aiCodingAssistantAliasMatchesWhenUserHoldsGithubCopilot_scoresFull() {
+        UserProfile profile = profile();
+
+        SkillScore actual = calculator.calculate(
+                List.of(new UserSkill(profile, "GitHub Copilot")),
+                List.of(new UserProject(profile, "OCI-ERP", "ERP 기능 개선", List.of("GitHub Copilot", "Java"))),
+                List.of("AI Coding Assistant")
+        );
+
+        assertThat(actual.value()).isCloseTo(100.0, within(0.001));
+    }
+
+    // "AI 코딩 도구"(한글 표기)도 같은 범주 별칭으로 인식해야 하며, Cursor 보유로도 일치해야 한다.
+    @Test
+    void calculate_koreanAiCodingToolAliasMatchesWhenUserHoldsCursor_scoresSixty() {
+        UserProfile profile = profile();
+
+        SkillScore actual = calculator.calculate(
+                List.of(new UserSkill(profile, "Cursor")),
+                List.of(),
+                List.of("AI 코딩 도구")
+        );
+
+        assertThat(actual.value()).isCloseTo(60.0, within(0.001));
+    }
+
+    // 사용자가 Claude Code/Copilot/Cursor 중 아무것도 보유하지 않으면 범주형 별칭이라도 일치하지 않는다.
+    @Test
+    void calculate_aiCodingToolAlias_withoutAnyEquivalentSkill_scoresZero() {
+        SkillScore actual = calculator.calculate(skills(), projects(), List.of("AI Coding Assistant"));
+
+        assertThat(actual.value()).isEqualTo(0.0);
+    }
+
     private static List<UserSkill> skills() {
         UserProfile profile = profile();
         return List.of(

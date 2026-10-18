@@ -101,6 +101,23 @@ class EvaluationServiceTest {
     }
 
     @Test
+    void evaluate_shillaHcm_allFourScoresExcluded_returnsInsufficientInfoNotFit() {
+        // 신라에이치엠은 필수조건(경력/고용형태/마감/직무카테고리)은 모두 통과하지만, 비교할 기술·경력·
+        // 우대·자격증 정보가 전혀 없다. 비교 불가 상태를 FIT으로 단정하면 안 되므로 INSUFFICIENT_INFO여야 한다.
+        JobPosting jobPosting = jobPostingOf("신라에이치엠");
+
+        EvaluationResult result = evaluationService.evaluate(userProfile(), skills(), projects(), certificates(), evaluationWeight(), jobPosting);
+
+        assertThat(result.verdict()).isEqualTo(EvaluationVerdict.INSUFFICIENT_INFO);
+        assertThat(result.totalScore()).isEqualTo(0.0);
+        assertThat(result.skillExcluded()).isTrue();
+        assertThat(result.experienceExcluded()).isTrue();
+        assertThat(result.preferenceExcluded()).isTrue();
+        assertThat(result.certificateExcluded()).isTrue();
+        assertThat(result.failedReasons()).isEmpty();
+    }
+
+    @Test
     void evaluate_seed8JobPostings_ranksTossBankFirstAmongFitPostings() {
         record Ranked(String companyName, EvaluationResult result) {
         }
@@ -132,10 +149,11 @@ class EvaluationServiceTest {
                         "보안 연구소 솔루션 개발자(신입)", "신입",
                         "Python,Django,Docker,Linux,PostgreSQL,Redis,FastAPI,SQL",
                         "[주요업무]\n- AI 기반 개발 환경을 활용한 서비스 설계 및 구현\n- 보안 솔루션 및 백엔드 시스템 개발\n- AI를 활용한 코드 분석, 테스트 자동화 및 품질 개선\n- 외부 시스템 및 보안 도구 연동\n- 고객사 요구사항 분석 및 신규 기능·커스터마이징 개발\n- 신규 기술 검토 및 AI 기반 개발 프로세스 개선\n\n[자격요건]\n- Python 또는 백엔드 개발 경험\n- AI 개발 도구를 활용한 개발에 관심이 있고 적극적으로 활용할 수 있는 분\n- 웹 서비스 및 RESTful API에 대한 기본 이해\n- SQL 및 관계형 데이터베이스에 대한 기본 이해\n- 새로운 기술을 빠르게 학습하고 적용할 수 있는 분\n- 원활한 커뮤니케이션 및 협업이 가능한 분\n\n[우대사항]\n- AI 개발 도구(Claude, ChatGPT, GitHub Copilot, Cursor 등) 활용 경험\n- Python 및 FastAPI, Django 등 백엔드 프레임워크 개발 경험\n- PostgreSQL, Redis, Docker, Linux 등 개발 환경 경험\n- Git 기반 협업 및 형상관리 경험\n- AI를 활용한 개발 프로세스 개선 또는 자동화 경험",
-                        // FakeLlmClient는 preferredSkills를 항상 비워 반환하므로 preference 가중치(20)가
-                        // skill(40)/experience(30)/certificate(10)에 비례 배분(스케일 100/80=1.25)된다.
+                        // FakeLlmClient는 preferredSkills/requiredCertificates/preferredCertificates를 항상 비워
+                        // 반환하므로 preference(20)와 certificate(10) 가중치가 모두 제외되어 skill(40)/experience(30)에
+                        // 비례 배분(스케일 100/70)된다.
                         "2026-08-26T23:59:59"
-                ), EvaluationVerdict.FIT, 17.1875, 25.0, 12.5),
+                ), EvaluationVerdict.FIT, 275.0 / 14, 25.0, 12.5),
                 Arguments.of("킨코스코리아", jobPosting(
                         "백엔드 개발자/디자인그룹 경력 및 신입사원 모집", "신입/경력 3년 이하",
                         "Python,FastAPI,PostgreSQL,SQLAlchemy,REST API,Git,Linux,React,Next.js",
@@ -147,7 +165,7 @@ class EvaluationServiceTest {
                         "React,Java,Spring Boot,Generative AI,AI Coding Assistant,Jira,Bitbucket,Confluence",
                         "[업무 내용]\n- AI 기반 ERP 시스템 개발\n- React 및 Java Spring Boot 기반 ERP 기능 개선 및 고도화\n- AI 코딩(Copilot, Claude Code)을 활용한 빠른 단위 기능 구현 및 코드 리팩토링\n- 장애 대응, 데이터 처리 및 프로젝트 지원 및 외주 업체와 협업\n- 신규 외부 프로젝트 지원 및 기술 소통 및 소스/품질 관리\n\n[학력 / 전공]\n- 대졸 이상 (컴퓨터 소프트웨어 관련 전공자)\n\n[자격 및 우대사항]\n- Web 프론트엔드(React) 및 백엔드(Java/Spring Boot) 기초 지식 보유자\n- AI 도구를 활용해 코드 작성, 오류 수정, 학습을 적극적으로 수행하는 태도\n- 외부 협력사 및 내부 담당자와의 원활한 커뮤니케이션 능력\n- IT 국비지원 부트캠프(6개월 이상) 이수자\n- Generative AI / AI Coding Assistant 실무·프로젝트 적용 경험자\n- 프로젝트 리더로서 팀 프로젝트를 완수한 경험이 있는 분\n- Jira, Bitbucket, Confluence 등 협업/프로젝트 관리 도구 활용 경험자\n- OPIC 또는 TOEIC Speaking 점수 제출 필수 (2년 내)",
                         "2026-09-04T23:59:59"
-                ), EvaluationVerdict.FIT, 21.875, 25.0, 25.0),
+                ), EvaluationVerdict.FIT, 25.0, 25.0, 25.0),
                 Arguments.of("링크알파코리아", jobPosting(
                         "Backend Engineer (Agent Platform)", "경력 5년 이상(또는 이에 준하는 실력)",
                         "Python,TypeScript,LLM,AI Agent,MCP,Claude Code,Cursor,PostgreSQL,AWS,Azure,GCP,React,Next.js",
@@ -161,12 +179,14 @@ class EvaluationServiceTest {
                         "요구사항 상세 미확인 — 목록 정보 기반",
                         "2026-08-15T23:59:59"
                 ), EvaluationVerdict.FIT, 0.0, 0.0, 0.0),
+                // requiredSkills/preferredSkills/requiredCertificates/preferredCertificates가 모두 비어
+                // 기술/경험/우대/자격증 네 항목이 전부 평가 제외되므로 FIT이 아닌 INSUFFICIENT_INFO여야 한다.
                 Arguments.of("신라에이치엠", jobPosting(
                         "신라스테이 호텔분야 신입채용 (더스타팩토리프로그램)", "신입/경력",
                         "",
                         "요구사항 상세 미확인 — 목록 정보 기반",
                         "2026-08-10T23:59:59"
-                ), EvaluationVerdict.FIT, 0.0, 0.0, 0.0),
+                ), EvaluationVerdict.INSUFFICIENT_INFO, 0.0, 0.0, 0.0),
                 Arguments.of("누비랩", jobPosting(
                         "[인턴] Product Engineer_Backend (연계형)", "경력무관 / 인턴",
                         "Kotlin,Spring Boot,Spring Batch,QueryDSL,JPA,Node.js,JavaScript(ES6+),Nest.js,TypeORM,Python,PostgreSQL,MySQL,Redis,Apache Kafka,Airflow,AWS,Github,Slack,Jira,Notion",
@@ -178,7 +198,7 @@ class EvaluationServiceTest {
                         "Java,Kotlin,Spring Boot,MSA,코어뱅킹,MDD",
                         "[주요업무]\n- 토스뱅크의 모든 여신 상품(신용, 기업, 전세 등)에 대한 신청·심사·금리 산출·실행·상환·사후관리 도메인을 각 파트별로 전담\n- MDD(Model Driven Development) + Java 기반 모놀리식 코어뱅킹 시스템을 안정적으로 유지하면서, Kotlin + Spring Boot 기반의 MSA 구조로 단계적으로 전환\n- 영업점 없는 환경에서 대출 시스템 전체 흐름이 사람 없이 이루어질 수 있도록 프로세스를 설계하고 자동화\n- 정책 중심 로직을 도메인 기반 구조로 재해석하고 리팩토링하며, 법령 변화·정책 변경·운영 요구까지 아우를 수 있는 지속 가능한 설계 구조로 발전\n- 고정밀 수치 계산과 실시간 처리 요구를 만족시키는 환경 속에서, 데이터 정합성·트랜잭션 처리·이벤트 연계 등 마이크로서비스 설계의 핵심 요소들을 직접 설계하고 구현\n- 반복되는 정책 분기와 다양한 케이스를 기준화하여 팀 내 설계 기준을 세우고, 확장 가능한 고가용성 구조를 직접 구축\n\n[자격요건]\n- 복잡한 비즈니스 흐름이나 경험해보지 못한 기술 스택도 빠르게 학습하고 흡수하려는 태도를 갖춘 분\n- 문제의 본질을 파악하고, 실질적인 해결에 집중하는 분. 주어진 요구를 그대로 구현하기보다, 스스로 기준을 세우고 마주한 문제를 해결하는 분\n- 유관부서와의 협업에서 소통에 책임감을 가지고, 함께 해법을 만들어가는 분. 변화를 두려워하지 않고 지속적인 성장을 원하는 분\n- 금융권이나 복잡한 정책 기반 시스템에서의 운영·개발 경험이 있다면 더욱 좋음",
                         "2026-08-15T23:59:59"
-                ), EvaluationVerdict.FIT, 205.0 / 6, 260.0 / 6, 200.0 / 6)
+                ), EvaluationVerdict.FIT, 820.0 / 21, 260.0 / 6, 200.0 / 6)
         );
     }
 

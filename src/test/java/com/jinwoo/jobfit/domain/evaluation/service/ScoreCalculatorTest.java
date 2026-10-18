@@ -56,10 +56,11 @@ class ScoreCalculatorTest {
         assertThat(result.certificateScore()).isCloseTo(100.0, within(0.001));
     }
 
-    // 파수에이아이(55234023)는 [주요 기술]에 우대 기술 구분이 없어 preferredSkills가 비어 있는 경우를 가정.
-    // preference 가중치(20)가 제외되어 skill(40)/experience(30)/certificate(10)에 비례 배분(스케일 100/80=1.25)된다.
+    // 파수에이아이(55234023)는 [주요 기술]에 우대 기술 구분이 없어 preferredSkills가 비어 있고, 자격증
+    // 요구도 전혀 없는 경우를 가정. preference(20)와 certificate(10) 가중치가 제외되어 skill(40)/experience(30)에
+    // 비례 배분된다. 두 값의 비율이 동일하게 배분되므로 결과적으로 skillScore(=experienceScore)와 같아진다.
     @Test
-    void calculateTotalScore_pasuAi_emptyPreferredSkills_redistributesPreferenceWeightToRemaining() {
+    void calculateTotalScore_pasuAi_emptyPreferredSkillsAndCertificates_redistributesToSkillAndExperience() {
         UserProfile profile = profile();
         List<UserSkill> skills = skills(profile);
         List<UserProject> projects = projects(profile);
@@ -74,16 +75,18 @@ class ScoreCalculatorTest {
         EvaluationWeight weight = new EvaluationWeight(profile, 40, 30, 20, 10);
 
         ScoreResult scoreResult = scoreCalculator.calculate(skills, projects, List.of(), extraction);
-        double totalScore = scoreCalculator.calculateTotalScore(scoreResult, extraction, weight);
+        double totalScore = scoreCalculator.calculateTotalScore(scoreResult, weight);
 
-        assertThat(scoreResult.preferenceScore()).isEqualTo(0.0);
-        assertThat(totalScore).isCloseTo(175.0 / 6, within(0.001));
+        assertThat(scoreResult.preferenceExcluded()).isTrue();
+        assertThat(scoreResult.certificateExcluded()).isTrue();
+        assertThat(totalScore).isCloseTo(100.0 / 3, within(0.001));
     }
 
-    // 원테크스탑(55205788)은 [자격요건]에 기술 요구가 없고 [우대사항]에만 핵심 기술 스택이 있는 경우를 가정.
-    // skill 가중치(40)가 제외되어 experience(30)/preference(20)/certificate(10)에 비례 배분(스케일 100/60)된다.
+    // 원테크스탑(55205788)은 [자격요건]에 기술 요구가 없고 [우대사항]에만 핵심 기술 스택이 있으며, 자격증
+    // 요구도 전혀 없는 경우를 가정. skill(40)/experience(30)/certificate(10) 가중치가 모두 제외되어
+    // preference(20)만 남아, 총점은 preferenceScore 그대로(가중치 100%)가 된다.
     @Test
-    void calculateTotalScore_wonTechStop_emptyRequiredSkills_redistributesSkillWeightToRemaining() {
+    void calculateTotalScore_wonTechStop_emptyRequiredSkillsAndCertificates_leavesOnlyPreferenceActive() {
         UserProfile profile = profile();
         List<UserSkill> skills = skills(profile);
         List<UserProject> projects = projects(profile);
@@ -98,10 +101,57 @@ class ScoreCalculatorTest {
         EvaluationWeight weight = new EvaluationWeight(profile, 40, 30, 20, 10);
 
         ScoreResult scoreResult = scoreCalculator.calculate(skills, projects, List.of(), extraction);
-        double totalScore = scoreCalculator.calculateTotalScore(scoreResult, extraction, weight);
+        double totalScore = scoreCalculator.calculateTotalScore(scoreResult, weight);
 
-        assertThat(scoreResult.skillScore()).isEqualTo(0.0);
-        assertThat(totalScore).isCloseTo(25.0 / 9, within(0.001));
+        assertThat(scoreResult.skillExcluded()).isTrue();
+        assertThat(scoreResult.experienceExcluded()).isTrue();
+        assertThat(scoreResult.certificateExcluded()).isTrue();
+        assertThat(totalScore).isCloseTo(25.0 / 3, within(0.001));
+    }
+
+    // CJ ENM(55101818)은 [주요업무]/[자격요건]에 구체적 기술명이 없고 [우대사항]에만 "Java"가 언급되며,
+    // 자격증 요건은 전혀 없는 경우를 가정. requiredSkills가 비어 skill/experience가 모두 제외되고,
+    // 필수·우대 자격증이 모두 비어 certificate도 제외되어, 활성 항목은 preference(20)만 남는다.
+    @Test
+    void calculateTotalScore_cjEnm_onlyPreferredSkillPresent_excludesSkillExperienceAndCertificate() {
+        UserProfile profile = profile();
+        List<UserSkill> skills = skills(profile);
+        List<UserProject> projects = projects(profile);
+        JobRequirementExtraction extraction = new JobRequirementExtraction(
+                List.of(),
+                List.of("Java"),
+                null, null, true,
+                List.of(),
+                List.of(),
+                JobCategory.BACKEND_DEVELOPMENT
+        );
+        EvaluationWeight weight = new EvaluationWeight(profile, 40, 30, 20, 10);
+
+        ScoreResult scoreResult = scoreCalculator.calculate(skills, projects, List.of(), extraction);
+        double totalScore = scoreCalculator.calculateTotalScore(scoreResult, weight);
+
+        assertThat(scoreResult.skillExcluded()).isTrue();
+        assertThat(scoreResult.experienceExcluded()).isTrue();
+        assertThat(scoreResult.certificateExcluded()).isTrue();
+        assertThat(scoreResult.preferenceExcluded()).isFalse();
+        // Java는 skills()/projects() 모두에 존재하므로 완전 일치(100점), preference만 활성 상태라 총점도 그대로 100.
+        assertThat(totalScore).isCloseTo(100.0, within(0.001));
+    }
+
+    // 모든 항목이 평가 제외되면(= 비교 가능한 정보가 전혀 없으면) 재분배할 가중치 자체가 없어 0점을 반환해야 한다.
+    @Test
+    void calculateTotalScore_allExcluded_returnsZero() {
+        UserProfile profile = profile();
+        JobRequirementExtraction extraction = new JobRequirementExtraction(
+                List.of(), List.of(), null, null, true, List.of(), List.of(), JobCategory.OTHER
+        );
+        EvaluationWeight weight = new EvaluationWeight(profile, 40, 30, 20, 10);
+
+        ScoreResult scoreResult = scoreCalculator.calculate(List.of(), List.of(), List.of(), extraction);
+        double totalScore = scoreCalculator.calculateTotalScore(scoreResult, weight);
+
+        assertThat(scoreResult.allExcluded()).isTrue();
+        assertThat(totalScore).isEqualTo(0.0);
     }
 
     private List<UserSkill> skills(UserProfile profile) {
