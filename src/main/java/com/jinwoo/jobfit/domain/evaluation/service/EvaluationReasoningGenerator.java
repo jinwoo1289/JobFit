@@ -76,13 +76,17 @@ public class EvaluationReasoningGenerator {
                                          List<UserCertificate> certificates,
                                          ScoreResult scoreResult) {
         SkillMatchResult matchResult = skillScoreCalculator.matchDetail(skills, projects, extraction.requiredSkills());
+        EvaluationReasoning ruleBased = ruleBasedReasoning(projects, matchResult);
         try {
             String response = llmClient.complete(SYSTEM_PROMPT,
                     buildUserPrompt(jobPosting, extraction, userProfile, skills, projects, certificates, scoreResult, matchResult));
-            return objectMapper.readValue(response, EvaluationReasoning.class);
+            EvaluationReasoning llmReasoning = objectMapper.readValue(response, EvaluationReasoning.class);
+            // 충족/미충족 문장은 LLM이 매번 다르게 쓰지 않도록 규칙 기반 결과로 고정하고, LLM 응답에서는 checkPoints만 사용한다.
+            List<String> checkPoints = llmReasoning.checkPoints() == null ? List.of() : llmReasoning.checkPoints();
+            return new EvaluationReasoning(ruleBased.matchedPoints(), ruleBased.gapPoints(), checkPoints);
         } catch (RuntimeException e) {
-            log.warn("LLM 근거 생성 실패, 규칙 기반 fallback 사용: {}", e.getMessage(), e);
-            return fallback(projects, matchResult);
+            log.warn("LLM 근거 생성 실패, 규칙 기반 근거만 사용: {}", e.getMessage(), e);
+            return ruleBased;
         }
     }
 
@@ -180,7 +184,7 @@ public class EvaluationReasoningGenerator {
         return certificates.stream().map(UserCertificate::getCertificateName).collect(Collectors.joining(", "));
     }
 
-    private EvaluationReasoning fallback(List<UserProject> projects, SkillMatchResult matchResult) {
+    private EvaluationReasoning ruleBasedReasoning(List<UserProject> projects, SkillMatchResult matchResult) {
         List<String> matchedPoints = matchResult.matchedSkills().stream()
                 .map(skill -> describeMatchedSkill(skill, projects))
                 .toList();

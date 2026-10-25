@@ -25,19 +25,58 @@ class EvaluationReasoningGeneratorTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    // LLM이 다른 matched/gap 문장을 돌려줘도 충족/미충족 문장은 규칙 기반으로 고정되고, checkPoints만 LLM 값을 사용한다.
     @Test
     void generate_llmReturnsValidJson_parsesReasoning() {
         LlmClient llmClient = (systemPrompt, userPrompt) -> """
-                {"matchedPoints": ["Spring Boot 충족 — HopeTail-BE에서 REST API 구현"], "gapPoints": ["AWS 미보유"], "checkPoints": ["재택근무 가능 여부 확인 필요"]}
+                {"matchedPoints": ["Spring Boot 충족 — HopeTail-BE에서 REST API 구현"], "gapPoints": ["AWS 경험 부족"], "checkPoints": ["재택근무 가능 여부 확인 필요"]}
                 """;
         EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(llmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer());
 
         EvaluationReasoning reasoning = generator.generate(
                 jobPosting(), extraction(), userProfile(), skills(), projects(), List.of(), scoreResult());
 
-        assertThat(reasoning.matchedPoints()).containsExactly("Spring Boot 충족 — HopeTail-BE에서 REST API 구현");
+        assertThat(reasoning.matchedPoints()).containsExactly("Spring Boot 충족 — HopeTail-BE에서 사용");
         assertThat(reasoning.gapPoints()).containsExactly("AWS 미보유");
         assertThat(reasoning.checkPoints()).containsExactly("재택근무 가능 여부 확인 필요");
+    }
+
+    // SQL처럼 범주 별칭(SQL→MySQL/PostgreSQL)으로 매칭된 기술도 LLM 문장과 무관하게
+    // 해당 기술을 사용한 프로젝트를 규칙 기반으로 나열해야, 공고마다 근거 문장이 달라지지 않는다.
+    @Test
+    void generate_llmReturnsDifferentSentence_categoryAliasSkillUsesRuleBasedProjects() {
+        LlmClient llmClient = (systemPrompt, userPrompt) -> """
+                {"matchedPoints": ["SQL 충족 — 보유 기술 목록에 포함"], "gapPoints": [], "checkPoints": []}
+                """;
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(llmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer());
+        JobRequirementExtraction sqlExtraction = new JobRequirementExtraction(
+                List.of("SQL"), List.of(), null, null, true, List.of(), List.of(), JobCategory.BACKEND_DEVELOPMENT);
+        UserProfile profile = userProfile();
+        List<UserSkill> skills = List.of(new UserSkill(profile, "MySQL"), new UserSkill(profile, "PostgreSQL"));
+        List<UserProject> projects = List.of(
+                new UserProject(profile, "HopeTail-BE", "채용 매칭 서비스", List.of("mysql")),
+                new UserProject(profile, "KakaoMCP", "MCP 연동 프로젝트", List.of("mcp")),
+                new UserProject(profile, "JobFit", "적합도 평가 서비스", List.of("postgresql"))
+        );
+
+        EvaluationReasoning reasoning = generator.generate(
+                jobPosting(), sqlExtraction, profile, skills, projects, List.of(), scoreResult());
+
+        assertThat(reasoning.matchedPoints()).containsExactly("SQL 충족 — HopeTail-BE, JobFit에서 사용");
+        assertThat(reasoning.gapPoints()).isEmpty();
+    }
+
+    @Test
+    void generate_llmReturnsNullCheckPoints_returnsEmptyCheckPoints() {
+        LlmClient llmClient = (systemPrompt, userPrompt) -> """
+                {"matchedPoints": [], "gapPoints": []}
+                """;
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(llmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer());
+
+        EvaluationReasoning reasoning = generator.generate(
+                jobPosting(), extraction(), userProfile(), skills(), projects(), List.of(), scoreResult());
+
+        assertThat(reasoning.checkPoints()).isEmpty();
     }
 
     @Test
