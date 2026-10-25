@@ -1,12 +1,16 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.jinwoo.jobfit.domain.evaluation.client.JsonSchemaFormat;
 import com.jinwoo.jobfit.domain.evaluation.client.LlmClient;
 import com.jinwoo.jobfit.domain.evaluation.entity.JobRequirementExtractionEntity;
 import com.jinwoo.jobfit.domain.evaluation.repository.JobRequirementExtractionRepository;
@@ -105,6 +109,35 @@ public class JobRequirementExtractor {
             - 범위가 명시되지 않으면 해당 필드를 null로 둬라.
             """;
 
+    // 프롬프트의 스키마 설명만으로는 jobCategory 같은 필드가 응답에서 빠지는 경우가 있어 Structured Outputs로 강제한다.
+    // 모델은 프로퍼티 선언 순서대로 값을 생성하므로, 프롬프트 스키마와 같은 순서를 유지하도록 LinkedHashMap을 쓴다.
+    static final JsonSchemaFormat EXTRACTION_SCHEMA = new JsonSchemaFormat("job_requirement_extraction", extractionSchema());
+
+    private static Map<String, Object> extractionSchema() {
+        Map<String, Object> stringArray = Map.of("type", "array", "items", Map.of("type", "string"));
+        Map<String, Object> nullableInteger = Map.of("type", List.of("integer", "null"));
+
+        Map<String, Object> properties = new LinkedHashMap<>();
+        properties.put("requiredSkills", stringArray);
+        properties.put("preferredSkills", stringArray);
+        properties.put("minYears", nullableInteger);
+        properties.put("maxYears", nullableInteger);
+        properties.put("newGraduateAllowed", Map.of("type", "boolean"));
+        properties.put("requiredCertificates", stringArray);
+        properties.put("preferredCertificates", stringArray);
+        properties.put("jobCategory", Map.of(
+                "type", "string",
+                "enum", Arrays.stream(JobCategory.values()).map(Enum::name).toList()
+        ));
+
+        return Map.of(
+                "type", "object",
+                "properties", properties,
+                "required", List.copyOf(properties.keySet()),
+                "additionalProperties", false
+        );
+    }
+
     // LLM이 구체적 기술명이 아닌 개념어/서술어를 requiredSkills/preferredSkills에 섞어 넣는 경우가 있어
     // 프롬프트 규칙만으로 막히지 않는 잔여 케이스를 후처리로 한 번 더 제거한다.
     private static final Set<String> CONCEPT_SKILL_BLOCKLIST = Set.of(
@@ -136,8 +169,14 @@ public class JobRequirementExtractor {
 
     private JobRequirementExtraction callLlmAndCache(JobPosting jobPosting) {
         try {
-            String response = llmClient.complete(SYSTEM_PROMPT, buildUserPrompt(jobPosting));
+            String response = llmClient.complete(SYSTEM_PROMPT, buildUserPrompt(jobPosting), EXTRACTION_SCHEMA);
             JobRequirementExtraction extraction = removeConceptSkills(objectMapper.readValue(response, JobRequirementExtraction.class));
+            if (extraction.jobCategory() == null) {
+                // jobCategory가 null이면 직무 필터를 통과하므로, 비개발 공고가 이대로 캐시되면 영구히 잘못 통과한다.
+                // 스키마로 강제하더라도 혹시 빠진 경우를 대비해 캐시하지 않고 다음 평가에서 다시 추출한다.
+                log.warn("LLM 추출 결과에 jobCategory가 없어 캐시하지 않음: jobPostingId={}", jobPosting.getId());
+                return extraction;
+            }
             if (hasNoSkillsForDevelopmentJob(extraction)) {
                 // 개발 직무인데 기술이 하나도 없는 결과는 추출 실패로 보고 캐시하지 않는다. 한 번 캐시되면
                 // 다음 평가부터 LLM을 다시 호출하지 않아 빈 결과가 영구히 고정되기 때문이다.

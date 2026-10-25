@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,16 +33,37 @@ public class OpenAiLlmClient implements LlmClient {
 
     @Override
     public String complete(String systemPrompt, String userPrompt) {
-        Map<String, Object> requestBody = Map.of(
-                "model", MODEL,
-                "max_tokens", MAX_TOKENS,
-                "temperature", 0,
-                "messages", List.of(
-                        Map.of("role", "system", "content", systemPrompt),
-                        Map.of("role", "user", "content", userPrompt)
-                )
-        );
+        return request(baseRequestBody(systemPrompt, userPrompt));
+    }
 
+    // 프롬프트 지시만으로는 필드 누락(예: jobCategory)을 막지 못해, 스키마를 API 레벨에서 강제한다.
+    @Override
+    public String complete(String systemPrompt, String userPrompt, JsonSchemaFormat responseSchema) {
+        Map<String, Object> requestBody = baseRequestBody(systemPrompt, userPrompt);
+        requestBody.put("response_format", Map.of(
+                "type", "json_schema",
+                "json_schema", Map.of(
+                        "name", responseSchema.name(),
+                        "strict", true,
+                        "schema", responseSchema.schema()
+                )
+        ));
+        return request(requestBody);
+    }
+
+    private Map<String, Object> baseRequestBody(String systemPrompt, String userPrompt) {
+        Map<String, Object> requestBody = new LinkedHashMap<>();
+        requestBody.put("model", MODEL);
+        requestBody.put("max_tokens", MAX_TOKENS);
+        requestBody.put("temperature", 0);
+        requestBody.put("messages", List.of(
+                Map.of("role", "system", "content", systemPrompt),
+                Map.of("role", "user", "content", userPrompt)
+        ));
+        return requestBody;
+    }
+
+    private String request(Map<String, Object> requestBody) {
         ChatCompletionResponse response = restClient.post()
                 .body(requestBody)
                 .retrieve()
