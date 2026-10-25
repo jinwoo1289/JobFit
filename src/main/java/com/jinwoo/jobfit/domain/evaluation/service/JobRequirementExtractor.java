@@ -43,9 +43,9 @@ public class JobRequirementExtractor {
             - [주요업무] 또는 [상세 내용]에 소프트웨어 설계·개발·운영 업무(예: "~개발 및 운영", "애플리케이션 개발",
               "시스템 구축")가 명시돼 있다면, 원문에 구체적인 기술명(Java, Spring 등)이 등장하지 않더라도
               OTHER로 분류하지 말고 해당 업무 성격에 가장 가까운 카테고리로 분류하라.
-            - [등록된 키워드]에 프로그래밍 언어·프레임워크가 있다면, 그 정보도 jobCategory 판단의 근거로 활용하라.
-              단, 키워드에 있는 기술명을 requiredSkills/preferredSkills에 직접 추가하지는 마라
-              (이 필드들은 원문 섹션 위치 규칙만 따른다).
+            - [등록된 키워드]는 jobCategory 판단에만 참고하라. requiredSkills/preferredSkills는 [상세 내용]에 실제로 등장한 기술만
+              섹션 위치 규칙에 따라 넣어라. [상세 내용]에 등장한 기술은 키워드에 같은 이름이 있더라도 제외하지 마라.
+              반대로 키워드에만 있고 [상세 내용]에는 없는 기술은 넣지 마라.
             - 여러 직무 트랙이 한 공고에 섞여 있어도, 그중 하나라도 소프트웨어 개발 업무를 명시하면 OTHER를 쓰지 마라.
               순수 비개발 업무(영업, 심사, 인사, 서비스직 등)만 있을 때만 OTHER를 사용하라.
             
@@ -53,6 +53,9 @@ public class JobRequirementExtractor {
             - requiredSkills와 preferredSkills는 오직 원문 섹션 위치로만 구분하라.
               "자격요건", "필수 요건", "주요업무"처럼 필수 자격/업무를 다루는 섹션에 명시된 기술만 requiredSkills에 넣어라.
               "우대사항", "자격 및 우대사항", "~하면 좋음", "~우대"처럼 우대를 다루는 섹션에 나열된 기술은, 그 문구에 "필수"라는 표현이 붙어 있더라도 requiredSkills로 옮기지 말고 preferredSkills로 분류하라.
+              [기술환경], [개발환경], [기술 스택], [사용 기술]처럼 회사가 사용하는 기술을 소개하는 별도 섹션에 나열된 기술은
+              preferredSkills로 분류하라. requiredSkills로 옮기지 마라. 이 규칙은 그런 섹션 제목 아래 나열된 기술에만 적용되며,
+              [주요업무]·[자격요건] 문장 안에서 "~ 기반", "~로 전환"처럼 언급된 기술은 위 규칙대로 requiredSkills로 분류하라.
               (requiredCertificates의 "필수 표기 시 섹션 무관하게 필수로 판단" 규칙은 자격증·어학성적에만 적용되며, 스킬 분류에는 적용하지 않는다.)
               예: "[자격 및 우대사항]" 섹션에 "GitHub Copilot, Claude Code, Jira, Bitbucket, Confluence" 도구 목록과 "OPIC 제출 필수" 문구가 함께 있어도, 도구 목록은 preferredSkills로 분류하고 requiredSkills로 옮기지 마라.
             - 반드시 기술·도구·언어·프레임워크의 이름만 담아라. 단어 또는 짧은 고유명사여야 한다.
