@@ -3,8 +3,11 @@ package com.jinwoo.jobfit.domain.evaluation.service;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -140,7 +143,8 @@ public class JobRequirementExtractor {
 
     // LLM이 구체적 기술명이 아닌 개념어/서술어를 requiredSkills/preferredSkills에 섞어 넣는 경우가 있어
     // 프롬프트 규칙만으로 막히지 않는 잔여 케이스를 후처리로 한 번 더 제거한다.
-    private static final Set<String> CONCEPT_SKILL_BLOCKLIST = Set.of(
+    // "Http", "cors"처럼 표기만 다른 경우도 걸러지도록 소문자로 정규화해 비교한다.
+    private static final Set<String> CONCEPT_SKILL_BLOCKLIST = Stream.of(
             "비동기 프로그래밍",
             "동시성 프로그래밍",
             "데이터 시각화",
@@ -148,8 +152,13 @@ public class JobRequirementExtractor {
             "웹 보안",
             "LLM",
             "AI",
-            "생성형 AI"
-    );
+            "생성형 AI",
+            // HTTP는 프롬프트 금지어(범용 프로토콜)이고, SSL·XSS·CORS는 "웹 보안"과 같은 성격의 웹 보안 개념이다.
+            "HTTP",
+            "SSL",
+            "XSS",
+            "CORS"
+    ).map(JobRequirementExtractor::normalizeForBlocklist).collect(Collectors.toUnmodifiableSet());
 
     private final LlmClient llmClient;
     private final JobRequirementParser jobRequirementParser;
@@ -250,8 +259,12 @@ public class JobRequirementExtractor {
 
     private List<String> filterConceptSkills(List<String> skills) {
         return skills.stream()
-                .filter(skill -> !CONCEPT_SKILL_BLOCKLIST.contains(skill))
+                .filter(skill -> !CONCEPT_SKILL_BLOCKLIST.contains(normalizeForBlocklist(skill)))
                 .toList();
+    }
+
+    private static String normalizeForBlocklist(String skill) {
+        return skill.trim().toLowerCase(Locale.ROOT);
     }
 
     private String nullToEmpty(String value) {

@@ -46,7 +46,7 @@ class JobRequirementExtractorTest {
         JobRequirementExtraction extraction = extractor.extract(jobPosting);
 
         assertThat(extraction.requiredSkills()).containsExactly(
-                "Java", "Spring Framework", "RDBMS/SQL", "React.js", "Redux", "TypeScript", "HTTP"
+                "Java", "Spring Framework", "RDBMS/SQL", "React.js", "Redux", "TypeScript"
         );
     }
 
@@ -61,6 +61,36 @@ class JobRequirementExtractorTest {
         JobRequirementExtraction extraction = extractor.extract(jobPosting);
 
         assertThat(extraction.preferredSkills()).containsExactly("Redux");
+    }
+
+    // 파수에이아이(55234023) [주요 기술]의 "HTTP, 웹 보안 (SSL, XSS, CORS)"에서 괄호 안 보안 개념까지 기술로 뽑히는 경우.
+    // LLM이 표기를 바꿔 내보내도 걸러지도록 대소문자와 무관하게 제거되어야 한다.
+    @Test
+    void extract_pasuAiPosting_removesWebProtocolAndSecurityConceptsIgnoringCase() {
+        JobPosting jobPosting = pasuAiJobPosting();
+        String llmResponse = """
+                {"requiredSkills": ["Java","HTTP","SSL","XSS","CORS","React.js"], "preferredSkills": ["Http","ssl","Xss","cors","Redux"], "minYears": null, "maxYears": null, "newGraduateAllowed": true, "requiredCertificates": [], "preferredCertificates": [], "jobCategory": "FULLSTACK_DEVELOPMENT"}
+                """;
+        JobRequirementExtractor extractor = extractorWith(llmResponse);
+
+        JobRequirementExtraction extraction = extractor.extract(jobPosting);
+
+        assertThat(extraction.requiredSkills()).containsExactly("Java", "React.js");
+        assertThat(extraction.preferredSkills()).containsExactly("Redux");
+    }
+
+    // 블록리스트는 정확히 일치하는 경우만 제거하므로, 보안 개념명이 포함된 구체적인 기술명은 남겨야 한다.
+    @Test
+    void extract_keepsSkillsThatOnlyContainBlockedTerms() {
+        JobPosting jobPosting = pasuAiJobPosting();
+        String llmResponse = """
+                {"requiredSkills": ["HTTP/2","OpenSSL","Spring Security"], "preferredSkills": [], "minYears": null, "maxYears": null, "newGraduateAllowed": true, "requiredCertificates": [], "preferredCertificates": [], "jobCategory": "BACKEND_DEVELOPMENT"}
+                """;
+        JobRequirementExtractor extractor = extractorWith(llmResponse);
+
+        JobRequirementExtraction extraction = extractor.extract(jobPosting);
+
+        assertThat(extraction.requiredSkills()).containsExactly("HTTP/2", "OpenSSL", "Spring Security");
     }
 
     // 원테크스탑(55205788)은 핵심 기술 스택만 나열되어 개념어가 섞이지 않는 경우로, 필터가 멀쩡한 기술명을
