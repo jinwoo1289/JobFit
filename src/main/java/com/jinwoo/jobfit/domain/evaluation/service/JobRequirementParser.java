@@ -20,16 +20,15 @@ public class JobRequirementParser {
 
         Integer minYears = extractYears(MIN_YEARS_PATTERN, experienceLevel);
         Integer maxYears = extractYears(MAX_YEARS_PATTERN, experienceLevel);
-        boolean newGraduateAllowed = isNewGraduateAllowed(experienceLevel, minYears);
+        boolean newGraduateAllowed = isNewGraduateAllowed(experienceLevel);
         EmploymentType employmentType = resolveEmploymentType(jobPosting.getTitle(), experienceLevel);
 
         return new JobRequirement(minYears, maxYears, newGraduateAllowed, employmentType);
     }
 
-    private boolean isNewGraduateAllowed(String experienceLevel, Integer minYears) {
-        if (minYears != null && minYears > 0) {
-            return false;
-        }
+    // "신입/경력 3년 이상"처럼 신입과 경력 하한이 함께 표기되면 하한은 경력자에게만 적용되므로,
+    // "신입"·"무관"이 명시된 경우 minYears와 관계없이 신입 지원 가능으로 본다.
+    private boolean isNewGraduateAllowed(String experienceLevel) {
         return experienceLevel.contains("신입")
                 || experienceLevel.contains("무관");
     }

@@ -58,14 +58,33 @@ class JobRequirementParserTest {
         );
     }
 
-    @Test
-    void parse_minYearsPresent_overridesNewGraduateKeyword() {
-        JobPosting jobPosting = jobPosting("백엔드 개발자", "신입/경력 5년 이상");
+    @ParameterizedTest(name = "[{index}] {0} → {1}")
+    @MethodSource("newGraduateAllowedCases")
+    void parse_newGraduateAllowed(String experienceLevel, boolean expectedNewGraduateAllowed) {
+        JobPosting jobPosting = jobPosting("백엔드 개발자", experienceLevel);
 
         JobRequirement requirement = parser.parse(jobPosting);
 
-        assertThat(requirement.minYears()).isEqualTo(5);
-        assertThat(requirement.newGraduateAllowed()).isFalse();
+        assertThat(requirement.newGraduateAllowed()).isEqualTo(expectedNewGraduateAllowed);
+    }
+
+    static Stream<Arguments> newGraduateAllowedCases() {
+        return Stream.of(
+                Arguments.of("신입/경력 3년 이상", true),
+                Arguments.of("경력 5년 이상", false),
+                Arguments.of("신입", true),
+                Arguments.of("경력무관(신입포함)", true)
+        );
+    }
+
+    @Test
+    void parse_newGraduateWithMinYears_keepsMinYearsForExperienced() {
+        JobPosting jobPosting = jobPosting("백엔드 개발자", "신입/경력 3년 이상");
+
+        JobRequirement requirement = parser.parse(jobPosting);
+
+        assertThat(requirement.minYears()).isEqualTo(3);
+        assertThat(requirement.newGraduateAllowed()).isTrue();
     }
 
     private JobPosting jobPosting(String title, String experienceLevel) {
