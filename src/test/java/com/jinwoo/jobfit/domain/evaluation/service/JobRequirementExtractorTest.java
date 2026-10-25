@@ -1,5 +1,7 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
+import com.jinwoo.jobfit.domain.evaluation.client.JsonSchemaFormat;
+import com.jinwoo.jobfit.domain.evaluation.client.LlmClient;
 import com.jinwoo.jobfit.domain.evaluation.entity.JobRequirementExtractionEntity;
 import com.jinwoo.jobfit.domain.evaluation.repository.JobRequirementExtractionRepository;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobCategory;
@@ -11,9 +13,13 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import tools.jackson.databind.ObjectMapper;
 
+import java.lang.reflect.RecordComponent;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -167,6 +173,58 @@ class JobRequirementExtractorTest {
         extractor.extract(pasuAiJobPosting());
 
         Mockito.verify(repository).save(Mockito.any(JobRequirementExtractionEntity.class));
+    }
+
+    // 기술은 있어도 jobCategory가 null이면 직무 필터를 통과하므로 캐시하지 않는다.
+    @Test
+    void extract_skillsPresentButJobCategoryNull_returnsResultWithoutCaching() {
+        JobRequirementExtractionRepository repository = neverCachedExtractionRepository();
+        String llmResponse = """
+                {"requiredSkills": ["Java"], "preferredSkills": [], "minYears": null, "maxYears": null, "newGraduateAllowed": true, "requiredCertificates": [], "preferredCertificates": []}
+                """;
+        JobRequirementExtractor extractor = extractorWith(llmResponse, repository);
+
+        JobRequirementExtraction extraction = extractor.extract(pasuAiJobPosting());
+
+        assertThat(extraction.requiredSkills()).containsExactly("Java");
+        assertThat(extraction.jobCategory()).isNull();
+        Mockito.verify(repository, Mockito.never()).save(Mockito.any());
+    }
+
+    // strict 모드는 모든 프로퍼티가 required여야 하고, jobCategory는 enum으로 값이 제한되어야 한다.
+    @Test
+    @SuppressWarnings("unchecked")
+    void extract_callsLlmWithStrictSchemaCoveringAllFields() {
+        AtomicReference<JsonSchemaFormat> capturedSchema = new AtomicReference<>();
+        LlmClient schemaCapturingClient = new LlmClient() {
+            @Override
+            public String complete(String systemPrompt, String userPrompt) {
+                throw new IllegalStateException("추출 호출은 스키마를 함께 넘겨야 한다");
+            }
+
+            @Override
+            public String complete(String systemPrompt, String userPrompt, JsonSchemaFormat responseSchema) {
+                capturedSchema.set(responseSchema);
+                return emptySkillsResponse("\"OTHER\"");
+            }
+        };
+        JobRequirementExtractor extractor = new JobRequirementExtractor(
+                schemaCapturingClient, jobRequirementParser, objectMapper, neverCachedExtractionRepository());
+
+        extractor.extract(pasuAiJobPosting());
+
+        Map<String, Object> schema = capturedSchema.get().schema();
+        List<String> recordFields = Arrays.stream(JobRequirementExtraction.class.getRecordComponents())
+                .map(RecordComponent::getName)
+                .toList();
+        Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
+        Map<String, Object> jobCategory = (Map<String, Object>) properties.get("jobCategory");
+
+        assertThat(schema.get("additionalProperties")).isEqualTo(false);
+        assertThat((List<String>) schema.get("required")).containsExactlyInAnyOrderElementsOf(recordFields);
+        assertThat(properties.keySet()).containsExactlyInAnyOrderElementsOf(recordFields);
+        assertThat((List<String>) jobCategory.get("enum")).containsExactlyElementsOf(
+                Arrays.stream(JobCategory.values()).map(Enum::name).toList());
     }
 
     private String emptySkillsResponse(String jobCategoryJson) {
