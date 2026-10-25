@@ -18,7 +18,8 @@ public class SkillAliasNormalizer {
 
     private static final Map<String, String> ALIASES = Map.of(
             "spring framework", "spring boot",
-            "spring", "spring boot"
+            "spring", "spring boot",
+            "api", "rest api"
     );
 
     private record CategoryAlias(Set<String> aliasTerms, Set<String> equivalentSkills) {
@@ -34,8 +35,12 @@ public class SkillAliasNormalizer {
 
     private static final List<CategoryAlias> CATEGORY_ALIASES = List.of(
             new CategoryAlias(
-                    Set.of("rdbms", "sql", "rdbms/sql"),
+                    Set.of("rdbms", "sql", "rdbms/sql", "rdb", "relational database"),
                     Set.of("mysql", "postgresql")
+            ),
+            new CategoryAlias(
+                    Set.of("nosql", "cache db"),
+                    Set.of("redis", "mongodb")
             ),
             new CategoryAlias(
                     Set.of("ai coding assistant", "generative ai", "ai 코딩 도구"),
