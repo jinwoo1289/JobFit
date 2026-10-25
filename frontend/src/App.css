@@ -333,6 +333,15 @@
   font-size: 14px;
 }
 
+.scope-limited-notice {
+  padding: 8px 12px;
+  background: #fff8e6;
+  border: 1px solid #f1dca7;
+  border-radius: 8px;
+  color: #8a6d1a;
+  font-size: 13px;
+}
+
 .failed-reasons-block {
   padding: 10px 12px;
   background: #fdecea;
