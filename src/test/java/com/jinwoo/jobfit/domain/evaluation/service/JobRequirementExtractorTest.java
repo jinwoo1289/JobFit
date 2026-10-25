@@ -122,12 +122,69 @@ class JobRequirementExtractorTest {
         assertThat(extraction.preferredSkills()).containsExactly("React");
     }
 
+    // 개발 직무인데 기술이 하나도 없는 결과가 캐시되면 다음 평가부터 LLM을 다시 부르지 않아 빈 결과가 고정된다.
+    @Test
+    void extract_noSkillsForDevelopmentJob_returnsResultWithoutCaching() {
+        JobRequirementExtractionRepository repository = neverCachedExtractionRepository();
+        JobRequirementExtractor extractor = extractorWith(emptySkillsResponse("\"BACKEND_DEVELOPMENT\""), repository);
+
+        JobRequirementExtraction extraction = extractor.extract(pasuAiJobPosting());
+
+        assertThat(extraction.requiredSkills()).isEmpty();
+        assertThat(extraction.jobCategory()).isEqualTo(JobCategory.BACKEND_DEVELOPMENT);
+        Mockito.verify(repository, Mockito.never()).save(Mockito.any());
+    }
+
+    @Test
+    void extract_noSkillsWithNullJobCategory_returnsResultWithoutCaching() {
+        JobRequirementExtractionRepository repository = neverCachedExtractionRepository();
+        JobRequirementExtractor extractor = extractorWith(emptySkillsResponse("null"), repository);
+
+        extractor.extract(pasuAiJobPosting());
+
+        Mockito.verify(repository, Mockito.never()).save(Mockito.any());
+    }
+
+    // OTHER는 비개발 직무라 기술이 없는 것이 정상이므로 캐시한다.
+    @Test
+    void extract_noSkillsForOtherJobCategory_cachesResult() {
+        JobRequirementExtractionRepository repository = neverCachedExtractionRepository();
+        JobRequirementExtractor extractor = extractorWith(emptySkillsResponse("\"OTHER\""), repository);
+
+        extractor.extract(pasuAiJobPosting());
+
+        Mockito.verify(repository).save(Mockito.any(JobRequirementExtractionEntity.class));
+    }
+
+    @Test
+    void extract_onlyPreferredSkillsPresent_cachesResult() {
+        JobRequirementExtractionRepository repository = neverCachedExtractionRepository();
+        String llmResponse = """
+                {"requiredSkills": [], "preferredSkills": ["Kotlin"], "minYears": null, "maxYears": null, "newGraduateAllowed": true, "requiredCertificates": [], "preferredCertificates": [], "jobCategory": "BACKEND_DEVELOPMENT"}
+                """;
+        JobRequirementExtractor extractor = extractorWith(llmResponse, repository);
+
+        extractor.extract(pasuAiJobPosting());
+
+        Mockito.verify(repository).save(Mockito.any(JobRequirementExtractionEntity.class));
+    }
+
+    private String emptySkillsResponse(String jobCategoryJson) {
+        return """
+                {"requiredSkills": [], "preferredSkills": [], "minYears": null, "maxYears": null, "newGraduateAllowed": true, "requiredCertificates": [], "preferredCertificates": [], "jobCategory": %s}
+                """.formatted(jobCategoryJson);
+    }
+
     private JobRequirementExtractor extractorWith(String llmResponse) {
+        return extractorWith(llmResponse, neverCachedExtractionRepository());
+    }
+
+    private JobRequirementExtractor extractorWith(String llmResponse, JobRequirementExtractionRepository repository) {
         return new JobRequirementExtractor(
                 (systemPrompt, userPrompt) -> llmResponse,
                 jobRequirementParser,
                 objectMapper,
-                neverCachedExtractionRepository()
+                repository
         );
     }
 

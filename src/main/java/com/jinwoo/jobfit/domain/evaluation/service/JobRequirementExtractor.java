@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.jinwoo.jobfit.domain.evaluation.client.LlmClient;
 import com.jinwoo.jobfit.domain.evaluation.entity.JobRequirementExtractionEntity;
 import com.jinwoo.jobfit.domain.evaluation.repository.JobRequirementExtractionRepository;
+import com.jinwoo.jobfit.domain.evaluation.vo.JobCategory;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirement;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementExtraction;
 import com.jinwoo.jobfit.domain.job.entity.JobPosting;
@@ -137,6 +138,13 @@ public class JobRequirementExtractor {
         try {
             String response = llmClient.complete(SYSTEM_PROMPT, buildUserPrompt(jobPosting));
             JobRequirementExtraction extraction = removeConceptSkills(objectMapper.readValue(response, JobRequirementExtraction.class));
+            if (hasNoSkillsForDevelopmentJob(extraction)) {
+                // 개발 직무인데 기술이 하나도 없는 결과는 추출 실패로 보고 캐시하지 않는다. 한 번 캐시되면
+                // 다음 평가부터 LLM을 다시 호출하지 않아 빈 결과가 영구히 고정되기 때문이다.
+                log.warn("LLM 추출 결과에 기술이 없어 캐시하지 않음: jobPostingId={}, jobCategory={}",
+                        jobPosting.getId(), extraction.jobCategory());
+                return extraction;
+            }
             jobRequirementExtractionRepository.save(new JobRequirementExtractionEntity(jobPosting, extraction));
             return extraction;
         } catch (RuntimeException e) {
@@ -179,6 +187,13 @@ public class JobRequirementExtractor {
                 List.of(),
                 null
         );
+    }
+
+    // OTHER는 비개발 직무라 기술이 없는 것이 정상이므로 캐시 대상에 둔다.
+    private boolean hasNoSkillsForDevelopmentJob(JobRequirementExtraction extraction) {
+        return extraction.requiredSkills().isEmpty()
+                && extraction.preferredSkills().isEmpty()
+                && extraction.jobCategory() != JobCategory.OTHER;
     }
 
     private JobRequirementExtraction removeConceptSkills(JobRequirementExtraction extraction) {
