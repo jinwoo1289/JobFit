@@ -52,7 +52,7 @@ function JobCard({ result, rank }: { result: EvaluationResponse; rank?: number }
 
       {isScopeLimited && (
         <div className="scope-limited-notice">
-          평가 범위 제한: {evaluatedItemNames.join('·')}만 평가됨 — 다른 공고와 점수를 직접 비교하기 어렵습니다
+          평가 범위 제한: {evaluatedItemNames.join('·')}만 평가됨 — 기술·경험 요건은 자동 평가되지 않았으니 공고 원문을 확인하세요
         </div>
       )}
 
