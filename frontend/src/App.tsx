@@ -6,7 +6,8 @@ import WeightSliders from './components/WeightSliders'
 import type { EvaluationResponse, Weights } from './types'
 import './App.css'
 
-const USER_PROFILE_ID = 4
+// 로컬과 배포(Render) DB의 프로필 id가 달라 환경변수로 주입한다. 미설정 시 배포 환경 값(4)을 사용한다.
+const USER_PROFILE_ID = Number(import.meta.env.VITE_USER_PROFILE_ID ?? 4)
 const NOTICE_DISMISSED_KEY = 'jobfit-cold-start-notice-dismissed'
 const SKELETON_COUNT = 6
 
