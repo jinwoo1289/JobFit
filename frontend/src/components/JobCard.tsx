@@ -18,9 +18,10 @@ function JobCard({ result, rank }: { result: EvaluationResponse; rank?: number }
   const isInsufficientInfo = result.verdict === 'INSUFFICIENT_INFO'
   // 총점에 반영되지 않는(UNFIT) 또는 비교할 정보 자체가 부족한(INSUFFICIENT_INFO) 경우, 세부 점수는 참고용임을 표시한다.
   const isReferenceOnly = isUnfit || isInsufficientInfo
-  // 필수 기술이 없으면 기술·경험이 함께 제외되어 우대사항·자격증만으로 총점이 계산되므로, 다른 공고와 기준이 다름을 안내한다.
+  // 기술·경험이 모두 평가 제외되면 우대사항·자격증만으로 총점이 계산되므로, 다른 공고와 기준이 다름을 안내한다.
+  // 백엔드의 제외 규칙(현재는 둘 다 requiredSkills 기준)에 기대지 않도록 두 플래그를 직접 확인한다.
   // 4개 항목이 모두 제외된 경우는 INSUFFICIENT_INFO로 판정되므로 FIT일 때만 표시한다.
-  const isScopeLimited = result.verdict === 'FIT' && result.skillExcluded
+  const isScopeLimited = result.verdict === 'FIT' && result.skillExcluded && result.experienceExcluded
   const evaluatedItemNames = scoreItems.filter((item) => !item.excluded).map((item) => item.name)
 
   return (
