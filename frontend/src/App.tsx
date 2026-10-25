@@ -11,10 +11,10 @@ const NOTICE_DISMISSED_KEY = 'jobfit-cold-start-notice-dismissed'
 const SKELETON_COUNT = 6
 
 const DEFAULT_WEIGHTS: Weights = {
-  skillWeight: 25,
-  experienceWeight: 25,
-  preferenceWeight: 25,
-  certificateWeight: 25,
+  skillWeight: 40,
+  experienceWeight: 30,
+  preferenceWeight: 20,
+  certificateWeight: 10,
 }
 
 function App() {
