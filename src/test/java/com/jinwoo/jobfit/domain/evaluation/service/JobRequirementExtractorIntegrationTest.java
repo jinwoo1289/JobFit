@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,9 +24,16 @@ import tools.jackson.databind.ObjectMapper;
  * JobRequirementExtractor가 job_requirement_extractions에 결과를 캐시하므로, seed 공고를 먼저
  * job_postings에 저장(또는 기존 행 재사용)해 실제 FK를 가진 상태로 extract()를 호출한다.
  * 재실행 시 이미 캐시된 공고는 LLM을 다시 호출하지 않고 저장된 결과를 재사용한다.
+ *
+ * 수동 실행 방법:
+ * 1. 로컬 PostgreSQL(docker의 jobfit-postgres)을 띄우고 .env에 OPENAI_API_KEY를 채운다.
+ * 2. 아래 @Disabled를 잠시 주석 처리한다. (커밋 전에 반드시 되돌린다)
+ * 3. ./gradlew test --tests '*JobRequirementExtractorIntegrationTest' -i
+ *    (-i를 붙여야 공고별 추출 결과 printf 출력이 보인다)
+ * 4. 프롬프트를 바꾼 뒤 다시 추출하려면 job_requirement_extractions에서 해당 공고 행을 먼저 지운다.
  */
 @SpringBootTest
-//@Disabled("실제 OpenAI API를 호출하는 수동 테스트")
+@Disabled("실제 OpenAI API를 호출하는 수동 테스트")
 class JobRequirementExtractorIntegrationTest {
 
     @Autowired
