@@ -164,6 +164,17 @@
   font-weight: 600;
 }
 
+.config-error {
+  margin-bottom: 20px;
+  padding: 10px 14px;
+  background: #fdecea;
+  border: 1px solid #f5c6c0;
+  border-radius: 8px;
+  color: #c0392b;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 /* Results */
 
 .results-empty {

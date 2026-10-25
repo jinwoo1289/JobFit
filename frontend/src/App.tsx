@@ -6,8 +6,9 @@ import WeightSliders from './components/WeightSliders'
 import type { EvaluationResponse, Weights } from './types'
 import './App.css'
 
-// 로컬과 배포(Render) DB의 프로필 id가 달라 환경변수로 주입한다. 미설정 시 배포 환경 값(4)을 사용한다.
-const USER_PROFILE_ID = Number(import.meta.env.VITE_USER_PROFILE_ID ?? 4)
+// 로컬과 배포(Render) DB의 프로필 id가 달라 환경변수로 주입한다. 잘못된 프로필로 조용히 조회되지 않도록
+// 기본값을 두지 않고, 값이 없거나 양의 정수가 아니면 null로 두어 화면에 설정 누락 에러를 표시한다.
+const USER_PROFILE_ID = parseUserProfileId(import.meta.env.VITE_USER_PROFILE_ID)
 const NOTICE_DISMISSED_KEY = 'jobfit-cold-start-notice-dismissed'
 const SKELETON_COUNT = 6
 
@@ -16,6 +17,11 @@ const DEFAULT_WEIGHTS: Weights = {
   experienceWeight: 30,
   preferenceWeight: 20,
   certificateWeight: 10,
+}
+
+function parseUserProfileId(value: string | undefined): number | null {
+  const id = Number(value)
+  return value && Number.isInteger(id) && id > 0 ? id : null
 }
 
 function App() {
@@ -41,6 +47,7 @@ function App() {
   }
 
   async function handleEvaluate() {
+    if (USER_PROFILE_ID === null) return
     setIsLoading(true)
     setError(null)
     try {
@@ -75,10 +82,17 @@ function App() {
         </div>
       )}
 
+      {USER_PROFILE_ID === null && (
+        <div className="config-error" role="alert">
+          설정 오류: VITE_USER_PROFILE_ID 환경변수가 없거나 올바르지 않습니다. 빌드 환경에 프로필 id를 설정한 뒤 다시
+          배포하세요.
+        </div>
+      )}
+
       <WeightSliders weights={weights} onChange={handleWeightChange} />
 
       <div className="evaluate-bar">
-        <button className="evaluate-button" onClick={handleEvaluate} disabled={!isWeightValid || isLoading}>
+        <button className="evaluate-button" onClick={handleEvaluate} disabled={USER_PROFILE_ID === null || !isWeightValid || isLoading}>
           {isLoading ? (
             <>
               <span className="button-spinner" />
