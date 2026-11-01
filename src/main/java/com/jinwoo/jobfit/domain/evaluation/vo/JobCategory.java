@@ -9,5 +9,7 @@ public enum JobCategory {
     AI_ML,
     DEVOPS,
     QA,
+    // 직무가 IT·전산으로 통합돼 개발/운영이 나뉘지 않은 공채, 시스템 운영, 사내 정보시스템(ERP·그룹웨어 등) 운영
+    IT_GENERAL,
     OTHER
 }

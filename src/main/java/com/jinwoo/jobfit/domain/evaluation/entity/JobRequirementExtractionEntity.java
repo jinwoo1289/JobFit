@@ -50,8 +50,17 @@ public class JobRequirementExtractionEntity {
     @Column(name = "job_category", length = 30)
     private JobCategory jobCategory;
 
-    public JobRequirementExtractionEntity(JobPosting jobPosting, JobRequirementExtraction extraction) {
+    // 이 결과를 만든 추출 프롬프트 버전. 컬럼 추가 이전에 저장된 행은 null이며, 현재 버전과 다르면 재추출 대상이다.
+    @Column(name = "prompt_version")
+    private Integer promptVersion;
+
+    public JobRequirementExtractionEntity(JobPosting jobPosting, JobRequirementExtraction extraction, int promptVersion) {
         this.jobPosting = jobPosting;
+        overwrite(extraction, promptVersion);
+    }
+
+    // 재추출 결과로 같은 행을 갱신한다. job_posting_id 유니크 제약이 있어 새 행을 INSERT하면 충돌하기 때문이다.
+    public void overwrite(JobRequirementExtraction extraction, int promptVersion) {
         this.requiredSkills = join(extraction.requiredSkills());
         this.preferredSkills = join(extraction.preferredSkills());
         this.minYears = extraction.minYears();
@@ -60,6 +69,11 @@ public class JobRequirementExtractionEntity {
         this.requiredCertificates = join(extraction.requiredCertificates());
         this.preferredCertificates = join(extraction.preferredCertificates());
         this.jobCategory = extraction.jobCategory();
+        this.promptVersion = promptVersion;
+    }
+
+    public boolean isExtractedWith(int promptVersion) {
+        return this.promptVersion != null && this.promptVersion == promptVersion;
     }
 
     public JobRequirementExtraction toExtraction() {

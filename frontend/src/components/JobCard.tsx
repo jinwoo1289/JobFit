@@ -50,6 +50,12 @@ function JobCard({ result, rank }: { result: EvaluationResponse; rank?: number }
         </div>
       )}
 
+      {result.notices.map((notice, i) => (
+        <div key={i} className="job-notice">
+          {notice}
+        </div>
+      ))}
+
       {isScopeLimited && (
         <div className="scope-limited-notice">
           평가 범위 제한: {evaluatedItemNames.join('·')}만 평가됨 — 기술·경험 요건은 자동 평가되지 않았으니 공고 원문을 확인하세요

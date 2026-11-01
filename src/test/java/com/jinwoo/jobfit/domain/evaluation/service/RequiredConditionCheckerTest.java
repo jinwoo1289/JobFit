@@ -105,6 +105,36 @@ class RequiredConditionCheckerTest {
         ConditionCheckResult result = checker.check(userProfile, jobPosting, extraction);
 
         assertThat(result.passed()).isTrue();
+        assertThat(result.notices()).isEmpty();
+    }
+
+    // IT 통합 채용은 개발 계열 희망자에게 통과시키되, 지원 불가 사유가 아닌 별도 안내로 직무 범위 확인을 알린다.
+    @Test
+    void check_jobCategoryItGeneralWithDevelopmentDesiredJob_passesWithNotice() {
+        UserProfile userProfile = newGraduateFullTimeUser();
+        JobPosting jobPosting = jobPosting(
+                "2026년 2차 정규직 신입사원 채용 공고 (IT)", "신입", "2026-08-26T23:59:59");
+        JobRequirementExtraction extraction = extractionOf(null, null, JobCategory.IT_GENERAL);
+
+        ConditionCheckResult result = checker.check(userProfile, jobPosting, extraction);
+
+        assertThat(result.passed()).isTrue();
+        assertThat(result.failedReasons()).isEmpty();
+        assertThat(result.notices()).containsExactly(RequiredConditionChecker.IT_GENERAL_NOTICE);
+    }
+
+    @Test
+    void check_jobCategoryItGeneralWithNonDevelopmentDesiredJob_fails() {
+        UserProfile userProfile = new UserProfile("마케팅 기획자", CareerLevel.NEW_GRADUATE, null, "서울", EmploymentType.FULL_TIME);
+        JobPosting jobPosting = jobPosting(
+                "2026년 2차 정규직 신입사원 채용 공고 (IT)", "신입", "2026-08-26T23:59:59");
+        JobRequirementExtraction extraction = extractionOf(null, null, JobCategory.IT_GENERAL);
+
+        ConditionCheckResult result = checker.check(userProfile, jobPosting, extraction);
+
+        assertThat(result.passed()).isFalse();
+        assertThat(result.failedReasons()).containsExactly("IT 통합 채용 공고로, 희망 직무(마케팅 기획자)가 개발 계열이 아닙니다.");
+        assertThat(result.notices()).isEmpty();
     }
 
     // 회귀 테스트: application-dev.properties에 2026-08-06로 고정된 clock이 방치되어, 실제로는

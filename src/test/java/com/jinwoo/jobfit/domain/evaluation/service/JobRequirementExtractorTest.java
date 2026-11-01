@@ -10,11 +10,14 @@ import com.jinwoo.jobfit.domain.job.entity.CloseType;
 import com.jinwoo.jobfit.domain.job.entity.JobPosting;
 import com.jinwoo.jobfit.domain.job.entity.JobSource;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 import tools.jackson.databind.ObjectMapper;
 
 import java.lang.reflect.RecordComponent;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -140,7 +143,7 @@ class JobRequirementExtractorTest {
                 List.of(),
                 List.of(),
                 JobCategory.BACKEND_DEVELOPMENT
-        ));
+        ), JobRequirementExtractor.EXTRACTION_PROMPT_VERSION);
         JobRequirementExtractionRepository repository = Mockito.mock(JobRequirementExtractionRepository.class);
         Mockito.when(repository.findByJobPostingId(Mockito.any())).thenReturn(Optional.of(cachedEntity));
         JobRequirementExtractor extractor = new JobRequirementExtractor(
@@ -158,9 +161,9 @@ class JobRequirementExtractorTest {
         assertThat(extraction.preferredSkills()).containsExactly("React");
     }
 
-    // 개발 직무인데 기술이 하나도 없는 결과가 캐시되면 다음 평가부터 LLM을 다시 부르지 않아 빈 결과가 고정된다.
+    // 기술이 빈 결과도 캐시해야 평가마다 LLM을 다시 부르지 않는다. (국민은행 IT·토스페이먼츠 SRE·한국투자증권 공고)
     @Test
-    void extract_noSkillsForDevelopmentJob_returnsResultWithoutCaching() {
+    void extract_noSkillsForDevelopmentJob_cachesResult() {
         JobRequirementExtractionRepository repository = neverCachedExtractionRepository();
         JobRequirementExtractor extractor = extractorWith(emptySkillsResponse("\"BACKEND_DEVELOPMENT\""), repository);
 
@@ -168,60 +171,103 @@ class JobRequirementExtractorTest {
 
         assertThat(extraction.requiredSkills()).isEmpty();
         assertThat(extraction.jobCategory()).isEqualTo(JobCategory.BACKEND_DEVELOPMENT);
-        Mockito.verify(repository, Mockito.never()).save(Mockito.any());
+        Mockito.verify(repository).save(Mockito.any(JobRequirementExtractionEntity.class));
     }
 
+    // null은 판단 근거 부족을 뜻하는 정상 응답이므로 캐시한다.
     @Test
-    void extract_noSkillsWithNullJobCategory_returnsResultWithoutCaching() {
+    void extract_nullJobCategory_cachesResult() {
         JobRequirementExtractionRepository repository = neverCachedExtractionRepository();
         JobRequirementExtractor extractor = extractorWith(emptySkillsResponse("null"), repository);
 
-        extractor.extract(pasuAiJobPosting());
+        JobRequirementExtraction extraction = extractor.extract(pasuAiJobPosting());
 
-        Mockito.verify(repository, Mockito.never()).save(Mockito.any());
+        assertThat(extraction.jobCategory()).isNull();
+        Mockito.verify(repository).save(Mockito.any(JobRequirementExtractionEntity.class));
     }
 
-    // OTHER는 비개발 직무라 기술이 없는 것이 정상이므로 캐시한다.
+    // 한국언론진흥재단(55219318)처럼 제목·본문에 IT 키워드가 있는 공고가 OTHER로 나오면 null로 낮춰 저장한다.
     @Test
-    void extract_noSkillsForOtherJobCategory_cachesResult() {
+    void extract_otherWithItKeyword_savesNullJobCategory() {
         JobRequirementExtractionRepository repository = neverCachedExtractionRepository();
         JobRequirementExtractor extractor = extractorWith(emptySkillsResponse("\"OTHER\""), repository);
 
-        extractor.extract(pasuAiJobPosting());
+        JobRequirementExtraction extraction = extractor.extract(kpfJobPosting());
 
-        Mockito.verify(repository).save(Mockito.any(JobRequirementExtractionEntity.class));
-    }
-
-    @Test
-    void extract_onlyPreferredSkillsPresent_cachesResult() {
-        JobRequirementExtractionRepository repository = neverCachedExtractionRepository();
-        String llmResponse = """
-                {"requiredSkills": [], "preferredSkills": ["Kotlin"], "minYears": null, "maxYears": null, "newGraduateAllowed": true, "requiredCertificates": [], "preferredCertificates": [], "jobCategory": "BACKEND_DEVELOPMENT"}
-                """;
-        JobRequirementExtractor extractor = extractorWith(llmResponse, repository);
-
-        extractor.extract(pasuAiJobPosting());
-
-        Mockito.verify(repository).save(Mockito.any(JobRequirementExtractionEntity.class));
-    }
-
-    // 기술은 있어도 jobCategory가 null이면 직무 필터를 통과하므로 캐시하지 않는다.
-    @Test
-    void extract_skillsPresentButJobCategoryNull_returnsResultWithoutCaching() {
-        JobRequirementExtractionRepository repository = neverCachedExtractionRepository();
-        String llmResponse = """
-                {"requiredSkills": ["Java"], "preferredSkills": [], "minYears": null, "maxYears": null, "newGraduateAllowed": true, "requiredCertificates": [], "preferredCertificates": []}
-                """;
-        JobRequirementExtractor extractor = extractorWith(llmResponse, repository);
-
-        JobRequirementExtraction extraction = extractor.extract(pasuAiJobPosting());
-
-        assertThat(extraction.requiredSkills()).containsExactly("Java");
         assertThat(extraction.jobCategory()).isNull();
-        Mockito.verify(repository, Mockito.never()).save(Mockito.any());
+        assertThat(savedEntity(repository).getJobCategory()).isNull();
     }
 
-    // strict 모드는 모든 프로퍼티가 required여야 하고, jobCategory는 enum으로 값이 제한되어야 한다.
+    // IT 키워드가 없더라도 기술이 추출됐다면 비IT 직무라는 OTHER와 모순되므로 null로 낮춘다.
+    @Test
+    void extract_otherWithSkills_savesNullJobCategory() {
+        JobRequirementExtractionRepository repository = neverCachedExtractionRepository();
+        String llmResponse = """
+                {"requiredSkills": ["SQL"], "preferredSkills": [], "minYears": null, "maxYears": null, "newGraduateAllowed": true, "requiredCertificates": [], "preferredCertificates": [], "jobCategory": "OTHER"}
+                """;
+        JobRequirementExtractor extractor = extractorWith(llmResponse, repository);
+
+        JobRequirementExtraction extraction = extractor.extract(shillaStayJobPosting());
+
+        assertThat(extraction.jobCategory()).isNull();
+        assertThat(savedEntity(repository).getJobCategory()).isNull();
+    }
+
+    // 신라스테이 호텔 공고처럼 IT 키워드도 기술도 없는 순수 비IT 공고는 OTHER를 그대로 둔다.
+    @Test
+    void extract_otherForNonItPosting_keepsOther() {
+        JobRequirementExtractionRepository repository = neverCachedExtractionRepository();
+        JobRequirementExtractor extractor = extractorWith(emptySkillsResponse("\"OTHER\""), repository);
+
+        JobRequirementExtraction extraction = extractor.extract(shillaStayJobPosting());
+
+        assertThat(extraction.jobCategory()).isEqualTo(JobCategory.OTHER);
+        assertThat(savedEntity(repository).getJobCategory()).isEqualTo(JobCategory.OTHER);
+    }
+
+    // 프롬프트 버전이 다른 캐시는 무시하고 재추출하며, 유니크 제약 충돌 없이 같은 행을 덮어쓴다.
+    @Test
+    void extract_cachedWithOldPromptVersion_reextractsAndOverwritesSameRow() {
+        JobPosting jobPosting = pasuAiJobPosting();
+        JobRequirementExtractionEntity staleEntity = new JobRequirementExtractionEntity(jobPosting,
+                new JobRequirementExtraction(List.of(), List.of(), null, null, true, List.of(), List.of(), JobCategory.OTHER),
+                JobRequirementExtractor.EXTRACTION_PROMPT_VERSION - 1);
+        JobRequirementExtractionRepository repository = Mockito.mock(JobRequirementExtractionRepository.class);
+        Mockito.when(repository.findByJobPostingId(Mockito.any())).thenReturn(Optional.of(staleEntity));
+        String llmResponse = """
+                {"requiredSkills": ["Java"], "preferredSkills": [], "minYears": null, "maxYears": null, "newGraduateAllowed": true, "requiredCertificates": [], "preferredCertificates": ["정보처리기사"], "jobCategory": "BACKEND_DEVELOPMENT"}
+                """;
+        JobRequirementExtractor extractor = extractorWith(llmResponse, repository);
+
+        JobRequirementExtraction extraction = extractor.extract(jobPosting);
+
+        assertThat(extraction.jobCategory()).isEqualTo(JobCategory.BACKEND_DEVELOPMENT);
+        Mockito.verify(repository).save(Mockito.same(staleEntity));
+        assertThat(staleEntity.getJobCategory()).isEqualTo(JobCategory.BACKEND_DEVELOPMENT);
+        assertThat(staleEntity.getRequiredSkills()).isEqualTo("Java");
+        assertThat(staleEntity.getPreferredCertificates()).isEqualTo("정보처리기사");
+        assertThat(staleEntity.isExtractedWith(JobRequirementExtractor.EXTRACTION_PROMPT_VERSION)).isTrue();
+    }
+
+    // prompt_version 컬럼 추가 이전에 저장된 행(null)도 버전 불일치로 보고 재추출한다.
+    @Test
+    void extract_cachedWithoutPromptVersion_reextracts() {
+        JobPosting jobPosting = pasuAiJobPosting();
+        JobRequirementExtractionEntity legacyEntity = new JobRequirementExtractionEntity(jobPosting,
+                new JobRequirementExtraction(List.of(), List.of(), null, null, true, List.of(), List.of(), JobCategory.OTHER),
+                JobRequirementExtractor.EXTRACTION_PROMPT_VERSION);
+        ReflectionTestUtils.setField(legacyEntity, "promptVersion", null);
+        JobRequirementExtractionRepository repository = Mockito.mock(JobRequirementExtractionRepository.class);
+        Mockito.when(repository.findByJobPostingId(Mockito.any())).thenReturn(Optional.of(legacyEntity));
+        JobRequirementExtractor extractor = extractorWith(emptySkillsResponse("\"BACKEND_DEVELOPMENT\""), repository);
+
+        JobRequirementExtraction extraction = extractor.extract(jobPosting);
+
+        assertThat(extraction.jobCategory()).isEqualTo(JobCategory.BACKEND_DEVELOPMENT);
+        Mockito.verify(repository).save(Mockito.same(legacyEntity));
+    }
+
+    // strict 모드는 모든 프로퍼티가 required여야 하고, jobCategory는 enum 값 또는 null로 제한되어야 한다.
     @Test
     @SuppressWarnings("unchecked")
     void extract_callsLlmWithStrictSchemaCoveringAllFields() {
@@ -253,14 +299,22 @@ class JobRequirementExtractorTest {
         assertThat(schema.get("additionalProperties")).isEqualTo(false);
         assertThat((List<String>) schema.get("required")).containsExactlyInAnyOrderElementsOf(recordFields);
         assertThat(properties.keySet()).containsExactlyInAnyOrderElementsOf(recordFields);
-        assertThat((List<String>) jobCategory.get("enum")).containsExactlyElementsOf(
-                Arrays.stream(JobCategory.values()).map(Enum::name).toList());
+        List<String> expectedJobCategoryValues = new ArrayList<>(Arrays.stream(JobCategory.values()).map(Enum::name).toList());
+        expectedJobCategoryValues.add(null);
+        assertThat((List<String>) jobCategory.get("type")).containsExactly("string", "null");
+        assertThat((List<String>) jobCategory.get("enum")).containsExactlyElementsOf(expectedJobCategoryValues);
     }
 
     private String emptySkillsResponse(String jobCategoryJson) {
         return """
                 {"requiredSkills": [], "preferredSkills": [], "minYears": null, "maxYears": null, "newGraduateAllowed": true, "requiredCertificates": [], "preferredCertificates": [], "jobCategory": %s}
                 """.formatted(jobCategoryJson);
+    }
+
+    private JobRequirementExtractionEntity savedEntity(JobRequirementExtractionRepository repository) {
+        ArgumentCaptor<JobRequirementExtractionEntity> captor = ArgumentCaptor.forClass(JobRequirementExtractionEntity.class);
+        Mockito.verify(repository).save(captor.capture());
+        return captor.getValue();
     }
 
     private JobRequirementExtractor extractorWith(String llmResponse) {
@@ -305,6 +359,54 @@ class JobRequirementExtractorTest {
                 """,
                 CloseType.FIXED_DATE,
                 LocalDateTime.parse("2026-10-25T23:59:59")
+        );
+    }
+
+    private JobPosting kpfJobPosting() {
+        return new JobPosting(
+                JobSource.SARAMIN,
+                "55219318",
+                "한국언론진흥재단",
+                "2026년 2차 정규직 신입사원 채용 공고 (IT)",
+                "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=55219318",
+                "서울 중구",
+                "신입",
+                "학력무관",
+                "SQL,ERP,그룹웨어,시스템운영,모니터링,데이터베이스,백업복구,장애처리",
+                """
+                [모집분야] IT(시스템 운영), 정규직
+
+                [직무수행내용]
+                - 업무전산시스템(그룹웨어, ERP) 고도화 등 정보시스템 개발 및 운영 관련 업무
+
+                [가점사항]
+                - (자격증) 정보처리기사, 정보처리산업기사
+                """,
+                CloseType.FIXED_DATE,
+                LocalDateTime.parse("2026-10-20T23:59:59")
+        );
+    }
+
+    private JobPosting shillaStayJobPosting() {
+        return new JobPosting(
+                JobSource.SARAMIN,
+                "test-shilla-stay",
+                "신라에이치엠(주)",
+                "신라스테이 호텔분야 신입채용 (더스타팩토리프로그램)",
+                "https://example.com",
+                "서울",
+                "신입/경력",
+                "학력무관",
+                "호텔,프론트,객실관리",
+                """
+                [모집분야] 호텔 프론트·객실 관리
+
+                [주요업무]
+                - 고객 응대 및 체크인/체크아웃
+                - 객실 관리
+                """,
+                CloseType.FIXED_DATE,
+                LocalDateTime.parse("2026-08-10T23:59:59")
         );
     }
 

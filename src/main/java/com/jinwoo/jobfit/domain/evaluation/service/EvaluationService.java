@@ -39,15 +39,16 @@ public class EvaluationService {
                 jobPosting, extraction, userProfile, skills, projects, certificates, scoreResult);
 
         if (!conditionCheckResult.passed()) {
-            return EvaluationResult.unfit(jobPosting.getId(), scoreResult, conditionCheckResult.failedReasons(), reasoning);
+            return EvaluationResult.unfit(jobPosting.getId(), scoreResult, conditionCheckResult.failedReasons(),
+                    conditionCheckResult.notices(), reasoning);
         }
 
         if (scoreResult.allExcluded()) {
-            return EvaluationResult.insufficientInfo(jobPosting.getId(), scoreResult, reasoning);
+            return EvaluationResult.insufficientInfo(jobPosting.getId(), scoreResult, conditionCheckResult.notices(), reasoning);
         }
 
         double totalScore = scoreCalculator.calculateTotalScore(scoreResult, evaluationWeight);
 
-        return EvaluationResult.fit(jobPosting.getId(), totalScore, scoreResult, reasoning);
+        return EvaluationResult.fit(jobPosting.getId(), totalScore, scoreResult, conditionCheckResult.notices(), reasoning);
     }
 }

@@ -19,6 +19,7 @@ public record EvaluationResponse(
         double certificateScore, boolean certificateExcluded,
         EvaluationVerdict verdict,
         List<String> failedReasons,
+        List<String> notices,
         EvaluationReasoning reasoning
 ) {
     public static EvaluationResponse from(EvaluationResult result, JobPosting jobPosting) {
@@ -34,6 +35,7 @@ public record EvaluationResponse(
                 result.certificateScore(), result.certificateExcluded(),
                 result.verdict(),
                 result.failedReasons(),
+                result.notices(),
                 result.reasoning()
         );
     }

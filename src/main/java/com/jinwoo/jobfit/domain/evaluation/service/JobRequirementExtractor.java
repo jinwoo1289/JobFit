@@ -1,10 +1,12 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -43,19 +45,33 @@ public class JobRequirementExtractor {
               "newGraduateAllowed": boolean,
               "requiredCertificates": string[],
               "preferredCertificates": string[],
-              "jobCategory": "BACKEND_DEVELOPMENT" | "FRONTEND_DEVELOPMENT" | "FULLSTACK_DEVELOPMENT" | "MOBILE_DEVELOPMENT" | "DATA_ENGINEERING" | "AI_ML" | "DEVOPS" | "QA" | "OTHER"
+              "jobCategory": "BACKEND_DEVELOPMENT" | "FRONTEND_DEVELOPMENT" | "FULLSTACK_DEVELOPMENT" | "MOBILE_DEVELOPMENT" | "DATA_ENGINEERING" | "AI_ML" | "DEVOPS" | "QA" | "IT_GENERAL" | "OTHER" | null
             }
 
             [jobCategory 판정 규칙]
             - jobCategory는 requiredSkills가 비어 있는 것과 무관하게 독립적으로 판단하라.
+            - 각 값은 아래 조건에 해당할 때만 사용하라. enum 이름만 보고 고르지 마라.
+              - BACKEND_DEVELOPMENT: 서버·API·데이터 처리 등 백엔드 애플리케이션 설계·개발이 주 업무일 때.
+              - FRONTEND_DEVELOPMENT: 웹 화면(UI) 개발이 주 업무일 때.
+              - FULLSTACK_DEVELOPMENT: 백엔드와 프론트엔드 개발을 함께 담당하거나 웹 애플리케이션 개발 전반을 담당할 때.
+              - MOBILE_DEVELOPMENT: iOS·Android 등 모바일 앱 개발이 주 업무일 때.
+              - DATA_ENGINEERING: 데이터 파이프라인·데이터 플랫폼 구축·운영이 주 업무일 때.
+              - AI_ML: 머신러닝·AI 모델 또는 AI 기반 서비스(LLM, AI 에이전트 등) 개발이 주 업무일 때.
+              - DEVOPS: CI/CD, 배포 자동화, 컨테이너·클라우드 인프라 운영이 주 업무일 때만 사용하라.
+                IT 시스템 운영·전산 운영 공고는 DEVOPS로 분류하지 마라.
+              - QA: 소프트웨어 테스트·품질 보증이 주 업무일 때.
+              - IT_GENERAL: 직무가 IT·전산으로 통합돼 개발/운영이 나뉘지 않은 공채, IT 시스템 운영·전산 운영,
+                사내 정보시스템(ERP·그룹웨어 등) 운영이 주 업무일 때.
+              - OTHER: 순수 비IT 업무(영업, 심사, 인사, 서비스직 등)만 있을 때만 사용하라.
+              - null: 원문에 위 값 중 하나로 판단할 근거가 부족할 때. 근거 없이 가장 비슷해 보이는 값을 고르지 마라.
             - [주요업무] 또는 [상세 내용]에 소프트웨어 설계·개발·운영 업무(예: "~개발 및 운영", "애플리케이션 개발",
               "시스템 구축")가 명시돼 있다면, 원문에 구체적인 기술명(Java, Spring 등)이 등장하지 않더라도
               OTHER로 분류하지 말고 해당 업무 성격에 가장 가까운 카테고리로 분류하라.
             - [등록된 키워드]는 jobCategory 판단에만 참고하라. requiredSkills/preferredSkills는 [상세 내용]에 실제로 등장한 기술만
               섹션 위치 규칙에 따라 넣어라. [상세 내용]에 등장한 기술은 키워드에 같은 이름이 있더라도 제외하지 마라.
               반대로 키워드에만 있고 [상세 내용]에는 없는 기술은 넣지 마라.
-            - 여러 직무 트랙이 한 공고에 섞여 있어도, 그중 하나라도 소프트웨어 개발 업무를 명시하면 OTHER를 쓰지 마라.
-              순수 비개발 업무(영업, 심사, 인사, 서비스직 등)만 있을 때만 OTHER를 사용하라.
+            - 여러 직무 트랙이 한 공고에 섞여 있어도, 그중 하나라도 소프트웨어 개발 또는 IT 운영 업무를 명시하면 OTHER를 쓰지 마라.
+              순수 비IT 업무(영업, 심사, 인사, 서비스직 등)만 있을 때만 OTHER를 사용하라.
             
             [requiredSkills / preferredSkills 규칙]
             - requiredSkills와 preferredSkills는 오직 원문 섹션 위치로만 구분하라.
@@ -99,18 +115,31 @@ public class JobRequirementExtractor {
             - 이 규칙은 자격증·어학성적에만 적용된다. requiredSkills / preferredSkills 분류에는 영향을 주지 않는다.
             - 자격증·어학성적 요구는 원문 내 섹션 위치(우대사항, 필수 자격 등)와 무관하게, 문구 자체의 표현을 기준으로 필수 여부를 판단하라.
             - "필수", "제출 필수", "반드시"처럼 필수임을 나타내는 표현이 붙어 있다면, "우대사항" 섹션에 있더라도 requiredCertificates에 포함하라.
-            - 그 외의 자격증·어학성적(필수 표현 없이 보유를 권장하는 수준, 주로 "우대사항" 섹션)은 preferredCertificates에 포함하라.
+            - 그 외의 자격증·어학성적(필수 표현 없이 보유를 권장하는 수준, 주로 "우대사항"·"가점사항" 섹션)은 preferredCertificates에 포함하라.
+              "우대 자격증: A, B, C"처럼 한 줄에 나열된 목록도 하나도 빠뜨리지 말고 모두 넣어라.
             - 자격증/어학성적의 명칭만 추출하고, 기간·점수 제출 방식 등 부가 설명은 제외하라.
               예: "[자격 및 우대사항]" 섹션의 "OPIC 또는 TOEIC Speaking 점수 제출 필수(2년 내)"
                   → requiredCertificates: ["OPIC", "TOEIC Speaking"]
               예: "[우대사항]" 섹션의 "정보처리기사, AWS 자격증 보유자"
                   → preferredCertificates: ["정보처리기사", "AWS"]
+              예: "[가점사항]" 섹션의 "(자격증) 정보처리기사, 정보처리산업기사"
+                  → preferredCertificates: ["정보처리기사", "정보처리산업기사"]
 
             [minYears / maxYears 규칙]
             - "경력 N년 이상"처럼 하한만 명시된 경우에만 minYears에 N을 넣어라.
             - "N년 이하"처럼 상한이 명시된 경우 maxYears에 N을 넣어라. 이 경우 minYears는 null로 둬라.
             - 범위가 명시되지 않으면 해당 필드를 null로 둬라.
             """;
+
+    // SYSTEM_PROMPT나 EXTRACTION_SCHEMA를 바꾸면 올린다. 캐시 행의 버전과 다르면 재추출해 같은 행을 덮어쓴다.
+    // 2: IT_GENERAL 추가, jobCategory null 허용, 카테고리별 사용 조건·가점사항 자격증 규칙 추가
+    static final int EXTRACTION_PROMPT_VERSION = 2;
+
+    // LLM이 OTHER로 분류했더라도 공고 제목/본문에 이 키워드가 있으면 IT 직무일 가능성이 높아 OTHER를 신뢰하지 않는다.
+    // "IT"는 영문 단어 일부(예: GitHub)와 겹치지 않도록 대소문자를 구분해 비교한다.
+    private static final List<String> IT_KEYWORDS = List.of(
+            "IT", "전산", "개발", "시스템", "정보보안", "인프라", "소프트웨어", "SW"
+    );
 
     // 프롬프트의 스키마 설명만으로는 jobCategory 같은 필드가 응답에서 빠지는 경우가 있어 Structured Outputs로 강제한다.
     // 모델은 프로퍼티 선언 순서대로 값을 생성하므로, 프롬프트 스키마와 같은 순서를 유지하도록 LinkedHashMap을 쓴다.
@@ -128,9 +157,12 @@ public class JobRequirementExtractor {
         properties.put("newGraduateAllowed", Map.of("type", "boolean"));
         properties.put("requiredCertificates", stringArray);
         properties.put("preferredCertificates", stringArray);
+        // strict 모드에서 null을 허용하려면 type과 enum 양쪽에 null이 있어야 한다. List.of는 null을 받지 않아 ArrayList를 쓴다.
+        List<String> jobCategoryValues = new ArrayList<>(Arrays.stream(JobCategory.values()).map(Enum::name).toList());
+        jobCategoryValues.add(null);
         properties.put("jobCategory", Map.of(
-                "type", "string",
-                "enum", Arrays.stream(JobCategory.values()).map(Enum::name).toList()
+                "type", List.of("string", "null"),
+                "enum", jobCategoryValues
         ));
 
         return Map.of(
@@ -169,31 +201,28 @@ public class JobRequirementExtractor {
     // 항상 성공하도록 별도의 쓰기 가능한 트랜잭션에서 실행한다.
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public JobRequirementExtraction extract(JobPosting jobPosting) {
-        return jobRequirementExtractionRepository.findByJobPostingId(jobPosting.getId())
-                .map(JobRequirementExtractionEntity::toExtraction)
-                // 블록리스트 추가 이전에 캐시된 결과에도 동일한 필터가 적용되도록, 조회 시에도 다시 거른다.
-                .map(this::removeConceptSkills)
-                .orElseGet(() -> callLlmAndCache(jobPosting));
+        Optional<JobRequirementExtractionEntity> cached = jobRequirementExtractionRepository.findByJobPostingId(jobPosting.getId());
+        if (cached.isPresent() && cached.get().isExtractedWith(EXTRACTION_PROMPT_VERSION)) {
+            // 블록리스트 추가 이전에 캐시된 결과에도 동일한 필터가 적용되도록, 조회 시에도 다시 거른다.
+            return removeConceptSkills(cached.get().toExtraction());
+        }
+        return callLlmAndCache(jobPosting, cached.orElse(null));
     }
 
-    private JobRequirementExtraction callLlmAndCache(JobPosting jobPosting) {
+    // 기술이 비어 있거나 jobCategory가 null인 결과도 캐시한다. 캐시하지 않으면 평가마다 LLM을 다시 불러
+    // 결과가 흔들리다가 우연히 나온 값이 고정되는 문제가 있었다. 잘못된 캐시는 프롬프트 버전을 올려 재추출한다.
+    private JobRequirementExtraction callLlmAndCache(JobPosting jobPosting, JobRequirementExtractionEntity staleEntity) {
         try {
             String response = llmClient.complete(SYSTEM_PROMPT, buildUserPrompt(jobPosting), EXTRACTION_SCHEMA);
-            JobRequirementExtraction extraction = removeConceptSkills(objectMapper.readValue(response, JobRequirementExtraction.class));
-            if (extraction.jobCategory() == null) {
-                // jobCategory가 null이면 직무 필터를 통과하므로, 비개발 공고가 이대로 캐시되면 영구히 잘못 통과한다.
-                // 스키마로 강제하더라도 혹시 빠진 경우를 대비해 캐시하지 않고 다음 평가에서 다시 추출한다.
-                log.warn("LLM 추출 결과에 jobCategory가 없어 캐시하지 않음: jobPostingId={}", jobPosting.getId());
-                return extraction;
+            JobRequirementExtraction extraction = distrustOtherForItPosting(jobPosting,
+                    removeConceptSkills(objectMapper.readValue(response, JobRequirementExtraction.class)));
+            if (staleEntity == null) {
+                jobRequirementExtractionRepository.save(
+                        new JobRequirementExtractionEntity(jobPosting, extraction, EXTRACTION_PROMPT_VERSION));
+            } else {
+                staleEntity.overwrite(extraction, EXTRACTION_PROMPT_VERSION);
+                jobRequirementExtractionRepository.save(staleEntity);
             }
-            if (hasNoSkillsForDevelopmentJob(extraction)) {
-                // 개발 직무인데 기술이 하나도 없는 결과는 추출 실패로 보고 캐시하지 않는다. 한 번 캐시되면
-                // 다음 평가부터 LLM을 다시 호출하지 않아 빈 결과가 영구히 고정되기 때문이다.
-                log.warn("LLM 추출 결과에 기술이 없어 캐시하지 않음: jobPostingId={}, jobCategory={}",
-                        jobPosting.getId(), extraction.jobCategory());
-                return extraction;
-            }
-            jobRequirementExtractionRepository.save(new JobRequirementExtractionEntity(jobPosting, extraction));
             return extraction;
         } catch (RuntimeException e) {
             // fallback 결과는 저장하지 않는다. LLM 장애가 해소되면 다음 평가에서 다시 시도하도록 하기 위함.
@@ -237,11 +266,36 @@ public class JobRequirementExtractor {
         );
     }
 
-    // OTHER는 비개발 직무라 기술이 없는 것이 정상이므로 캐시 대상에 둔다.
-    private boolean hasNoSkillsForDevelopmentJob(JobRequirementExtraction extraction) {
-        return extraction.requiredSkills().isEmpty()
-                && extraction.preferredSkills().isEmpty()
-                && extraction.jobCategory() != JobCategory.OTHER;
+    // OTHER는 곧바로 UNFIT으로 이어지고 캐시에 고정되므로, IT 공고로 볼 근거가 있으면 판정 불가(null)로 낮춰 통과시킨다.
+    private JobRequirementExtraction distrustOtherForItPosting(JobPosting jobPosting, JobRequirementExtraction extraction) {
+        if (extraction.jobCategory() != JobCategory.OTHER) {
+            return extraction;
+        }
+        boolean hasSkills = !extraction.requiredSkills().isEmpty() || !extraction.preferredSkills().isEmpty();
+        if (!hasSkills && !containsItKeyword(jobPosting)) {
+            return extraction;
+        }
+        log.info("IT 공고로 보이는데 OTHER로 추출되어 jobCategory를 null로 변경: jobPostingId={}, original={}, hasSkills={}",
+                jobPosting.getId(), extraction.jobCategory(), hasSkills);
+        return withJobCategory(extraction, null);
+    }
+
+    private boolean containsItKeyword(JobPosting jobPosting) {
+        String text = nullToEmpty(jobPosting.getTitle()) + "\n" + nullToEmpty(jobPosting.getDescription());
+        return IT_KEYWORDS.stream().anyMatch(text::contains);
+    }
+
+    private JobRequirementExtraction withJobCategory(JobRequirementExtraction extraction, JobCategory jobCategory) {
+        return new JobRequirementExtraction(
+                extraction.requiredSkills(),
+                extraction.preferredSkills(),
+                extraction.minYears(),
+                extraction.maxYears(),
+                extraction.newGraduateAllowed(),
+                extraction.requiredCertificates(),
+                extraction.preferredCertificates(),
+                jobCategory
+        );
     }
 
     private JobRequirementExtraction removeConceptSkills(JobRequirementExtraction extraction) {

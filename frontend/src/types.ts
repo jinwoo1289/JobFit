@@ -29,5 +29,7 @@ export interface EvaluationResponse {
   certificateExcluded: boolean
   verdict: EvaluationVerdict
   failedReasons: string[]
+  // 판정과 별개로 보여줄 안내 문구 (예: IT 통합 채용 공고의 직무 범위 확인 안내)
+  notices: string[]
   reasoning: EvaluationReasoning
 }
