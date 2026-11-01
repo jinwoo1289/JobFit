@@ -100,10 +100,10 @@ class JobRequirementExtractorTest {
         assertThat(extraction.requiredSkills()).containsExactly("HTTP/2", "OpenSSL", "Spring Security");
     }
 
-    // 원테크스탑(55205788)은 핵심 기술 스택만 나열되어 개념어가 섞이지 않는 경우로, 필터가 멀쩡한 기술명을
-    // 지우지 않는지 확인한다.
+    // 원테크스탑(55205788)은 핵심 기술 스택만 나열된 경우로, 필터가 멀쩡한 기술명을 지우지 않는지 확인한다.
+    // 함께 나열된 CI/CD는 방법론이라 프롬프트 금지어인데도 다시 추출된 적이 있어 후처리로 제거되어야 한다.
     @Test
-    void extract_wonTechStopPosting_keepsAllSkillsWhenNoConceptWordsPresent() {
+    void extract_wonTechStopPosting_keepsAllSkillsExceptCiCd() {
         JobPosting jobPosting = wonTechStopJobPosting();
         String llmResponse = """
                 {"requiredSkills": [], "preferredSkills": ["Java","Python","Node.js","NestJS","Next.js","React","JSP","PostgreSQL","Oracle","GCP","Git","CI/CD"], "minYears": null, "maxYears": null, "newGraduateAllowed": true, "requiredCertificates": [], "preferredCertificates": [], "jobCategory": "FULLSTACK_DEVELOPMENT"}
@@ -114,8 +114,22 @@ class JobRequirementExtractorTest {
 
         assertThat(extraction.requiredSkills()).isEmpty();
         assertThat(extraction.preferredSkills()).containsExactly(
-                "Java", "Python", "Node.js", "NestJS", "Next.js", "React", "JSP", "PostgreSQL", "Oracle", "GCP", "Git", "CI/CD"
+                "Java", "Python", "Node.js", "NestJS", "Next.js", "React", "JSP", "PostgreSQL", "Oracle", "GCP", "Git"
         );
+    }
+
+    // CI/CD는 표기만 다르게 나와도(소문자 등) required/preferred 양쪽에서 제거되어야 한다.
+    @Test
+    void extract_removesCiCdIgnoringCaseFromBothSkillLists() {
+        String llmResponse = """
+                {"requiredSkills": ["Java","ci/cd"], "preferredSkills": ["CI/CD","Docker"], "minYears": null, "maxYears": null, "newGraduateAllowed": true, "requiredCertificates": [], "preferredCertificates": [], "jobCategory": "BACKEND_DEVELOPMENT"}
+                """;
+        JobRequirementExtractor extractor = extractorWith(llmResponse);
+
+        JobRequirementExtraction extraction = extractor.extract(pasuAiJobPosting());
+
+        assertThat(extraction.requiredSkills()).containsExactly("Java");
+        assertThat(extraction.preferredSkills()).containsExactly("Docker");
     }
 
     // 링크알파코리아(54428738) [등록된 키워드]: "Python,TypeScript,LLM,AI Agent,MCP,..."

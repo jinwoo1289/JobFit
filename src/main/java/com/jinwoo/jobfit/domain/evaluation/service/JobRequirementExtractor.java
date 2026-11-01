@@ -87,19 +87,33 @@ public class JobRequirementExtractor {
               preferredSkills로 분류하라. requiredSkills로 옮기지 마라. 이 규칙은 그런 섹션 제목 아래 나열된 기술에만 적용되며,
               [주요업무]·[자격요건] 문장 안에서 "~ 기반", "~로 전환"처럼 언급된 기술은 위 규칙대로 requiredSkills로 분류하라.
               (requiredCertificates의 "필수 표기 시 섹션 무관하게 필수로 판단" 규칙은 자격증·어학성적에만 적용되며, 스킬 분류에는 적용하지 않는다.)
+              예: "[자격 및 우대사항]" 섹션에 "GitHub Copilot, Claude Code, Jira, Bitbucket, Confluence" 도구 목록과 "OPIC 제출 필수" 문구가 함께 있어도, 도구 목록은 preferredSkills로 분류하고 requiredSkills로 옮기지 마라.
+            - [자격요건]에 명시된 기술은 위 섹션 위치 규칙대로 모두 requiredSkills에 넣어라.
+              "또는"으로 묶인 기술은 하나만 고르지 말고 모두 넣어라. "기본 이해", "경험"처럼 요구 수준이 낮은 표현이어도 마찬가지다.
+              예: "[자격요건]" 섹션의 "Python 또는 Java 개발 경험" → requiredSkills: ["Python", "Java"]
+              예: "[자격요건]" 섹션의 "SQL 및 관계형 데이터베이스 기본 이해" → requiredSkills: ["SQL"]
+              [담당업무]·[주요업무]에 더 구체적인 기술(예: SQL에 대한 PostgreSQL)이 나와도 [자격요건]의 기술을 중복으로 보지 말고 그대로 넣어라.
+              예: [담당업무]에 "PostgreSQL 데이터 조회", [자격요건]에 "SQL 및 관계형 데이터베이스 기본 이해"
+                  → requiredSkills에 "PostgreSQL"과 "SQL"을 모두 넣는다.
+            - 아래 "~ 기반" 규칙은 [자격요건] 규칙을 대체하지 않고 추가로 적용하는 규칙이다.
+              [주요업무]에서 기술을 찾았다고 [자격요건]의 기술을 빼지 마라. 두 섹션의 기술을 모두 requiredSkills에 넣어라.
             - [주요업무]·[담당업무]·[수행업무] 문장 안에 "~ 기반", "~ 환경에서"처럼 업무의 수단·환경으로 언급된 구체적 기술도
               빠뜨리지 말고 requiredSkills에 넣어라. 문장이 기술 사용 요건이 아니라 업무 설명처럼 보여도 마찬가지다.
               예: "[주요업무]" 섹션의 "AWS 기반 서비스 운영 및 개선 활동" → requiredSkills: ["AWS"]
               예: "[담당업무]" 섹션의 "Kubernetes 환경에서 서비스 배포 및 운영" → requiredSkills: ["Kubernetes"]
-              예: "[자격 및 우대사항]" 섹션에 "GitHub Copilot, Claude Code, Jira, Bitbucket, Confluence" 도구 목록과 "OPIC 제출 필수" 문구가 함께 있어도, 도구 목록은 preferredSkills로 분류하고 requiredSkills로 옮기지 마라.
+              예: "[주요업무]" 섹션의 "Local AD - Azure Entra ID 기반 SSO 관리" → requiredSkills: ["Active Directory", "Azure"]
             - 반드시 기술·도구·언어·프레임워크의 이름만 담아라. 단어 또는 짧은 고유명사여야 한다.
             - 요구사항을 설명하는 문장이나 서술을 절대 넣지 마라.
               예: "Python 또는 백엔드 개발 경험" (X) → "Python" (O)
+                  (서술어인 "백엔드 개발 경험"은 버리고 기술명만 남긴다는 뜻이다. "또는"으로 묶인 것 중 하나만 고르라는 뜻이 아니다.)
+              예: "Python 또는 Java 개발 경험" → "Python", "Java" (기술명이 둘이면 둘 다 넣는다)
               예: "웹 서비스 및 RESTful API에 대한 기본 이해" (X) → "REST API" (O)
             - 방법론·개념·아키텍처 스타일 용어는 구체적인 기술/도구 이름이 아니므로 절대 포함하지 마라.
               절대 금지 목록(원문에 그대로 등장하더라도 출력에 포함하면 안 됨): MDD, MSA, Microservices, 마이크로서비스, 모놀리식, Monolithic, DDD, 도메인 주도 설계, 이벤트 기반 아키텍처, Event-Driven, TDD, BDD, 애자일, Agile, 스크럼, Scrum, 워터폴, CI/CD, DevOps,
               비동기 처리, 큐 기반 아키텍처, RDBMS, 관계형 데이터베이스, 객체지향
               (같은 개념의 한글/영문 표기, 축약어/풀네임 모두 동일하게 제외 대상이다. 프로그래밍 언어, 프레임워크, 라이브러리, 데이터베이스, 클라우드 서비스, 자격증, 협업 툴이 아니라면 넣지 마라)
+              금지어와 기술명이 한 문구에 함께 있으면 금지어만 빼고 기술명은 남겨라.
+              예: "SQL 및 관계형 데이터베이스 기본 이해" → "SQL" (관계형 데이터베이스는 개념어라 빼고, SQL은 기술명이라 남긴다)
             - 여러 기술을 묶어 지칭하는 카테고리 표현도 절대 포함하지 마라. (예: AI 개발도구, 협업 도구, 클라우드) 카테고리가 아니라 그 안에 언급된 구체적인 제품명만 추출하라.
               예: "AI 개발도구" (X) → 제외, "GitHub Copilot" (O) → 포함
             - 범용 프로토콜·데이터 포맷 이름은 절대 포함하지 마라: HTTP, JSON, XML (단, REST API는 실무에서 스킬로 통용되므로 예외적으로 유지한다)
@@ -138,6 +152,9 @@ public class JobRequirementExtractor {
               [자격요건] 섹션에 있더라도 preferredCertificates에 넣어라. 점수·등급은 빼고 시험명만 넣어라.
               예: "[자격요건]" 섹션의 "영어 가능자 (TOEIC 850, TOEIC SPEAKING/OPIC IH 이상 또는 그에 준함)"
                   → preferredCertificates: ["TOEIC", "TOEIC Speaking", "OPIc"]
+            - "~에 상응하는", "~ 보유자"처럼 특정 시험명을 기준으로 든 어학성적 요구도 빠뜨리지 말고 시험명을 추출하라.
+              필수 표현이 있으면 requiredCertificates, 없으면 preferredCertificates에 넣어라.
+              예: "[자격요건]" 섹션의 "토익 700점에 상응하는 영어공인성적 보유자" → preferredCertificates: ["TOEIC"]
 
             [minYears / maxYears 규칙]
             - "경력 N년 이상"처럼 하한만 명시된 경우에만 minYears에 N을 넣어라.
@@ -149,7 +166,8 @@ public class JobRequirementExtractor {
     // 2: IT_GENERAL 추가, jobCategory null 허용, 카테고리별 사용 조건·가점사항 자격증 규칙 추가
     // 3: 회사 도메인이 아닌 직무명·주요업무 기준 판단 규칙 추가, AI_ML을 ML 자체가 주 업무일 때로 한정
     // 4: 주요업무의 "~ 기반", "~ 환경에서" 기술을 requiredSkills로, 필수 표현 없는 어학성적 기준을 preferredCertificates로 넣는 예시 추가
-    static final int EXTRACTION_PROMPT_VERSION = 4;
+    // 5: [자격요건] 기술("또는"·"기본 이해" 포함)을 "~ 기반" 규칙과 별개로 유지하도록 명시, Azure Entra ID·"~에 상응하는" 어학 예시 추가
+    static final int EXTRACTION_PROMPT_VERSION = 5;
 
     // LLM이 OTHER로 분류했더라도 공고 제목/본문에 이 키워드가 있으면 IT 직무일 가능성이 높아 OTHER를 신뢰하지 않는다.
     // "IT"는 영문 단어 일부(예: GitHub)와 겹치지 않도록 대소문자를 구분해 비교한다.
@@ -205,7 +223,9 @@ public class JobRequirementExtractor {
             "HTTP",
             "SSL",
             "XSS",
-            "CORS"
+            "CORS",
+            // CI/CD는 프롬프트 금지어(방법론)인데도 우대 기술 목록에 섞여 다시 추출되는 경우가 있었다. (원테크스탑 55205788)
+            "CI/CD"
     ).map(JobRequirementExtractor::normalizeForBlocklist).collect(Collectors.toUnmodifiableSet());
 
     private final LlmClient llmClient;
