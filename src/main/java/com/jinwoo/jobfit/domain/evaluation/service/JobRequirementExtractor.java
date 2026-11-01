@@ -50,13 +50,17 @@ public class JobRequirementExtractor {
 
             [jobCategory 판정 규칙]
             - jobCategory는 requiredSkills가 비어 있는 것과 무관하게 독립적으로 판단하라.
+            - 공고 제목이나 직무명에 명시된 직무(Backend, Frontend 등)와 [주요업무]의 실제 업무를 기준으로 판단하라.
+              회사의 사업 도메인이나 제품 분야(AI, 금융, 커머스 등)로 판단하지 마라.
+              예: "Backend Engineer (Agent Platform)"처럼 AI 에이전트 플랫폼 회사의 백엔드 공고 → BACKEND_DEVELOPMENT
             - 각 값은 아래 조건에 해당할 때만 사용하라. enum 이름만 보고 고르지 마라.
               - BACKEND_DEVELOPMENT: 서버·API·데이터 처리 등 백엔드 애플리케이션 설계·개발이 주 업무일 때.
               - FRONTEND_DEVELOPMENT: 웹 화면(UI) 개발이 주 업무일 때.
               - FULLSTACK_DEVELOPMENT: 백엔드와 프론트엔드 개발을 함께 담당하거나 웹 애플리케이션 개발 전반을 담당할 때.
               - MOBILE_DEVELOPMENT: iOS·Android 등 모바일 앱 개발이 주 업무일 때.
               - DATA_ENGINEERING: 데이터 파이프라인·데이터 플랫폼 구축·운영이 주 업무일 때.
-              - AI_ML: 머신러닝·AI 모델 또는 AI 기반 서비스(LLM, AI 에이전트 등) 개발이 주 업무일 때.
+              - AI_ML: 모델 학습·평가·추론 최적화 등 ML 자체가 주 업무일 때만 사용하라.
+                AI 제품의 서버·API 개발은 BACKEND_DEVELOPMENT로 분류하라.
               - DEVOPS: CI/CD, 배포 자동화, 컨테이너·클라우드 인프라 운영이 주 업무일 때만 사용하라.
                 IT 시스템 운영·전산 운영 공고는 DEVOPS로 분류하지 마라.
               - QA: 소프트웨어 테스트·품질 보증이 주 업무일 때.
@@ -133,7 +137,8 @@ public class JobRequirementExtractor {
 
     // SYSTEM_PROMPT나 EXTRACTION_SCHEMA를 바꾸면 올린다. 캐시 행의 버전과 다르면 재추출해 같은 행을 덮어쓴다.
     // 2: IT_GENERAL 추가, jobCategory null 허용, 카테고리별 사용 조건·가점사항 자격증 규칙 추가
-    static final int EXTRACTION_PROMPT_VERSION = 2;
+    // 3: 회사 도메인이 아닌 직무명·주요업무 기준 판단 규칙 추가, AI_ML을 ML 자체가 주 업무일 때로 한정
+    static final int EXTRACTION_PROMPT_VERSION = 3;
 
     // LLM이 OTHER로 분류했더라도 공고 제목/본문에 이 키워드가 있으면 IT 직무일 가능성이 높아 OTHER를 신뢰하지 않는다.
     // "IT"는 영문 단어 일부(예: GitHub)와 겹치지 않도록 대소문자를 구분해 비교한다.
