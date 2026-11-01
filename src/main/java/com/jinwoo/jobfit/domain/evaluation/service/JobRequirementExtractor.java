@@ -18,10 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 import com.jinwoo.jobfit.domain.evaluation.client.JsonSchemaFormat;
 import com.jinwoo.jobfit.domain.evaluation.client.LlmClient;
 import com.jinwoo.jobfit.domain.evaluation.entity.JobRequirementExtractionEntity;
+import com.jinwoo.jobfit.domain.evaluation.exception.LlmResponseException;
 import com.jinwoo.jobfit.domain.evaluation.repository.JobRequirementExtractionRepository;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobCategory;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirement;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementExtraction;
+import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementReExtraction;
 import com.jinwoo.jobfit.domain.job.entity.JobPosting;
 
 import lombok.RequiredArgsConstructor;
@@ -214,26 +216,55 @@ public class JobRequirementExtractor {
         return callLlmAndCache(jobPosting, cached.orElse(null));
     }
 
+    // 캐시와 프롬프트 버전에 관계없이 다시 추출해 캐시 행을 덮어쓴다. 특정 공고의 추출 결과를 점검·교정할 때 쓴다.
+    // 평가 경로와 달리 LLM 실패 시 정규식 fallback으로 대체하지 않는다. fallback 결과를 "재추출 결과"로 돌려주면 오해를 낳기 때문이다.
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public JobRequirementReExtraction reExtract(JobPosting jobPosting) {
+        Optional<JobRequirementExtractionEntity> cached = jobRequirementExtractionRepository.findByJobPostingId(jobPosting.getId());
+        // overwrite가 엔티티를 변경하기 전에 변경 전 값을 복사해 둔다.
+        JobRequirementExtraction before = cached.map(JobRequirementExtractionEntity::toExtraction).orElse(null);
+
+        JobRequirementExtraction after;
+        try {
+            after = requestExtraction(jobPosting);
+        } catch (RuntimeException e) {
+            throw new LlmResponseException("요구사항 재추출에 실패했습니다. jobPostingId=%d, 원인=%s"
+                    .formatted(jobPosting.getId(), e.getMessage()));
+        }
+        saveToCache(jobPosting, cached.orElse(null), after);
+        return new JobRequirementReExtraction(before, after);
+    }
+
     // 기술이 비어 있거나 jobCategory가 null인 결과도 캐시한다. 캐시하지 않으면 평가마다 LLM을 다시 불러
     // 결과가 흔들리다가 우연히 나온 값이 고정되는 문제가 있었다. 잘못된 캐시는 프롬프트 버전을 올려 재추출한다.
     private JobRequirementExtraction callLlmAndCache(JobPosting jobPosting, JobRequirementExtractionEntity staleEntity) {
         try {
-            String response = llmClient.complete(SYSTEM_PROMPT, buildUserPrompt(jobPosting), EXTRACTION_SCHEMA);
-            JobRequirementExtraction extraction = distrustOtherForItPosting(jobPosting,
-                    removeConceptSkills(objectMapper.readValue(response, JobRequirementExtraction.class)));
-            if (staleEntity == null) {
-                jobRequirementExtractionRepository.save(
-                        new JobRequirementExtractionEntity(jobPosting, extraction, EXTRACTION_PROMPT_VERSION));
-            } else {
-                staleEntity.overwrite(extraction, EXTRACTION_PROMPT_VERSION);
-                jobRequirementExtractionRepository.save(staleEntity);
-            }
+            JobRequirementExtraction extraction = requestExtraction(jobPosting);
+            saveToCache(jobPosting, staleEntity, extraction);
             return extraction;
         } catch (RuntimeException e) {
             // fallback 결과는 저장하지 않는다. LLM 장애가 해소되면 다음 평가에서 다시 시도하도록 하기 위함.
             log.warn("LLM 추출 실패, 정규식 fallback 사용: {}", e.getMessage(), e);
             return fallback(jobPosting);
         }
+    }
+
+    private JobRequirementExtraction requestExtraction(JobPosting jobPosting) {
+        String response = llmClient.complete(SYSTEM_PROMPT, buildUserPrompt(jobPosting), EXTRACTION_SCHEMA);
+        return distrustOtherForItPosting(jobPosting,
+                removeConceptSkills(objectMapper.readValue(response, JobRequirementExtraction.class)));
+    }
+
+    // 기존 행이 있으면 job_posting_id 유니크 제약과 충돌하지 않도록 새로 INSERT하지 않고 같은 행을 덮어쓴다.
+    private void saveToCache(JobPosting jobPosting, JobRequirementExtractionEntity existingEntity,
+                             JobRequirementExtraction extraction) {
+        if (existingEntity == null) {
+            jobRequirementExtractionRepository.save(
+                    new JobRequirementExtractionEntity(jobPosting, extraction, EXTRACTION_PROMPT_VERSION));
+            return;
+        }
+        existingEntity.overwrite(extraction, EXTRACTION_PROMPT_VERSION);
+        jobRequirementExtractionRepository.save(existingEntity);
     }
 
     private String buildUserPrompt(JobPosting jobPosting) {

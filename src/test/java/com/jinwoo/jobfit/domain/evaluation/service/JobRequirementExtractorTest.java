@@ -3,9 +3,11 @@ package com.jinwoo.jobfit.domain.evaluation.service;
 import com.jinwoo.jobfit.domain.evaluation.client.JsonSchemaFormat;
 import com.jinwoo.jobfit.domain.evaluation.client.LlmClient;
 import com.jinwoo.jobfit.domain.evaluation.entity.JobRequirementExtractionEntity;
+import com.jinwoo.jobfit.domain.evaluation.exception.LlmResponseException;
 import com.jinwoo.jobfit.domain.evaluation.repository.JobRequirementExtractionRepository;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobCategory;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementExtraction;
+import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementReExtraction;
 import com.jinwoo.jobfit.domain.job.entity.CloseType;
 import com.jinwoo.jobfit.domain.job.entity.JobPosting;
 import com.jinwoo.jobfit.domain.job.entity.JobSource;
@@ -22,9 +24,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * JobRequirementExtractor의 개념어 후처리 필터를 LLM 호출 없이(FakeLlmClient 역할의 람다) 검증한다.
@@ -265,6 +269,67 @@ class JobRequirementExtractorTest {
 
         assertThat(extraction.jobCategory()).isEqualTo(JobCategory.BACKEND_DEVELOPMENT);
         Mockito.verify(repository).save(Mockito.same(legacyEntity));
+    }
+
+    // 강제 재추출은 현재 버전으로 캐시돼 있어도 LLM을 다시 호출하고 같은 행을 덮어쓰며, 변경 전/후를 함께 돌려준다.
+    @Test
+    void reExtract_cachedWithCurrentPromptVersion_callsLlmAndOverwritesSameRow() {
+        JobPosting jobPosting = pasuAiJobPosting();
+        JobRequirementExtractionEntity cachedEntity = new JobRequirementExtractionEntity(jobPosting,
+                new JobRequirementExtraction(List.of(), List.of("Java"), null, null, true, List.of(), List.of(), JobCategory.BACKEND_DEVELOPMENT),
+                JobRequirementExtractor.EXTRACTION_PROMPT_VERSION);
+        JobRequirementExtractionRepository repository = Mockito.mock(JobRequirementExtractionRepository.class);
+        Mockito.when(repository.findByJobPostingId(Mockito.any())).thenReturn(Optional.of(cachedEntity));
+        AtomicInteger llmCalls = new AtomicInteger();
+        JobRequirementExtractor extractor = new JobRequirementExtractor(
+                (systemPrompt, userPrompt) -> {
+                    llmCalls.incrementAndGet();
+                    return """
+                            {"requiredSkills": ["AWS"], "preferredSkills": ["Java"], "minYears": null, "maxYears": null, "newGraduateAllowed": true, "requiredCertificates": [], "preferredCertificates": [], "jobCategory": "BACKEND_DEVELOPMENT"}
+                            """;
+                },
+                jobRequirementParser,
+                objectMapper,
+                repository
+        );
+
+        JobRequirementReExtraction result = extractor.reExtract(jobPosting);
+
+        assertThat(llmCalls.get()).isEqualTo(1);
+        assertThat(result.before().requiredSkills()).isEmpty();
+        assertThat(result.after().requiredSkills()).containsExactly("AWS");
+        Mockito.verify(repository).save(Mockito.same(cachedEntity));
+        assertThat(cachedEntity.getRequiredSkills()).isEqualTo("AWS");
+    }
+
+    @Test
+    void reExtract_noCache_returnsNullBeforeAndSavesNewRow() {
+        JobRequirementExtractionRepository repository = neverCachedExtractionRepository();
+        JobRequirementExtractor extractor = extractorWith(emptySkillsResponse("\"BACKEND_DEVELOPMENT\""), repository);
+
+        JobRequirementReExtraction result = extractor.reExtract(pasuAiJobPosting());
+
+        assertThat(result.before()).isNull();
+        assertThat(result.after().jobCategory()).isEqualTo(JobCategory.BACKEND_DEVELOPMENT);
+        Mockito.verify(repository).save(Mockito.any(JobRequirementExtractionEntity.class));
+    }
+
+    // 재추출은 fallback으로 대체하지 않고 실패를 드러내며, 기존 캐시를 건드리지 않는다.
+    @Test
+    void reExtract_llmFails_throwsWithoutTouchingCache() {
+        JobRequirementExtractionRepository repository = neverCachedExtractionRepository();
+        JobRequirementExtractor extractor = new JobRequirementExtractor(
+                (systemPrompt, userPrompt) -> {
+                    throw new IllegalStateException("OpenAI 장애");
+                },
+                jobRequirementParser,
+                objectMapper,
+                repository
+        );
+
+        assertThatThrownBy(() -> extractor.reExtract(pasuAiJobPosting()))
+                .isInstanceOf(LlmResponseException.class);
+        Mockito.verify(repository, Mockito.never()).save(Mockito.any());
     }
 
     // strict 모드는 모든 프로퍼티가 required여야 하고, jobCategory는 enum 값 또는 null로 제한되어야 한다.
