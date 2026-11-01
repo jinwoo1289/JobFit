@@ -1,5 +1,6 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
+import com.jinwoo.jobfit.domain.evaluation.repository.EvaluationReasoningCacheRepository;
 import com.jinwoo.jobfit.domain.evaluation.repository.JobRequirementExtractionRepository;
 import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationResult;
 import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationVerdict;
@@ -67,7 +68,8 @@ class EvaluationServiceTest {
                     new ExperienceScoreCalculator(new SkillAliasNormalizer()), new CertificateScoreCalculator()),
             jobRequirementExtractor,
             new EvaluationReasoningGenerator(new FakeLlmClient(REQUIRED_SKILLS_BY_TITLE), new ObjectMapper(),
-                    new SkillScoreCalculator(new SkillAliasNormalizer()), new SkillAliasNormalizer())
+                    new SkillScoreCalculator(new SkillAliasNormalizer()), new SkillAliasNormalizer(),
+                    Mockito.mock(EvaluationReasoningCacheRepository.class))
     );
 
     @ParameterizedTest(name = "[{index}] {0} - verdict={2}")

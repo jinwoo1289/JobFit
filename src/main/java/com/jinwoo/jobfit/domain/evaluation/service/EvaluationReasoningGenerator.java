@@ -1,6 +1,9 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
 import com.jinwoo.jobfit.domain.evaluation.client.LlmClient;
+import com.jinwoo.jobfit.domain.evaluation.entity.EvaluationReasoningCacheEntity;
+import com.jinwoo.jobfit.domain.evaluation.repository.EvaluationReasoningCacheRepository;
+import com.jinwoo.jobfit.domain.evaluation.vo.CheckPointsCacheKey;
 import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationReasoning;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementExtraction;
 import com.jinwoo.jobfit.domain.evaluation.vo.ScoreResult;
@@ -13,9 +16,17 @@ import com.jinwoo.jobfit.domain.user.entity.UserSkill;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -63,11 +74,18 @@ public class EvaluationReasoningGenerator {
             - [시스템이 판정한 필수 기술 불일치 목록]이 비어 있으면 gapPoints는 반드시 빈 배열로 출력하라.
             """;
 
+    // SYSTEM_PROMPT를 바꾸면 올린다. 캐시된 checkPoints의 버전과 다르면 다시 생성한다.
+    static final int REASONING_PROMPT_VERSION = 1;
+
+    private static final int MAX_CACHED_CHECK_POINTS_JSON_LENGTH = 4000;
+
     private final LlmClient llmClient;
     private final ObjectMapper objectMapper;
     private final SkillScoreCalculator skillScoreCalculator;
     private final SkillAliasNormalizer skillAliasNormalizer;
+    private final EvaluationReasoningCacheRepository evaluationReasoningCacheRepository;
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public EvaluationReasoning generate(JobPosting jobPosting,
                                          JobRequirementExtraction extraction,
                                          UserProfile userProfile,
@@ -75,18 +93,105 @@ public class EvaluationReasoningGenerator {
                                          List<UserProject> projects,
                                          List<UserCertificate> certificates,
                                          ScoreResult scoreResult) {
+        return generate(jobPosting, extraction, userProfile, skills, projects, certificates, scoreResult, new LlmCallBreaker());
+    }
+
+    // 평가할 때마다 공고 수만큼 LLM을 부르지 않도록 checkPoints를 캐시한다. 가중치만 바꿔 재평가하면 호출이 0회가 된다.
+    // 외부의 readOnly 트랜잭션 안에서 호출돼도 캐시 저장이 되도록 별도의 쓰기 가능한 트랜잭션에서 실행한다.
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public EvaluationReasoning generate(JobPosting jobPosting,
+                                         JobRequirementExtraction extraction,
+                                         UserProfile userProfile,
+                                         List<UserSkill> skills,
+                                         List<UserProject> projects,
+                                         List<UserCertificate> certificates,
+                                         ScoreResult scoreResult,
+                                         LlmCallBreaker breaker) {
         SkillMatchResult matchResult = skillScoreCalculator.matchDetail(skills, projects, extraction.requiredSkills());
         EvaluationReasoning ruleBased = ruleBasedReasoning(projects, matchResult);
+
+        CheckPointsCacheKey key = cacheKey(jobPosting, extraction, userProfile, skills, projects, certificates);
+        Optional<EvaluationReasoningCacheEntity> cached = evaluationReasoningCacheRepository
+                .findByJobPostingIdAndUserProfileId(key.jobPostingId(), key.userProfileId());
+        if (cached.isPresent() && cached.get().matches(key)) {
+            return withCheckPoints(ruleBased, readCheckPoints(cached.get().getCheckPointsJson()));
+        }
+
+        if (breaker.isOpen()) {
+            log.warn("LLM 호출이 연속 실패해 근거 생성을 건너뜀: jobPostingId={}", jobPosting.getId());
+            return ruleBased;
+        }
+        List<String> checkPoints;
         try {
             String response = llmClient.complete(SYSTEM_PROMPT,
                     buildUserPrompt(jobPosting, extraction, userProfile, skills, projects, certificates, scoreResult, matchResult));
             EvaluationReasoning llmReasoning = objectMapper.readValue(response, EvaluationReasoning.class);
             // 충족/미충족 문장은 LLM이 매번 다르게 쓰지 않도록 규칙 기반 결과로 고정하고, LLM 응답에서는 checkPoints만 사용한다.
-            List<String> checkPoints = llmReasoning.checkPoints() == null ? List.of() : llmReasoning.checkPoints();
-            return new EvaluationReasoning(ruleBased.matchedPoints(), ruleBased.gapPoints(), checkPoints);
+            checkPoints = llmReasoning.checkPoints() == null ? List.of() : llmReasoning.checkPoints();
+            breaker.recordSuccess();
         } catch (RuntimeException e) {
+            // 실패 결과는 캐시하지 않는다. LLM이 회복되면 다음 평가에서 다시 생성하도록 하기 위함.
+            breaker.recordFailure();
             log.warn("LLM 근거 생성 실패, 규칙 기반 근거만 사용: {}", e.getMessage(), e);
             return ruleBased;
+        }
+
+        saveCheckPoints(key, cached.orElse(null), checkPoints);
+        return withCheckPoints(ruleBased, checkPoints);
+    }
+
+    private CheckPointsCacheKey cacheKey(JobPosting jobPosting,
+                                         JobRequirementExtraction extraction,
+                                         UserProfile userProfile,
+                                         List<UserSkill> skills,
+                                         List<UserProject> projects,
+                                         List<UserCertificate> certificates) {
+        // 근거 프롬프트에 들어가는 프로필 값과 같은 표현을 해시해, 프롬프트에 영향을 주는 변경만 캐시를 무효화한다.
+        String profileSnapshot = String.join("\n",
+                nullToEmpty(userProfile.getDesiredJob()),
+                String.valueOf(userProfile.getCareerLevel()),
+                nullToText(userProfile.getYearsOfExperience()),
+                describeSkills(skills),
+                describeProjects(projects),
+                describeCertificates(certificates));
+        return new CheckPointsCacheKey(
+                jobPosting.getId(),
+                userProfile.getId(),
+                sha256(profileSnapshot),
+                sha256(extraction.toString()),
+                REASONING_PROMPT_VERSION
+        );
+    }
+
+    private void saveCheckPoints(CheckPointsCacheKey key, EvaluationReasoningCacheEntity existingEntity, List<String> checkPoints) {
+        String checkPointsJson = objectMapper.writeValueAsString(checkPoints);
+        if (checkPointsJson.length() > MAX_CACHED_CHECK_POINTS_JSON_LENGTH) {
+            log.warn("checkPoints가 너무 길어 캐시하지 않음: jobPostingId={}, length={}", key.jobPostingId(), checkPointsJson.length());
+            return;
+        }
+        if (existingEntity == null) {
+            evaluationReasoningCacheRepository.save(new EvaluationReasoningCacheEntity(key, checkPointsJson));
+            return;
+        }
+        existingEntity.overwrite(key, checkPointsJson);
+        evaluationReasoningCacheRepository.save(existingEntity);
+    }
+
+    private List<String> readCheckPoints(String checkPointsJson) {
+        return objectMapper.readValue(checkPointsJson, new TypeReference<List<String>>() {
+        });
+    }
+
+    private EvaluationReasoning withCheckPoints(EvaluationReasoning ruleBased, List<String> checkPoints) {
+        return new EvaluationReasoning(ruleBased.matchedPoints(), ruleBased.gapPoints(), checkPoints);
+    }
+
+    private static String sha256(String value) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256을 사용할 수 없습니다.", e);
         }
     }
 

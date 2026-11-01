@@ -34,7 +34,7 @@ public class EvaluationService {
         return evaluate(userProfile, skills, projects, certificates, evaluationWeight, jobPosting, new LlmCallBreaker());
     }
 
-    // 여러 공고를 한 요청에서 평가할 때는 같은 breaker를 넘겨, LLM 연속 실패 시 남은 공고의 추출 호출을 건너뛴다.
+    // 여러 공고를 한 요청에서 평가할 때는 같은 breaker를 넘겨, LLM 연속 실패 시 남은 공고의 추출·근거 생성 호출을 건너뛴다.
     public EvaluationResult evaluate(UserProfile userProfile,
                                       List<UserSkill> skills,
                                       List<UserProject> projects,
@@ -47,7 +47,7 @@ public class EvaluationService {
         ConditionCheckResult conditionCheckResult = requiredConditionChecker.check(userProfile, jobPosting, extraction);
         ScoreResult scoreResult = scoreCalculator.calculate(skills, projects, certificates, extraction);
         EvaluationReasoning reasoning = evaluationReasoningGenerator.generate(
-                jobPosting, extraction, userProfile, skills, projects, certificates, scoreResult);
+                jobPosting, extraction, userProfile, skills, projects, certificates, scoreResult, breaker);
 
         if (!conditionCheckResult.passed()) {
             return EvaluationResult.unfit(jobPosting.getId(), scoreResult, conditionCheckResult.failedReasons(),

@@ -1,6 +1,7 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
 import com.jinwoo.jobfit.domain.evaluation.client.LlmClient;
+import com.jinwoo.jobfit.domain.evaluation.repository.EvaluationReasoningCacheRepository;
 import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationReasoning;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobCategory;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementExtraction;
@@ -14,6 +15,7 @@ import com.jinwoo.jobfit.domain.user.entity.UserProfile;
 import com.jinwoo.jobfit.domain.user.entity.UserProject;
 import com.jinwoo.jobfit.domain.user.entity.UserSkill;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
@@ -31,7 +33,7 @@ class EvaluationReasoningGeneratorTest {
         LlmClient llmClient = (systemPrompt, userPrompt) -> """
                 {"matchedPoints": ["Spring Boot 충족 — HopeTail-BE에서 REST API 구현"], "gapPoints": ["AWS 경험 부족"], "checkPoints": ["재택근무 가능 여부 확인 필요"]}
                 """;
-        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(llmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer());
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(llmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer(), emptyReasoningCache());
 
         EvaluationReasoning reasoning = generator.generate(
                 jobPosting(), extraction(), userProfile(), skills(), projects(), List.of(), scoreResult());
@@ -48,7 +50,7 @@ class EvaluationReasoningGeneratorTest {
         LlmClient llmClient = (systemPrompt, userPrompt) -> """
                 {"matchedPoints": ["SQL 충족 — 보유 기술 목록에 포함"], "gapPoints": [], "checkPoints": []}
                 """;
-        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(llmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer());
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(llmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer(), emptyReasoningCache());
         JobRequirementExtraction sqlExtraction = new JobRequirementExtraction(
                 List.of("SQL"), List.of(), null, null, true, List.of(), List.of(), JobCategory.BACKEND_DEVELOPMENT);
         UserProfile profile = userProfile();
@@ -71,7 +73,7 @@ class EvaluationReasoningGeneratorTest {
         LlmClient llmClient = (systemPrompt, userPrompt) -> """
                 {"matchedPoints": [], "gapPoints": []}
                 """;
-        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(llmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer());
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(llmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer(), emptyReasoningCache());
 
         EvaluationReasoning reasoning = generator.generate(
                 jobPosting(), extraction(), userProfile(), skills(), projects(), List.of(), scoreResult());
@@ -84,7 +86,7 @@ class EvaluationReasoningGeneratorTest {
         LlmClient failingLlmClient = (systemPrompt, userPrompt) -> {
             throw new RuntimeException("LLM 장애");
         };
-        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer());
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer(), emptyReasoningCache());
 
         EvaluationReasoning reasoning = generator.generate(
                 jobPosting(), extraction(), userProfile(), skills(), projects(), List.of(), scoreResult());
@@ -101,7 +103,7 @@ class EvaluationReasoningGeneratorTest {
         LlmClient failingLlmClient = (systemPrompt, userPrompt) -> {
             throw new RuntimeException("LLM 장애");
         };
-        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer());
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer(), emptyReasoningCache());
         JobRequirementExtraction jpaOnlyExtraction = new JobRequirementExtraction(
                 List.of("JPA"), List.of(), null, null, true, List.of(), List.of(), JobCategory.BACKEND_DEVELOPMENT);
 
@@ -123,7 +125,7 @@ class EvaluationReasoningGeneratorTest {
                     {"matchedPoints": [], "gapPoints": [], "checkPoints": []}
                     """;
         };
-        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(capturingLlmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer());
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(capturingLlmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer(), emptyReasoningCache());
 
         generator.generate(jobPosting(), extraction(), userProfile(), skills(), projects(), List.of(), scoreResult());
 
@@ -139,7 +141,7 @@ class EvaluationReasoningGeneratorTest {
         LlmClient failingLlmClient = (systemPrompt, userPrompt) -> {
             throw new RuntimeException("LLM 장애");
         };
-        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer());
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer(), emptyReasoningCache());
         JobRequirementExtraction javaOnlyExtraction = new JobRequirementExtraction(
                 List.of("Java"), List.of(), null, null, true, List.of(), List.of(), JobCategory.BACKEND_DEVELOPMENT);
         UserProfile profile = userProfile();
@@ -164,7 +166,7 @@ class EvaluationReasoningGeneratorTest {
         LlmClient failingLlmClient = (systemPrompt, userPrompt) -> {
             throw new RuntimeException("LLM 장애");
         };
-        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer());
+        EvaluationReasoningGenerator generator = new EvaluationReasoningGenerator(failingLlmClient, objectMapper, skillScoreCalculator(), skillAliasNormalizer(), emptyReasoningCache());
         JobRequirementExtraction springFrameworkExtraction = new JobRequirementExtraction(
                 List.of("Spring Framework"), List.of(), null, null, true, List.of(), List.of(), JobCategory.BACKEND_DEVELOPMENT);
         UserProfile profile = userProfile();
@@ -197,6 +199,10 @@ class EvaluationReasoningGeneratorTest {
 
     private ScoreResult scoreResult() {
         return new ScoreResult(50.0, false, 0.0, false, 0.0, false, 0.0, false);
+    }
+
+    private EvaluationReasoningCacheRepository emptyReasoningCache() {
+        return Mockito.mock(EvaluationReasoningCacheRepository.class);
     }
 
     private SkillScoreCalculator skillScoreCalculator() {
