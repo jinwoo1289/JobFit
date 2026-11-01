@@ -87,6 +87,10 @@ public class JobRequirementExtractor {
               preferredSkills로 분류하라. requiredSkills로 옮기지 마라. 이 규칙은 그런 섹션 제목 아래 나열된 기술에만 적용되며,
               [주요업무]·[자격요건] 문장 안에서 "~ 기반", "~로 전환"처럼 언급된 기술은 위 규칙대로 requiredSkills로 분류하라.
               (requiredCertificates의 "필수 표기 시 섹션 무관하게 필수로 판단" 규칙은 자격증·어학성적에만 적용되며, 스킬 분류에는 적용하지 않는다.)
+            - [주요업무]·[담당업무]·[수행업무] 문장 안에 "~ 기반", "~ 환경에서"처럼 업무의 수단·환경으로 언급된 구체적 기술도
+              빠뜨리지 말고 requiredSkills에 넣어라. 문장이 기술 사용 요건이 아니라 업무 설명처럼 보여도 마찬가지다.
+              예: "[주요업무]" 섹션의 "AWS 기반 서비스 운영 및 개선 활동" → requiredSkills: ["AWS"]
+              예: "[담당업무]" 섹션의 "Kubernetes 환경에서 서비스 배포 및 운영" → requiredSkills: ["Kubernetes"]
               예: "[자격 및 우대사항]" 섹션에 "GitHub Copilot, Claude Code, Jira, Bitbucket, Confluence" 도구 목록과 "OPIC 제출 필수" 문구가 함께 있어도, 도구 목록은 preferredSkills로 분류하고 requiredSkills로 옮기지 마라.
             - 반드시 기술·도구·언어·프레임워크의 이름만 담아라. 단어 또는 짧은 고유명사여야 한다.
             - 요구사항을 설명하는 문장이나 서술을 절대 넣지 마라.
@@ -130,6 +134,10 @@ public class JobRequirementExtractor {
                   → preferredCertificates: ["정보처리기사", "AWS"]
               예: "[가점사항]" 섹션의 "(자격증) 정보처리기사, 정보처리산업기사"
                   → preferredCertificates: ["정보처리기사", "정보처리산업기사"]
+            - 어학성적 기준(TOEIC 850, OPIc IH 등)이 "또는 그에 준함", "가능자"처럼 필수 표현 없이 적혀 있으면,
+              [자격요건] 섹션에 있더라도 preferredCertificates에 넣어라. 점수·등급은 빼고 시험명만 넣어라.
+              예: "[자격요건]" 섹션의 "영어 가능자 (TOEIC 850, TOEIC SPEAKING/OPIC IH 이상 또는 그에 준함)"
+                  → preferredCertificates: ["TOEIC", "TOEIC Speaking", "OPIc"]
 
             [minYears / maxYears 규칙]
             - "경력 N년 이상"처럼 하한만 명시된 경우에만 minYears에 N을 넣어라.
@@ -140,7 +148,8 @@ public class JobRequirementExtractor {
     // SYSTEM_PROMPT나 EXTRACTION_SCHEMA를 바꾸면 올린다. 캐시 행의 버전과 다르면 재추출해 같은 행을 덮어쓴다.
     // 2: IT_GENERAL 추가, jobCategory null 허용, 카테고리별 사용 조건·가점사항 자격증 규칙 추가
     // 3: 회사 도메인이 아닌 직무명·주요업무 기준 판단 규칙 추가, AI_ML을 ML 자체가 주 업무일 때로 한정
-    static final int EXTRACTION_PROMPT_VERSION = 3;
+    // 4: 주요업무의 "~ 기반", "~ 환경에서" 기술을 requiredSkills로, 필수 표현 없는 어학성적 기준을 preferredCertificates로 넣는 예시 추가
+    static final int EXTRACTION_PROMPT_VERSION = 4;
 
     // LLM이 OTHER로 분류했더라도 공고 제목/본문에 이 키워드가 있으면 IT 직무일 가능성이 높아 OTHER를 신뢰하지 않는다.
     // "IT"는 영문 단어 일부(예: GitHub)와 겹치지 않도록 대소문자를 구분해 비교한다.
