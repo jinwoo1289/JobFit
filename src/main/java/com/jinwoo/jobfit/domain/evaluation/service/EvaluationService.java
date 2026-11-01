@@ -31,7 +31,18 @@ public class EvaluationService {
                                       List<UserCertificate> certificates,
                                       EvaluationWeight evaluationWeight,
                                       JobPosting jobPosting) {
-        JobRequirementExtraction extraction = jobRequirementExtractor.extract(jobPosting);
+        return evaluate(userProfile, skills, projects, certificates, evaluationWeight, jobPosting, new LlmCallBreaker());
+    }
+
+    // 여러 공고를 한 요청에서 평가할 때는 같은 breaker를 넘겨, LLM 연속 실패 시 남은 공고의 추출 호출을 건너뛴다.
+    public EvaluationResult evaluate(UserProfile userProfile,
+                                      List<UserSkill> skills,
+                                      List<UserProject> projects,
+                                      List<UserCertificate> certificates,
+                                      EvaluationWeight evaluationWeight,
+                                      JobPosting jobPosting,
+                                      LlmCallBreaker breaker) {
+        JobRequirementExtraction extraction = jobRequirementExtractor.extract(jobPosting, breaker);
 
         ConditionCheckResult conditionCheckResult = requiredConditionChecker.check(userProfile, jobPosting, extraction);
         ScoreResult scoreResult = scoreCalculator.calculate(skills, projects, certificates, extraction);

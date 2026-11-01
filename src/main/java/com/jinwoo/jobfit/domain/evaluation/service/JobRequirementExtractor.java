@@ -217,12 +217,34 @@ public class JobRequirementExtractor {
     // 항상 성공하도록 별도의 쓰기 가능한 트랜잭션에서 실행한다.
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public JobRequirementExtraction extract(JobPosting jobPosting) {
+        return extract(jobPosting, new LlmCallBreaker());
+    }
+
+    // 1) 현재 버전 캐시가 있으면 사용한다.
+    // 2) 옛 버전 캐시만 있으면 재추출을 시도하고, 실패하면 옛 캐시를 덮어쓰지 않고 그대로 쓴다.
+    //    LLM 장애 중에 정규식 fallback(기술·카테고리 없음)으로 떨어지는 것보다 옛 추출 결과가 훨씬 정확하기 때문이다.
+    // 3) 캐시가 없으면 추출을 시도하고, 실패하면 정규식 fallback을 쓰되 캐시하지 않는다.
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public JobRequirementExtraction extract(JobPosting jobPosting, LlmCallBreaker breaker) {
         Optional<JobRequirementExtractionEntity> cached = jobRequirementExtractionRepository.findByJobPostingId(jobPosting.getId());
         if (cached.isPresent() && cached.get().isExtractedWith(EXTRACTION_PROMPT_VERSION)) {
             // 블록리스트 추가 이전에 캐시된 결과에도 동일한 필터가 적용되도록, 조회 시에도 다시 거른다.
             return removeConceptSkills(cached.get().toExtraction());
         }
-        return callLlmAndCache(jobPosting, cached.orElse(null));
+
+        JobRequirementExtractionEntity staleEntity = cached.orElse(null);
+        Optional<JobRequirementExtraction> extracted = tryRequestExtraction(jobPosting, breaker);
+        if (extracted.isPresent()) {
+            saveToCache(jobPosting, staleEntity, extracted.get());
+            return extracted.get();
+        }
+        if (staleEntity != null) {
+            log.warn("재추출 실패로 옛 버전 캐시 사용: jobPostingId={}, cachedPromptVersion={}, currentPromptVersion={}",
+                    jobPosting.getId(), staleEntity.getPromptVersion(), EXTRACTION_PROMPT_VERSION);
+            return removeConceptSkills(staleEntity.toExtraction());
+        }
+        // fallback 결과는 저장하지 않는다. LLM 장애가 해소되면 다음 평가에서 다시 시도하도록 하기 위함.
+        return fallback(jobPosting);
     }
 
     // 캐시와 프롬프트 버전에 관계없이 다시 추출해 캐시 행을 덮어쓴다. 특정 공고의 추출 결과를 점검·교정할 때 쓴다.
@@ -244,17 +266,20 @@ public class JobRequirementExtractor {
         return new JobRequirementReExtraction(before, after);
     }
 
-    // 기술이 비어 있거나 jobCategory가 null인 결과도 캐시한다. 캐시하지 않으면 평가마다 LLM을 다시 불러
-    // 결과가 흔들리다가 우연히 나온 값이 고정되는 문제가 있었다. 잘못된 캐시는 프롬프트 버전을 올려 재추출한다.
-    private JobRequirementExtraction callLlmAndCache(JobPosting jobPosting, JobRequirementExtractionEntity staleEntity) {
+    // 연속 실패로 breaker가 열려 있으면 LLM을 호출하지 않고 실패로 처리한다.
+    private Optional<JobRequirementExtraction> tryRequestExtraction(JobPosting jobPosting, LlmCallBreaker breaker) {
+        if (breaker.isOpen()) {
+            log.warn("LLM 추출이 연속 실패해 호출을 건너뜀: jobPostingId={}", jobPosting.getId());
+            return Optional.empty();
+        }
         try {
             JobRequirementExtraction extraction = requestExtraction(jobPosting);
-            saveToCache(jobPosting, staleEntity, extraction);
-            return extraction;
+            breaker.recordSuccess();
+            return Optional.of(extraction);
         } catch (RuntimeException e) {
-            // fallback 결과는 저장하지 않는다. LLM 장애가 해소되면 다음 평가에서 다시 시도하도록 하기 위함.
-            log.warn("LLM 추출 실패, 정규식 fallback 사용: {}", e.getMessage(), e);
-            return fallback(jobPosting);
+            breaker.recordFailure();
+            log.warn("LLM 추출 실패: jobPostingId={}, 원인={}", jobPosting.getId(), e.getMessage(), e);
+            return Optional.empty();
         }
     }
 
@@ -264,6 +289,8 @@ public class JobRequirementExtractor {
                 removeConceptSkills(objectMapper.readValue(response, JobRequirementExtraction.class)));
     }
 
+    // 기술이 비어 있거나 jobCategory가 null인 결과도 캐시한다. 캐시하지 않으면 평가마다 LLM을 다시 불러
+    // 결과가 흔들리다가 우연히 나온 값이 고정되는 문제가 있었다. 잘못된 캐시는 프롬프트 버전을 올려 재추출한다.
     // 기존 행이 있으면 job_posting_id 유니크 제약과 충돌하지 않도록 새로 INSERT하지 않고 같은 행을 덮어쓴다.
     private void saveToCache(JobPosting jobPosting, JobRequirementExtractionEntity existingEntity,
                              JobRequirementExtraction extraction) {

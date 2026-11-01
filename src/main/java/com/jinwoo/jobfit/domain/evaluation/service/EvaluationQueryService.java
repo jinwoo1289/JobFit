@@ -42,9 +42,10 @@ public class EvaluationQueryService {
         List<UserProject> projects = userProjectRepository.findByUserProfileId(userProfileId);
         List<UserCertificate> certificates = userCertificateRepository.findByUserProfileId(userProfileId);
         EvaluationWeight evaluationWeight = getEvaluationWeight(userProfileId);
+        LlmCallBreaker breaker = new LlmCallBreaker();
 
         return jobPostingRepository.findAll().stream()
-                .map(jobPosting -> evaluate(userProfile, skills, projects, certificates, evaluationWeight, jobPosting))
+                .map(jobPosting -> evaluate(userProfile, skills, projects, certificates, evaluationWeight, jobPosting, breaker))
                 .sorted(Comparator.comparingDouble(EvaluationResponse::totalScore).reversed())
                 .toList();
     }
@@ -58,7 +59,7 @@ public class EvaluationQueryService {
         JobPosting jobPosting = jobPostingRepository.findById(jobPostingId)
                 .orElseThrow(() -> new JobPostingNotFoundException("공고를 찾을 수 없습니다. id=" + jobPostingId));
 
-        return evaluate(userProfile, skills, projects, certificates, evaluationWeight, jobPosting);
+        return evaluate(userProfile, skills, projects, certificates, evaluationWeight, jobPosting, new LlmCallBreaker());
     }
 
     private EvaluationResponse evaluate(UserProfile userProfile,
@@ -66,8 +67,10 @@ public class EvaluationQueryService {
                                          List<UserProject> projects,
                                          List<UserCertificate> certificates,
                                          EvaluationWeight evaluationWeight,
-                                         JobPosting jobPosting) {
-        EvaluationResult result = evaluationService.evaluate(userProfile, skills, projects, certificates, evaluationWeight, jobPosting);
+                                         JobPosting jobPosting,
+                                         LlmCallBreaker breaker) {
+        EvaluationResult result = evaluationService.evaluate(
+                userProfile, skills, projects, certificates, evaluationWeight, jobPosting, breaker);
         return EvaluationResponse.from(result, jobPosting);
     }
 

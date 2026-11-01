@@ -271,6 +271,85 @@ class JobRequirementExtractorTest {
         Mockito.verify(repository).save(Mockito.same(legacyEntity));
     }
 
+    // LLM 장애 중에는 옛 버전 캐시가 정규식 fallback보다 정확하므로, 덮어쓰지 않고 그대로 사용한다.
+    @Test
+    void extract_cachedWithOldPromptVersionAndLlmFails_usesOldCacheWithoutOverwriting() {
+        JobPosting jobPosting = pasuAiJobPosting();
+        int oldVersion = JobRequirementExtractor.EXTRACTION_PROMPT_VERSION - 1;
+        JobRequirementExtractionEntity staleEntity = new JobRequirementExtractionEntity(jobPosting,
+                new JobRequirementExtraction(List.of("Java"), List.of(), null, null, true, List.of(), List.of("정보처리기사"),
+                        JobCategory.BACKEND_DEVELOPMENT),
+                oldVersion);
+        JobRequirementExtractionRepository repository = Mockito.mock(JobRequirementExtractionRepository.class);
+        Mockito.when(repository.findByJobPostingId(Mockito.any())).thenReturn(Optional.of(staleEntity));
+        JobRequirementExtractor extractor = failingExtractor(repository, new AtomicInteger());
+
+        JobRequirementExtraction extraction = extractor.extract(jobPosting);
+
+        assertThat(extraction.requiredSkills()).containsExactly("Java");
+        assertThat(extraction.preferredCertificates()).containsExactly("정보처리기사");
+        assertThat(extraction.jobCategory()).isEqualTo(JobCategory.BACKEND_DEVELOPMENT);
+        Mockito.verify(repository, Mockito.never()).save(Mockito.any());
+        assertThat(staleEntity.isExtractedWith(oldVersion)).isTrue();
+    }
+
+    @Test
+    void extract_noCacheAndLlmFails_returnsFallbackWithoutSaving() {
+        JobRequirementExtractionRepository repository = neverCachedExtractionRepository();
+        JobRequirementExtractor extractor = failingExtractor(repository, new AtomicInteger());
+
+        JobRequirementExtraction extraction = extractor.extract(pasuAiJobPosting());
+
+        assertThat(extraction.requiredSkills()).isEmpty();
+        assertThat(extraction.preferredSkills()).isEmpty();
+        assertThat(extraction.jobCategory()).isNull();
+        Mockito.verify(repository, Mockito.never()).save(Mockito.any());
+    }
+
+    // 같은 요청에서 연속으로 실패하면(예: 429 insufficient_quota) 남은 공고는 LLM을 호출하지 않고 실패 경로로 보낸다.
+    @Test
+    void extract_consecutiveFailuresInSameRequest_skipsLlmForRemainingPostings() {
+        JobRequirementExtractionRepository repository = neverCachedExtractionRepository();
+        AtomicInteger llmCalls = new AtomicInteger();
+        JobRequirementExtractor extractor = failingExtractor(repository, llmCalls);
+        LlmCallBreaker breaker = new LlmCallBreaker();
+
+        for (int i = 0; i < 5; i++) {
+            JobRequirementExtraction extraction = extractor.extract(pasuAiJobPosting(), breaker);
+            assertThat(extraction.jobCategory()).isNull();
+        }
+
+        assertThat(llmCalls.get()).isEqualTo(LlmCallBreaker.CONSECUTIVE_FAILURE_THRESHOLD);
+        Mockito.verify(repository, Mockito.never()).save(Mockito.any());
+    }
+
+    // 실패 횟수는 연속일 때만 누적된다. 중간에 성공하면 다시 0부터 센다.
+    @Test
+    void extract_failureThenSuccess_resetsConsecutiveFailures() {
+        JobRequirementExtractionRepository repository = neverCachedExtractionRepository();
+        AtomicInteger llmCalls = new AtomicInteger();
+        JobRequirementExtractor extractor = new JobRequirementExtractor(
+                (systemPrompt, userPrompt) -> {
+                    // 1, 3번째 호출만 실패시켜 연속 실패가 임계값에 닿지 않게 한다.
+                    if (llmCalls.incrementAndGet() % 2 == 1) {
+                        throw new IllegalStateException("일시적 장애");
+                    }
+                    return emptySkillsResponse("\"BACKEND_DEVELOPMENT\"");
+                },
+                jobRequirementParser,
+                objectMapper,
+                repository
+        );
+        LlmCallBreaker breaker = new LlmCallBreaker();
+
+        for (int i = 0; i < 4; i++) {
+            extractor.extract(pasuAiJobPosting(), breaker);
+        }
+
+        assertThat(llmCalls.get()).isEqualTo(4);
+        assertThat(breaker.isOpen()).isFalse();
+    }
+
     // 강제 재추출은 현재 버전으로 캐시돼 있어도 LLM을 다시 호출하고 같은 행을 덮어쓰며, 변경 전/후를 함께 돌려준다.
     @Test
     void reExtract_cachedWithCurrentPromptVersion_callsLlmAndOverwritesSameRow() {
@@ -374,6 +453,18 @@ class JobRequirementExtractorTest {
         return """
                 {"requiredSkills": [], "preferredSkills": [], "minYears": null, "maxYears": null, "newGraduateAllowed": true, "requiredCertificates": [], "preferredCertificates": [], "jobCategory": %s}
                 """.formatted(jobCategoryJson);
+    }
+
+    private JobRequirementExtractor failingExtractor(JobRequirementExtractionRepository repository, AtomicInteger llmCalls) {
+        return new JobRequirementExtractor(
+                (systemPrompt, userPrompt) -> {
+                    llmCalls.incrementAndGet();
+                    throw new IllegalStateException("429 Too Many Requests: insufficient_quota");
+                },
+                jobRequirementParser,
+                objectMapper,
+                repository
+        );
     }
 
     private JobRequirementExtractionEntity savedEntity(JobRequirementExtractionRepository repository) {
