@@ -54,6 +54,43 @@ class RequiredConditionCheckerTest {
         assertThat(result.failedReasons()).contains("경력 5년 이상 요구, 신입 지원 불가");
     }
 
+    // 셀트리온처럼 experienceLevel이 "경력"뿐이어도 본문 추출 결과에 연수가 있으면 그 연수로 사유를 표시한다.
+    @Test
+    void check_careerOnlyWithExtractedMinYears_failsWithYearsReason() {
+        UserProfile userProfile = newGraduateFullTimeUser();
+        JobPosting jobPosting = jobPosting("서버/Cloud 엔지니어", "경력", "2026-08-15T23:59:59");
+        JobRequirementExtraction extraction = extractionOf(5, null, JobCategory.DEVOPS);
+
+        ConditionCheckResult result = checker.check(userProfile, jobPosting, extraction);
+
+        assertThat(result.passed()).isFalse();
+        assertThat(result.failedReasons()).containsExactly("경력 5년 이상 요구, 신입 지원 불가");
+    }
+
+    @Test
+    void check_careerOnlyWithoutMinYears_failsWithCareerOnlyReason() {
+        UserProfile userProfile = newGraduateFullTimeUser();
+        JobPosting jobPosting = jobPosting("서버/Cloud 엔지니어", "경력", "2026-08-15T23:59:59");
+
+        ConditionCheckResult result = checker.check(userProfile, jobPosting, defaultExtraction());
+
+        assertThat(result.passed()).isFalse();
+        assertThat(result.failedReasons()).containsExactly("경력직 채용 공고, 신입 지원 불가");
+        assertThat(result.failedReasons().getFirst().split("지원 불가", -1)).hasSize(2);
+    }
+
+    @Test
+    void check_newGraduateAllowed_hasNoCareerReason() {
+        UserProfile userProfile = newGraduateFullTimeUser();
+        JobPosting jobPosting = jobPosting("Server Developer(여신)", "신입/경력", "2026-08-15T23:59:59");
+        JobRequirementExtraction extraction = extractionOf(3, null, JobCategory.BACKEND_DEVELOPMENT);
+
+        ConditionCheckResult result = checker.check(userProfile, jobPosting, extraction);
+
+        assertThat(result.passed()).isTrue();
+        assertThat(result.failedReasons()).noneMatch(reason -> reason.contains("경력"));
+    }
+
     @Test
     void check_nubilab_failsOnEmploymentType() {
         UserProfile userProfile = newGraduateFullTimeUser();

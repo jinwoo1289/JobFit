@@ -37,7 +37,7 @@ public class RequiredConditionChecker {
 
         List<String> failedReasons = new ArrayList<>();
         List<String> notices = new ArrayList<>();
-        checkCareer(userProfile, requirement, failedReasons);
+        checkCareer(userProfile, requirement, extraction, failedReasons);
         checkEmploymentType(userProfile, requirement, failedReasons);
         checkDeadline(jobPosting, failedReasons);
         checkMaxYears(userProfile, extraction, failedReasons);
@@ -48,15 +48,19 @@ public class RequiredConditionChecker {
                 : ConditionCheckResult.fail(failedReasons, notices);
     }
 
-    private void checkCareer(UserProfile userProfile, JobRequirement requirement, List<String> failedReasons) {
+    private void checkCareer(UserProfile userProfile, JobRequirement requirement,
+                             JobRequirementExtraction extraction, List<String> failedReasons) {
         if (userProfile.getCareerLevel() != CareerLevel.NEW_GRADUATE || requirement.newGraduateAllowed()) {
             return;
         }
 
-        if (requirement.minYears() != null) {
-            failedReasons.add("경력 %d년 이상 요구, 신입 지원 불가".formatted(requirement.minYears()));
+        // 판정은 experienceLevel 기준 그대로 두고, 문구의 연수만 experienceLevel에 없으면 본문 추출 결과로 보완한다.
+        // (예: experienceLevel "경력" + 본문 "5년 이상 ... 경험자")
+        Integer minYears = requirement.minYears() != null ? requirement.minYears() : extraction.minYears();
+        if (minYears != null) {
+            failedReasons.add("경력 %d년 이상 요구, 신입 지원 불가".formatted(minYears));
         } else {
-            failedReasons.add("경력 지원 불가 공고, 신입 지원 불가");
+            failedReasons.add("경력직 채용 공고, 신입 지원 불가");
         }
     }
 
