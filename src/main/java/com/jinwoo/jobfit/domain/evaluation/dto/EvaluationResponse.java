@@ -1,10 +1,12 @@
 package com.jinwoo.jobfit.domain.evaluation.dto;
 
+import com.jinwoo.jobfit.domain.evaluation.vo.DeadlineStatus;
 import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationReasoning;
 import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationResult;
 import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationVerdict;
 import com.jinwoo.jobfit.domain.evaluation.vo.MatchedSkill;
 import com.jinwoo.jobfit.domain.evaluation.vo.RequiredSkillMatch;
+import com.jinwoo.jobfit.domain.job.entity.CloseType;
 import com.jinwoo.jobfit.domain.job.entity.JobPosting;
 
 import java.time.LocalDateTime;
@@ -34,9 +36,17 @@ public record EvaluationResponse(
         List<String> missingSkills,
         // 지원 완료 체크 여부와 체크 시각(미체크면 null). 평가 결과·캐시와 무관하게 응답을 만들 때만 합친다.
         boolean applied,
-        LocalDateTime appliedAt
+        LocalDateTime appliedAt,
+        // 마감일 표시와 마감 임박 안내용. 판정·점수·캐시에는 쓰지 않는다.
+        LocalDateTime expirationAt,
+        CloseType closeType,
+        // 오늘 기준 마감일까지 남은 날 수(오늘 마감이면 0). 마감일이 없거나 이미 지났으면 null.
+        Integer daysUntilDeadline,
+        // 마감 D-3 이내(당일 포함)인 진행 중 공고
+        boolean deadlineImminent
 ) {
-    public static EvaluationResponse from(EvaluationResult result, JobPosting jobPosting, LocalDateTime appliedAt) {
+    public static EvaluationResponse from(EvaluationResult result, JobPosting jobPosting, LocalDateTime appliedAt,
+                                          DeadlineStatus deadlineStatus) {
         RequiredSkillMatch skillMatch = result.skillMatch();
         return new EvaluationResponse(
                 result.jobPostingId(),
@@ -60,7 +70,11 @@ public record EvaluationResponse(
                 skillMatch.matchedSkills(),
                 skillMatch.missingSkills(),
                 appliedAt != null,
-                appliedAt
+                appliedAt,
+                jobPosting.getExpirationAt(),
+                jobPosting.getCloseType(),
+                deadlineStatus.daysLeft(),
+                deadlineStatus.imminent()
         );
     }
 }

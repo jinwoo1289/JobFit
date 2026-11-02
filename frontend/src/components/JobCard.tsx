@@ -18,6 +18,18 @@ interface JobCardProps {
   applyError?: string
 }
 
+// "마감 11/17 (D-15)" / "마감 10/25 (종료)" / "채용시 마감".
+// 남은 날 수(daysUntilDeadline)와 마감 여부(expired)는 서버 Clock 기준 값을 그대로 쓰고, 브라우저 시간으로 계산하지 않는다.
+// 날짜는 "2026-11-17T23:59:59" 문자열에서 시간대 변환 없이 월/일만 꺼낸다.
+function formatDeadline(result: EvaluationResponse): string {
+  const match = result.expirationAt?.match(/^\d{4}-(\d{2})-(\d{2})/)
+  if (!match) return '채용시 마감'
+  const date = `${Number(match[1])}/${Number(match[2])}`
+  if (result.expired) return `마감 ${date} (종료)`
+  if (result.daysUntilDeadline === null) return `마감 ${date}`
+  return `마감 ${date} (${result.daysUntilDeadline === 0 ? 'D-day' : `D-${result.daysUntilDeadline}`})`
+}
+
 // 보유하지 않은 기술이 이 개수를 넘으면 앞의 일부만 보여주고 나머지는 "외 N개 더 보기"로 접는다.
 const MISSING_SKILLS_VISIBLE_COUNT = 3
 
@@ -68,6 +80,9 @@ function JobCard({ result, rank, onToggleApplied, isApplyPending, applyError }: 
         <div className="job-card-heading">
           <p className="job-card-company">{result.companyName}</p>
           <h3 className="job-card-title">{result.title}</h3>
+          <p className={`job-card-deadline ${result.deadlineImminent ? 'job-card-deadline-imminent' : ''}`}>
+            {formatDeadline(result)}
+          </p>
         </div>
         <div className="job-card-side">
           <span
@@ -100,6 +115,8 @@ function JobCard({ result, rank, onToggleApplied, isApplyPending, applyError }: 
           ))}
         </ul>
       )}
+
+      {result.deadlineImminent && <div className="deadline-imminent-notice">마감이 임박한 공고입니다</div>}
 
       {result.notices.map((notice, i) => (
         <div key={i} className="job-notice">

@@ -1,6 +1,7 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
 import com.jinwoo.jobfit.domain.evaluation.dto.EvaluationResponse;
+import com.jinwoo.jobfit.domain.evaluation.vo.DeadlineStatus;
 import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationResult;
 import com.jinwoo.jobfit.domain.job.entity.JobPosting;
 import com.jinwoo.jobfit.domain.job.exception.JobPostingNotFoundException;
@@ -22,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -41,6 +43,7 @@ public class EvaluationQueryService {
     private final EvaluationWeightRepository evaluationWeightRepository;
     private final JobPostingRepository jobPostingRepository;
     private final JobApplicationRepository jobApplicationRepository;
+    private final Clock clock;
 
     public List<EvaluationResponse> evaluateAll(Long userProfileId) {
         UserProfile userProfile = getUserProfile(userProfileId);
@@ -86,7 +89,9 @@ public class EvaluationQueryService {
         // 지원 여부는 평가(추출·근거 생성·캐시 키)에 넘기지 않고 응답에만 붙인다. 체크를 바꿔도 LLM 재호출이 일어나지 않게 하기 위함.
         EvaluationResult result = evaluationService.evaluate(
                 userProfile, skills, projects, certificates, evaluationWeight, jobPosting, breaker);
-        return EvaluationResponse.from(result, jobPosting, appliedAt);
+        // 마감 임박 여부도 응답에만 붙인다. 마감 판정과 같은 clock을 써서 고정 시각 테스트에서도 일관되게 한다.
+        DeadlineStatus deadlineStatus = DeadlineStatus.of(jobPosting.getExpirationAt(), LocalDateTime.now(clock));
+        return EvaluationResponse.from(result, jobPosting, appliedAt, deadlineStatus);
     }
 
     private UserProfile getUserProfile(Long id) {

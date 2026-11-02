@@ -51,6 +51,13 @@ export interface EvaluationResponse {
   // 지원 완료 체크 여부와 체크 시각(서버 로컬 시각 ISO 문자열, 미체크면 null)
   applied: boolean
   appliedAt: string | null
+  // 마감 일시(서버 로컬 시각 ISO 문자열). 상시·채용시 마감 등 마감일이 없으면 null.
+  expirationAt: string | null
+  closeType: 'FIXED_DATE' | 'UNTIL_HIRED' | 'ALWAYS_OPEN' | 'OCCASIONAL' | null
+  // 서버 Clock 기준 마감일까지 남은 날 수(오늘 마감이면 0). 마감일이 없거나 이미 지났으면 null.
+  daysUntilDeadline: number | null
+  // 마감 3일 이내(당일 포함)인 진행 중 공고
+  deadlineImminent: boolean
 }
 
 export interface JobApplicationResponse {

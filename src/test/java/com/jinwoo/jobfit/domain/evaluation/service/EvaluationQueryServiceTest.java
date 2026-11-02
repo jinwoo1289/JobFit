@@ -5,6 +5,7 @@ import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationReasoning;
 import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationResult;
 import com.jinwoo.jobfit.domain.evaluation.vo.RequiredSkillMatch;
 import com.jinwoo.jobfit.domain.evaluation.vo.ScoreResult;
+import com.jinwoo.jobfit.domain.job.entity.CloseType;
 import com.jinwoo.jobfit.domain.job.entity.JobPosting;
 import com.jinwoo.jobfit.domain.job.repository.JobPostingRepository;
 import com.jinwoo.jobfit.domain.user.entity.EvaluationWeight;
@@ -18,7 +19,9 @@ import com.jinwoo.jobfit.domain.user.repository.UserProjectRepository;
 import com.jinwoo.jobfit.domain.user.repository.UserSkillRepository;
 import org.junit.jupiter.api.Test;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,6 +38,7 @@ import static org.mockito.Mockito.when;
 class EvaluationQueryServiceTest {
 
     private static final Long PROFILE_ID = 1L;
+    private static final ZoneId ZONE = ZoneId.of("Asia/Seoul");
 
     private final EvaluationService evaluationService = mock(EvaluationService.class);
     private final UserProfileRepository userProfileRepository = mock(UserProfileRepository.class);
@@ -47,7 +51,8 @@ class EvaluationQueryServiceTest {
 
     private final EvaluationQueryService evaluationQueryService = new EvaluationQueryService(
             evaluationService, userProfileRepository, userSkillRepository, userProjectRepository,
-            userCertificateRepository, evaluationWeightRepository, jobPostingRepository, jobApplicationRepository);
+            userCertificateRepository, evaluationWeightRepository, jobPostingRepository, jobApplicationRepository,
+            Clock.fixed(LocalDateTime.of(2026, 11, 2, 15, 0).atZone(ZONE).toInstant(), ZONE));
 
     @Test
     void evaluateAll_marksOnlyAppliedPostingsWithTheirAppliedAt() {
@@ -74,6 +79,34 @@ class EvaluationQueryServiceTest {
         assertThat(responses.get(10L).appliedAt()).isEqualTo(appliedAt);
         assertThat(responses.get(20L).applied()).isFalse();
         assertThat(responses.get(20L).appliedAt()).isNull();
+    }
+
+    @Test
+    void evaluateAll_attachesDeadlineStatusByClock() {
+        JobPosting imminentPosting = jobPosting(10L);
+        LocalDateTime imminentDeadline = LocalDateTime.of(2026, 11, 4, 23, 59, 59);
+        when(imminentPosting.getExpirationAt()).thenReturn(imminentDeadline);
+        when(imminentPosting.getCloseType()).thenReturn(CloseType.FIXED_DATE);
+        JobPosting farPosting = jobPosting(20L);
+        when(farPosting.getExpirationAt()).thenReturn(LocalDateTime.of(2026, 11, 20, 23, 59, 59));
+
+        when(userProfileRepository.findById(PROFILE_ID)).thenReturn(Optional.of(mock(UserProfile.class)));
+        when(evaluationWeightRepository.findByUserProfileId(PROFILE_ID)).thenReturn(Optional.of(mock(EvaluationWeight.class)));
+        when(jobPostingRepository.findAll()).thenReturn(List.of(imminentPosting, farPosting));
+        when(evaluationService.evaluate(any(), anyList(), anyList(), anyList(), any(), eq(imminentPosting), any()))
+                .thenReturn(fitResult(10L));
+        when(evaluationService.evaluate(any(), anyList(), anyList(), anyList(), any(), eq(farPosting), any()))
+                .thenReturn(fitResult(20L));
+
+        Map<Long, EvaluationResponse> responses = evaluationQueryService.evaluateAll(PROFILE_ID).stream()
+                .collect(Collectors.toMap(EvaluationResponse::jobPostingId, Function.identity()));
+
+        assertThat(responses.get(10L).expirationAt()).isEqualTo(imminentDeadline);
+        assertThat(responses.get(10L).closeType()).isEqualTo(CloseType.FIXED_DATE);
+        assertThat(responses.get(10L).daysUntilDeadline()).isEqualTo(2);
+        assertThat(responses.get(10L).deadlineImminent()).isTrue();
+        assertThat(responses.get(20L).daysUntilDeadline()).isEqualTo(18);
+        assertThat(responses.get(20L).deadlineImminent()).isFalse();
     }
 
     private JobPosting jobPosting(Long id) {
