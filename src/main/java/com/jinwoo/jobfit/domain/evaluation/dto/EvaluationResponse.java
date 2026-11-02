@@ -7,6 +7,7 @@ import com.jinwoo.jobfit.domain.evaluation.vo.MatchedSkill;
 import com.jinwoo.jobfit.domain.evaluation.vo.RequiredSkillMatch;
 import com.jinwoo.jobfit.domain.job.entity.JobPosting;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record EvaluationResponse(
@@ -30,9 +31,12 @@ public record EvaluationResponse(
         int experienceSkillCount,
         int experienceMatchedCount,
         List<MatchedSkill> matchedSkills,
-        List<String> missingSkills
+        List<String> missingSkills,
+        // 지원 완료 체크 여부와 체크 시각(미체크면 null). 평가 결과·캐시와 무관하게 응답을 만들 때만 합친다.
+        boolean applied,
+        LocalDateTime appliedAt
 ) {
-    public static EvaluationResponse from(EvaluationResult result, JobPosting jobPosting) {
+    public static EvaluationResponse from(EvaluationResult result, JobPosting jobPosting, LocalDateTime appliedAt) {
         RequiredSkillMatch skillMatch = result.skillMatch();
         return new EvaluationResponse(
                 result.jobPostingId(),
@@ -54,7 +58,9 @@ public record EvaluationResponse(
                 skillMatch.experienceSkillCount(),
                 skillMatch.experienceMatchedCount(),
                 skillMatch.matchedSkills(),
-                skillMatch.missingSkills()
+                skillMatch.missingSkills(),
+                appliedAt != null,
+                appliedAt
         );
     }
 }

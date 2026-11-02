@@ -10,10 +10,24 @@ interface ScoreItem {
   detail?: string
 }
 
+// "2026-11-02T11:40:00" 같은 서버 시각 문자열을 시간대 변환 없이 "11/2"로 표시한다.
+function formatAppliedDate(appliedAt: string | null): string {
+  const match = appliedAt?.match(/^\d{4}-(\d{2})-(\d{2})/)
+  return match ? `${Number(match[1])}/${Number(match[2])}` : ''
+}
+
+interface JobCardProps {
+  result: EvaluationResponse
+  rank?: number
+  onToggleApplied: (nextApplied: boolean) => void
+  isApplyPending: boolean
+  applyError?: string
+}
+
 // 보유하지 않은 기술이 이 개수를 넘으면 앞의 일부만 보여주고 나머지는 "외 N개 더 보기"로 접는다.
 const MISSING_SKILLS_VISIBLE_COUNT = 3
 
-function JobCard({ result, rank }: { result: EvaluationResponse; rank?: number }) {
+function JobCard({ result, rank, onToggleApplied, isApplyPending, applyError }: JobCardProps) {
   const [isMissingExpanded, setIsMissingExpanded] = useState(false)
 
   const scoreItems: ScoreItem[] = [
@@ -58,15 +72,35 @@ function JobCard({ result, rank }: { result: EvaluationResponse; rank?: number }
       <header className="job-card-header">
         {rank !== undefined && <span className="job-card-rank">{rank}</span>}
         <div className="job-card-heading">
-          <p className="job-card-company">{result.companyName}</p>
+          <p className="job-card-company">
+            {result.companyName}
+            {result.applied && <span className="applied-tag">지원함 · {formatAppliedDate(result.appliedAt)}</span>}
+          </p>
           <h3 className="job-card-title">{result.title}</h3>
         </div>
-        <span
-          className={`badge ${isUnfit ? 'badge-unfit' : isInsufficientInfo ? 'badge-insufficient' : 'badge-fit'}`}
-        >
-          {isInsufficientInfo ? '정보 부족' : result.verdict}
-        </span>
+        <div className="job-card-side">
+          <span
+            className={`badge ${isUnfit ? 'badge-unfit' : isInsufficientInfo ? 'badge-insufficient' : 'badge-fit'}`}
+          >
+            {isInsufficientInfo ? '정보 부족' : result.verdict}
+          </span>
+          <label className="applied-checkbox">
+            <input
+              type="checkbox"
+              checked={result.applied}
+              disabled={isApplyPending}
+              onChange={(event) => onToggleApplied(event.target.checked)}
+            />
+            지원 완료
+          </label>
+        </div>
       </header>
+
+      {applyError && (
+        <p className="applied-error" role="alert">
+          {applyError}
+        </p>
+      )}
 
       {isUnfit && result.failedReasons.length > 0 && (
         <ul className="failed-reasons" aria-label="지원 불가 사유">

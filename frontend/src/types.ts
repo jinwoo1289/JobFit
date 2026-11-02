@@ -48,4 +48,12 @@ export interface EvaluationResponse {
   experienceMatchedCount: number
   matchedSkills: MatchedSkill[]
   missingSkills: string[]
+  // 지원 완료 체크 여부와 체크 시각(서버 로컬 시각 ISO 문자열, 미체크면 null)
+  applied: boolean
+  appliedAt: string | null
+}
+
+export interface JobApplicationResponse {
+  jobPostingId: number
+  appliedAt: string
 }

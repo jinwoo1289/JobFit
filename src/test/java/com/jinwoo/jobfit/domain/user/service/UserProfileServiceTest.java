@@ -8,7 +8,9 @@ import com.jinwoo.jobfit.domain.user.dto.UserProjectRequest;
 import com.jinwoo.jobfit.domain.user.dto.UserSkillRequest;
 import com.jinwoo.jobfit.domain.user.entity.CareerLevel;
 import com.jinwoo.jobfit.domain.user.entity.EmploymentType;
+import com.jinwoo.jobfit.domain.job.repository.JobPostingRepository;
 import com.jinwoo.jobfit.domain.user.repository.EvaluationWeightRepository;
+import com.jinwoo.jobfit.domain.user.repository.JobApplicationRepository;
 import com.jinwoo.jobfit.domain.user.repository.UserCertificateRepository;
 import com.jinwoo.jobfit.domain.user.repository.UserProfileRepository;
 import com.jinwoo.jobfit.domain.user.repository.UserProjectRepository;
@@ -41,6 +43,12 @@ class UserProfileServiceTest {
     @Autowired
     private EvaluationWeightRepository evaluationWeightRepository;
     @Autowired
+    private JobApplicationService jobApplicationService;
+    @Autowired
+    private JobApplicationRepository jobApplicationRepository;
+    @Autowired
+    private JobPostingRepository jobPostingRepository;
+    @Autowired
     private EntityManager entityManager;
 
     @Test
@@ -55,6 +63,13 @@ class UserProfileServiceTest {
         assertThat(userCertificateRepository.findByUserProfileId(id)).isNotEmpty();
         assertThat(evaluationWeightRepository.findByUserProfileId(id)).isPresent();
 
+        // 지원 완료 기록이 있어도 FK 위반 없이 함께 삭제되어야 한다.
+        Long jobPostingId = jobPostingRepository.findAll().getFirst().getId();
+        jobApplicationService.markApplied(id, jobPostingId);
+        entityManager.flush();
+        entityManager.clear();
+        assertThat(jobApplicationRepository.findByUserProfileId(id)).hasSize(1);
+
         userProfileService.delete(id);
         entityManager.flush();
         entityManager.clear();
@@ -64,6 +79,7 @@ class UserProfileServiceTest {
         assertThat(userProjectRepository.findByUserProfileId(id)).isEmpty();
         assertThat(userCertificateRepository.findByUserProfileId(id)).isEmpty();
         assertThat(evaluationWeightRepository.findByUserProfileId(id)).isEmpty();
+        assertThat(jobApplicationRepository.findByUserProfileId(id)).isEmpty();
     }
 
     private UserProfileCreateRequest newCreateRequest() {

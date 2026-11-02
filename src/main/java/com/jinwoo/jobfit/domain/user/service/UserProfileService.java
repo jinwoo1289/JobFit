@@ -11,6 +11,7 @@ import com.jinwoo.jobfit.domain.user.entity.UserProject;
 import com.jinwoo.jobfit.domain.user.entity.UserSkill;
 import com.jinwoo.jobfit.domain.user.exception.UserProfileNotFoundException;
 import com.jinwoo.jobfit.domain.user.repository.EvaluationWeightRepository;
+import com.jinwoo.jobfit.domain.user.repository.JobApplicationRepository;
 import com.jinwoo.jobfit.domain.user.repository.UserCertificateRepository;
 import com.jinwoo.jobfit.domain.user.repository.UserProfileRepository;
 import com.jinwoo.jobfit.domain.user.repository.UserProjectRepository;
@@ -31,6 +32,7 @@ public class UserProfileService {
     private final UserProjectRepository userProjectRepository;
     private final UserCertificateRepository userCertificateRepository;
     private final EvaluationWeightRepository evaluationWeightRepository;
+    private final JobApplicationRepository jobApplicationRepository;
 
     @Transactional
     public UserProfileResponse create(UserProfileCreateRequest request) {
@@ -138,6 +140,8 @@ public class UserProfileService {
     @Transactional
     public void delete(Long id) {
         UserProfile userProfile = getUserProfile(id);
+        // 지원 완료 기록은 프로필 cascade 대상이 아니므로 FK 위반이 나지 않도록 먼저 지운다.
+        jobApplicationRepository.deleteAllByUserProfileId(id);
         userProfileRepository.delete(userProfile);
     }
 
