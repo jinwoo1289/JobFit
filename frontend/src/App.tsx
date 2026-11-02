@@ -3,7 +3,7 @@ import { evaluateAll, updateWeights } from './api'
 import JobCard from './components/JobCard'
 import JobCardSkeleton from './components/JobCardSkeleton'
 import WeightSliders from './components/WeightSliders'
-import type { EvaluationResponse, Weights } from './types'
+import type { EvaluationResponse, EvaluationVerdict, Weights } from './types'
 import './App.css'
 
 // 로컬과 배포(Render) DB의 프로필 id가 달라 환경변수로 주입한다. 잘못된 프로필로 조용히 조회되지 않도록
@@ -19,6 +19,19 @@ const DEFAULT_WEIGHTS: Weights = {
   certificateWeight: 10,
 }
 
+// 목록 정렬 순서: FIT → 정보 부족 → UNFIT. 같은 판정 안에서는 종합 점수 내림차순.
+const VERDICT_ORDER: Record<EvaluationVerdict, number> = {
+  FIT: 0,
+  INSUFFICIENT_INFO: 1,
+  UNFIT: 2,
+}
+
+function sortResults(results: EvaluationResponse[]): EvaluationResponse[] {
+  return [...results].sort(
+    (a, b) => VERDICT_ORDER[a.verdict] - VERDICT_ORDER[b.verdict] || b.totalScore - a.totalScore,
+  )
+}
+
 function parseUserProfileId(value: string | undefined): number | null {
   const id = Number(value)
   return value && Number.isInteger(id) && id > 0 ? id : null
@@ -27,6 +40,8 @@ function parseUserProfileId(value: string | undefined): number | null {
 function App() {
   const [weights, setWeights] = useState<Weights>(DEFAULT_WEIGHTS)
   const [results, setResults] = useState<EvaluationResponse[]>([])
+  // 한 번이라도 평가에 성공했는지. 버튼 문구를 "평가" → "재평가"로 바꾸는 데 쓴다.
+  const [hasEvaluated, setHasEvaluated] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isNoticeDismissed, setIsNoticeDismissed] = useState(
@@ -47,14 +62,15 @@ function App() {
   }
 
   async function handleEvaluate() {
-    if (USER_PROFILE_ID === null) return
+    // 평가 중 중복 클릭 방지 (버튼 disabled와 별개로, 상태 반영 전 연타도 막는다)
+    if (USER_PROFILE_ID === null || isLoading) return
     setIsLoading(true)
     setError(null)
     try {
       await updateWeights(USER_PROFILE_ID, weights)
       const evaluations = await evaluateAll(USER_PROFILE_ID)
-      const sorted = [...evaluations].sort((a, b) => b.totalScore - a.totalScore)
-      setResults(sorted)
+      setResults(evaluations)
+      setHasEvaluated(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : '평가 요청 중 오류가 발생했습니다.')
     } finally {
@@ -62,6 +78,9 @@ function App() {
     }
   }
 
+  // 마감 여부는 failedReasons 문자열이 아니라 응답의 expired 플래그로 판단한다.
+  const activeResults = sortResults(results.filter((result) => !result.expired))
+  const expiredResults = sortResults(results.filter((result) => result.expired))
   let fitRank = 0
 
   return (
@@ -98,8 +117,10 @@ function App() {
               <span className="button-spinner" />
               평가 중...
             </>
-          ) : (
+          ) : hasEvaluated ? (
             '재평가'
+          ) : (
+            '평가'
           )}
         </button>
         {!isWeightValid && <span className="evaluate-warning">가중치 합계가 100이 되어야 합니다.</span>}
@@ -107,11 +128,13 @@ function App() {
       </div>
 
       <section className="results">
-        {results.length === 0 && !isLoading && <p className="results-empty">재평가 버튼을 눌러 추천 공고를 확인하세요.</p>}
+        {results.length === 0 && !isLoading && (
+          <p className="results-empty">{hasEvaluated ? '평가할 공고가 없습니다.' : '평가 버튼을 눌러 추천 공고를 확인하세요.'}</p>
+        )}
         <div className="results-grid">
           {isLoading
             ? Array.from({ length: SKELETON_COUNT }).map((_, i) => <JobCardSkeleton key={i} />)
-            : results.map((result) => {
+            : activeResults.map((result) => {
                 if (result.verdict === 'FIT') fitRank += 1
                 return (
                   <JobCard
@@ -122,6 +145,17 @@ function App() {
                 )
               })}
         </div>
+
+        {!isLoading && expiredResults.length > 0 && (
+          <details className="expired-section">
+            <summary className="expired-section-summary">마감된 공고 {expiredResults.length}개</summary>
+            <div className="results-grid">
+              {expiredResults.map((result) => (
+                <JobCard key={result.jobPostingId} result={result} />
+              ))}
+            </div>
+          </details>
+        )}
       </section>
     </div>
   )

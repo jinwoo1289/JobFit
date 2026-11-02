@@ -2,6 +2,8 @@ package com.jinwoo.jobfit.domain.evaluation.service;
 
 import com.jinwoo.jobfit.domain.evaluation.vo.JobCategory;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementExtraction;
+import com.jinwoo.jobfit.domain.evaluation.vo.MatchedSkill;
+import com.jinwoo.jobfit.domain.evaluation.vo.RequiredSkillMatch;
 import com.jinwoo.jobfit.domain.evaluation.vo.ScoreResult;
 import com.jinwoo.jobfit.domain.user.entity.CareerLevel;
 import com.jinwoo.jobfit.domain.user.entity.EmploymentType;
@@ -54,6 +56,41 @@ class ScoreCalculatorTest {
         assertThat(result.experienceScore()).isCloseTo(200.0 / 3, within(0.001));
         assertThat(result.preferenceScore()).isCloseTo(100.0, within(0.001));
         assertThat(result.certificateScore()).isCloseTo(100.0, within(0.001));
+    }
+
+    @Test
+    void requiredSkillMatch_countsMatchedSkillsAndAttachesProjects() {
+        UserProfile profile = profile();
+        List<UserSkill> skills = List.of(
+                new UserSkill(profile, "Java"),
+                new UserSkill(profile, "Kotlin"),
+                new UserSkill(profile, "Spring Boot")
+        );
+        List<UserProject> projects = List.of(
+                new UserProject(profile, "HopeTail-BE", "채용 매칭 서비스", List.of("Java", "Spring Boot")),
+                new UserProject(profile, "KakaoMCP", "MCP 연동 프로젝트", List.of("Java"))
+        );
+        JobRequirementExtraction extraction = new JobRequirementExtraction(
+                List.of("Java", "Kotlin", "Spring Boot", "Go"),
+                List.of(),
+                null, null, true,
+                List.of(),
+                List.of(),
+                JobCategory.BACKEND_DEVELOPMENT
+        );
+
+        RequiredSkillMatch match = scoreCalculator.requiredSkillMatch(skills, projects, extraction);
+
+        assertThat(match.requiredSkillCount()).isEqualTo(4);
+        assertThat(match.matchedSkills()).containsExactly(
+                new MatchedSkill("Java", List.of("HopeTail-BE", "KakaoMCP")),
+                new MatchedSkill("Kotlin", List.of()),
+                new MatchedSkill("Spring Boot", List.of("HopeTail-BE"))
+        );
+        assertThat(match.missingSkills()).containsExactly("Go");
+        // 경험 점수와 같은 기준: 필수 기술이 가장 많이 겹치는 프로젝트(HopeTail-BE)의 2개
+        assertThat(match.experienceSkillCount()).isEqualTo(4);
+        assertThat(match.experienceMatchedCount()).isEqualTo(2);
     }
 
     // 파수에이아이(55234023)는 [주요 기술]에 우대 기술 구분이 없어 preferredSkills가 비어 있고, 자격증

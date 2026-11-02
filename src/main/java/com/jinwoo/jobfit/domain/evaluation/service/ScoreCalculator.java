@@ -1,7 +1,9 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementExtraction;
+import com.jinwoo.jobfit.domain.evaluation.vo.RequiredSkillMatch;
 import com.jinwoo.jobfit.domain.evaluation.vo.ScoreResult;
+import com.jinwoo.jobfit.domain.evaluation.vo.SkillMatchResult;
 import com.jinwoo.jobfit.domain.evaluation.vo.SkillScore;
 import com.jinwoo.jobfit.domain.user.entity.EvaluationWeight;
 import com.jinwoo.jobfit.domain.user.entity.UserCertificate;
@@ -42,6 +44,21 @@ public class ScoreCalculator {
                 experienceScore, experienceExcluded,
                 preference.value(), preference.excluded(),
                 certificateScore, certificateExcluded
+        );
+    }
+
+    // 점수 계산과 같은 기준으로 필수 기술 매칭 개수와 일치 기술별 사용 프로젝트를 요약한다. LLM을 호출하지 않는다.
+    public RequiredSkillMatch requiredSkillMatch(List<UserSkill> skills,
+                                                 List<UserProject> projects,
+                                                 JobRequirementExtraction extraction) {
+        List<String> requiredSkills = extraction.requiredSkills();
+        SkillMatchResult matchResult = skillScoreCalculator.matchDetail(skills, projects, requiredSkills);
+        return new RequiredSkillMatch(
+                requiredSkills.size(),
+                skillScoreCalculator.matchedWithProjects(matchResult.matchedSkills(), projects),
+                matchResult.unmatchedSkills(),
+                experienceScoreCalculator.requiredSkillCount(requiredSkills),
+                experienceScoreCalculator.bestMatchedCount(projects, requiredSkills)
         );
     }
 

@@ -4,6 +4,7 @@ import com.jinwoo.jobfit.domain.evaluation.vo.ConditionCheckResult;
 import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationReasoning;
 import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationResult;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementExtraction;
+import com.jinwoo.jobfit.domain.evaluation.vo.RequiredSkillMatch;
 import com.jinwoo.jobfit.domain.evaluation.vo.ScoreResult;
 import com.jinwoo.jobfit.domain.job.entity.JobPosting;
 import com.jinwoo.jobfit.domain.user.entity.EvaluationWeight;
@@ -46,20 +47,21 @@ public class EvaluationService {
 
         ConditionCheckResult conditionCheckResult = requiredConditionChecker.check(userProfile, jobPosting, extraction);
         ScoreResult scoreResult = scoreCalculator.calculate(skills, projects, certificates, extraction);
+        RequiredSkillMatch skillMatch = scoreCalculator.requiredSkillMatch(skills, projects, extraction);
         EvaluationReasoning reasoning = evaluationReasoningGenerator.generate(
                 jobPosting, extraction, userProfile, skills, projects, certificates, scoreResult, breaker);
 
         if (!conditionCheckResult.passed()) {
             return EvaluationResult.unfit(jobPosting.getId(), scoreResult, conditionCheckResult.failedReasons(),
-                    conditionCheckResult.notices(), reasoning);
+                    conditionCheckResult.notices(), reasoning, conditionCheckResult.expired(), skillMatch);
         }
 
         if (scoreResult.allExcluded()) {
-            return EvaluationResult.insufficientInfo(jobPosting.getId(), scoreResult, conditionCheckResult.notices(), reasoning);
+            return EvaluationResult.insufficientInfo(jobPosting.getId(), scoreResult, conditionCheckResult.notices(), reasoning, skillMatch);
         }
 
         double totalScore = scoreCalculator.calculateTotalScore(scoreResult, evaluationWeight);
 
-        return EvaluationResult.fit(jobPosting.getId(), totalScore, scoreResult, conditionCheckResult.notices(), reasoning);
+        return EvaluationResult.fit(jobPosting.getId(), totalScore, scoreResult, conditionCheckResult.notices(), reasoning, skillMatch);
     }
 }

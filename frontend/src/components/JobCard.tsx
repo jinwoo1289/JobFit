@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { EvaluationResponse } from '../types'
 
 interface ScoreItem {
@@ -5,15 +6,37 @@ interface ScoreItem {
   name: string
   value: number
   excluded: boolean
+  // 점수 옆에 보여줄 개수 근거 (예: "필수 기술 1개 중 0개 보유")
+  detail?: string
 }
 
+// 보유하지 않은 기술이 이 개수를 넘으면 앞의 일부만 보여주고 나머지는 "외 N개 더 보기"로 접는다.
+const MISSING_SKILLS_VISIBLE_COUNT = 3
+
 function JobCard({ result, rank }: { result: EvaluationResponse; rank?: number }) {
+  const [isMissingExpanded, setIsMissingExpanded] = useState(false)
+
   const scoreItems: ScoreItem[] = [
-    { label: '기술', name: '필수 기술', value: result.skillScore, excluded: result.skillExcluded },
-    { label: '경험', name: '프로젝트 경험', value: result.experienceScore, excluded: result.experienceExcluded },
+    {
+      label: '기술',
+      name: '필수 기술',
+      value: result.skillScore,
+      excluded: result.skillExcluded,
+      detail: `필수 기술 ${result.requiredSkillCount}개 중 ${result.matchedSkillCount}개 보유`,
+    },
+    {
+      label: '경험',
+      name: '프로젝트 경험',
+      value: result.experienceScore,
+      excluded: result.experienceExcluded,
+      detail: `한 프로젝트에서 필수 기술 ${result.experienceSkillCount}개 중 ${result.experienceMatchedCount}개 사용`,
+    },
     { label: '우대', name: '우대사항', value: result.preferenceScore, excluded: result.preferenceExcluded },
     { label: '자격증', name: '자격증', value: result.certificateScore, excluded: result.certificateExcluded },
   ]
+  const evaluatedItems = scoreItems.filter((item) => !item.excluded)
+  const excludedItems = scoreItems.filter((item) => item.excluded)
+
   const isUnfit = result.verdict === 'UNFIT'
   const isInsufficientInfo = result.verdict === 'INSUFFICIENT_INFO'
   // 총점에 반영되지 않는(UNFIT) 또는 비교할 정보 자체가 부족한(INSUFFICIENT_INFO) 경우, 세부 점수는 참고용임을 표시한다.
@@ -22,13 +45,19 @@ function JobCard({ result, rank }: { result: EvaluationResponse; rank?: number }
   // 백엔드의 제외 규칙(현재는 둘 다 requiredSkills 기준)에 기대지 않도록 두 플래그를 직접 확인한다.
   // 4개 항목이 모두 제외된 경우는 INSUFFICIENT_INFO로 판정되므로 FIT일 때만 표시한다.
   const isScopeLimited = result.verdict === 'FIT' && result.skillExcluded && result.experienceExcluded
-  const evaluatedItemNames = scoreItems.filter((item) => !item.excluded).map((item) => item.name)
+
+  const hiddenMissingCount = result.missingSkills.length - MISSING_SKILLS_VISIBLE_COUNT
+  const shouldCollapseMissing = result.missingSkills.length > MISSING_SKILLS_VISIBLE_COUNT
+  const visibleMissingSkills =
+    shouldCollapseMissing && !isMissingExpanded
+      ? result.missingSkills.slice(0, MISSING_SKILLS_VISIBLE_COUNT)
+      : result.missingSkills
 
   return (
     <article className={`job-card ${isReferenceOnly ? 'job-card-unfit' : ''}`}>
       <header className="job-card-header">
         {rank !== undefined && <span className="job-card-rank">{rank}</span>}
-        <div>
+        <div className="job-card-heading">
           <p className="job-card-company">{result.companyName}</p>
           <h3 className="job-card-title">{result.title}</h3>
         </div>
@@ -39,15 +68,12 @@ function JobCard({ result, rank }: { result: EvaluationResponse; rank?: number }
         </span>
       </header>
 
-      {result.verdict === 'UNFIT' && result.failedReasons.length > 0 && (
-        <div className="reasoning-block failed-reasons-block">
-          <h4 className="reasoning-title reasoning-title-negative">지원 불가 사유</h4>
-          <ul>
-            {result.failedReasons.map((reason, i) => (
-              <li key={i}>{reason}</li>
-            ))}
-          </ul>
-        </div>
+      {isUnfit && result.failedReasons.length > 0 && (
+        <ul className="failed-reasons" aria-label="지원 불가 사유">
+          {result.failedReasons.map((reason, i) => (
+            <li key={i}>{reason}</li>
+          ))}
+        </ul>
       )}
 
       {result.notices.map((notice, i) => (
@@ -58,54 +84,76 @@ function JobCard({ result, rank }: { result: EvaluationResponse; rank?: number }
 
       {isScopeLimited && (
         <div className="scope-limited-notice">
-          평가 범위 제한: {evaluatedItemNames.join('·')}만 평가됨 — 기술·경험 요건은 자동 평가되지 않았으니 공고 원문을 확인하세요
+          평가 범위 제한: {evaluatedItems.map((item) => item.name).join('·')}만 평가됨 — 기술·경험 요건은 자동 평가되지
+          않았으니 공고 원문을 확인하세요
         </div>
       )}
 
-      <div className="job-card-total">
-        <span>종합 점수</span>
-        <strong>{result.totalScore.toFixed(1)}</strong>
+      {/* UNFIT은 종합 점수가 계산되지 않으므로(항상 0) 영역 자체를 숨긴다. */}
+      {!isUnfit && (
+        <div className="job-card-total">
+          <span>종합 점수</span>
+          <strong>{result.totalScore.toFixed(1)}</strong>
+        </div>
+      )}
+
+      <div>
+        <div className="job-card-scores-header">
+          <span className="job-card-scores-title">세부 점수</span>
+          {isReferenceOnly && <span className="score-reference-label">참고용</span>}
+        </div>
+        {evaluatedItems.length > 0 && (
+          <ul className={`job-card-scores ${isReferenceOnly ? 'job-card-scores-unfit' : ''}`}>
+            {evaluatedItems.map((item) => (
+              <li key={item.label} className="score-item">
+                <span className="score-item-label">{item.label}</span>
+                <span className="score-item-value">{item.value.toFixed(1)}</span>
+                {item.detail && <span className="score-item-detail">{item.detail}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+        {excludedItems.length > 0 && (
+          <p className="score-excluded-line">평가 제외: {excludedItems.map((item) => item.label).join(', ')}</p>
+        )}
       </div>
 
-      <div className="job-card-scores-header">
-        <span className="job-card-scores-title">세부 점수</span>
-        {isReferenceOnly && <span className="score-reference-label">참고용</span>}
-      </div>
-      <div className={`job-card-scores ${isReferenceOnly ? 'job-card-scores-unfit' : ''}`}>
-        {scoreItems.map((item) => (
-          <div key={item.label} className="score-item">
-            <span className="score-item-label">{item.label}</span>
-            {item.excluded ? (
-              <>
-                <span className="score-item-value score-item-value-excluded">-</span>
-                <span className="score-item-excluded-note">평가 제외</span>
-              </>
-            ) : (
-              <span className="score-item-value">{item.value.toFixed(1)}</span>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {result.reasoning.matchedPoints.length > 0 && (
+      {result.matchedSkills.length > 0 && (
         <div className="reasoning-block">
           <h4 className="reasoning-title reasoning-title-positive">적합한 점</h4>
-          <ul>
-            {result.reasoning.matchedPoints.map((point, i) => (
-              <li key={i}>{point}</li>
+          <ul className="matched-skills">
+            {result.matchedSkills.map((matched, i) => (
+              <li key={i} className="matched-skill">
+                <span className="matched-skill-name">{matched.skill}</span>
+                {matched.projectNames.map((projectName) => (
+                  <span key={projectName} className="project-tag">
+                    {projectName}
+                  </span>
+                ))}
+              </li>
             ))}
           </ul>
         </div>
       )}
 
-      {result.reasoning.gapPoints.length > 0 && (
+      {result.missingSkills.length > 0 && (
         <div className="reasoning-block">
-          <h4 className="reasoning-title reasoning-title-negative">부족한 점</h4>
+          <h4 className="reasoning-title reasoning-title-negative">보유하지 않은 기술</h4>
           <ul>
-            {result.reasoning.gapPoints.map((point, i) => (
-              <li key={i}>{point}</li>
+            {visibleMissingSkills.map((skill, i) => (
+              <li key={i}>{skill}</li>
             ))}
           </ul>
+          {shouldCollapseMissing && (
+            <button
+              type="button"
+              className="missing-skills-toggle"
+              onClick={() => setIsMissingExpanded((prev) => !prev)}
+              aria-expanded={isMissingExpanded}
+            >
+              {isMissingExpanded ? '접기' : `외 ${hiddenMissingCount}개 더 보기`}
+            </button>
+          )}
         </div>
       )}
 

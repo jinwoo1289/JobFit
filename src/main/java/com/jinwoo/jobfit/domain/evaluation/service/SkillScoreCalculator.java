@@ -1,5 +1,6 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
+import com.jinwoo.jobfit.domain.evaluation.vo.MatchedSkill;
 import com.jinwoo.jobfit.domain.evaluation.vo.SkillMatchResult;
 import com.jinwoo.jobfit.domain.evaluation.vo.SkillScore;
 import com.jinwoo.jobfit.domain.user.entity.UserProject;
@@ -53,6 +54,22 @@ public class SkillScoreCalculator {
             }
         }
         return new SkillMatchResult(matchedSkills, unmatchedSkills);
+    }
+
+    // 일치한 필수 기술마다 그 기술을 사용한 프로젝트명을 붙인다. 판단 근거 문장(matchedPoints)과 같은 기준으로 판정한다.
+    public List<MatchedSkill> matchedWithProjects(List<String> matchedSkills, List<UserProject> projects) {
+        return matchedSkills.stream()
+                .map(skill -> new MatchedSkill(skill, projectsUsing(skillAliasNormalizer.normalize(skill), projects)))
+                .toList();
+    }
+
+    private List<String> projectsUsing(String normalizedSkill, List<UserProject> projects) {
+        return projects.stream()
+                .filter(project -> skillAliasNormalizer.matches(normalizedSkill, project.getTechStack().stream()
+                        .map(skillAliasNormalizer::normalize)
+                        .collect(Collectors.toSet())))
+                .map(UserProject::getProjectName)
+                .toList();
     }
 
     private Set<String> userSkillNames(List<UserSkill> skills) {

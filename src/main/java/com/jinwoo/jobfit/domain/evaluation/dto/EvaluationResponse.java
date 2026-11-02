@@ -3,6 +3,8 @@ package com.jinwoo.jobfit.domain.evaluation.dto;
 import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationReasoning;
 import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationResult;
 import com.jinwoo.jobfit.domain.evaluation.vo.EvaluationVerdict;
+import com.jinwoo.jobfit.domain.evaluation.vo.MatchedSkill;
+import com.jinwoo.jobfit.domain.evaluation.vo.RequiredSkillMatch;
 import com.jinwoo.jobfit.domain.job.entity.JobPosting;
 
 import java.util.List;
@@ -20,9 +22,18 @@ public record EvaluationResponse(
         EvaluationVerdict verdict,
         List<String> failedReasons,
         List<String> notices,
-        EvaluationReasoning reasoning
+        EvaluationReasoning reasoning,
+        // 마감 여부. 화면은 failedReasons 문자열이 아니라 이 값으로 마감 공고를 분리한다.
+        boolean expired,
+        int requiredSkillCount,
+        int matchedSkillCount,
+        int experienceSkillCount,
+        int experienceMatchedCount,
+        List<MatchedSkill> matchedSkills,
+        List<String> missingSkills
 ) {
     public static EvaluationResponse from(EvaluationResult result, JobPosting jobPosting) {
+        RequiredSkillMatch skillMatch = result.skillMatch();
         return new EvaluationResponse(
                 result.jobPostingId(),
                 jobPosting.getCompanyName(),
@@ -36,7 +47,14 @@ public record EvaluationResponse(
                 result.verdict(),
                 result.failedReasons(),
                 result.notices(),
-                result.reasoning()
+                result.reasoning(),
+                result.expired(),
+                skillMatch.requiredSkillCount(),
+                skillMatch.matchedSkills().size(),
+                skillMatch.experienceSkillCount(),
+                skillMatch.experienceMatchedCount(),
+                skillMatch.matchedSkills(),
+                skillMatch.missingSkills()
         );
     }
 }

@@ -39,13 +39,13 @@ public class RequiredConditionChecker {
         List<String> notices = new ArrayList<>();
         checkCareer(userProfile, requirement, extraction, failedReasons);
         checkEmploymentType(userProfile, requirement, failedReasons);
-        checkDeadline(jobPosting, failedReasons);
+        boolean expired = checkDeadline(jobPosting, failedReasons);
         checkMaxYears(userProfile, extraction, failedReasons);
         checkJobCategory(userProfile, extraction, failedReasons, notices);
 
         return failedReasons.isEmpty()
                 ? ConditionCheckResult.pass(notices)
-                : ConditionCheckResult.fail(failedReasons, notices);
+                : ConditionCheckResult.fail(failedReasons, notices, expired);
     }
 
     private void checkCareer(UserProfile userProfile, JobRequirement requirement,
@@ -74,11 +74,13 @@ public class RequiredConditionChecker {
         }
     }
 
-    private void checkDeadline(JobPosting jobPosting, List<String> failedReasons) {
+    private boolean checkDeadline(JobPosting jobPosting, List<String> failedReasons) {
         LocalDateTime expirationAt = jobPosting.getExpirationAt();
-        if (expirationAt != null && expirationAt.isBefore(LocalDateTime.now(clock))) {
+        boolean expired = expirationAt != null && expirationAt.isBefore(LocalDateTime.now(clock));
+        if (expired) {
             failedReasons.add("마감일이 지난 공고입니다.");
         }
+        return expired;
     }
 
     private void checkMaxYears(UserProfile userProfile, JobRequirementExtraction extraction, List<String> failedReasons) {

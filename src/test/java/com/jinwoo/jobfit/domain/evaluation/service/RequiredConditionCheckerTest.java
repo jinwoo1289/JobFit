@@ -192,6 +192,19 @@ class RequiredConditionCheckerTest {
 
         assertThat(result.passed()).isFalse();
         assertThat(result.failedReasons()).contains("마감일이 지난 공고입니다.");
+        assertThat(result.expired()).isTrue();
+    }
+
+    // 마감 외 사유(경력 요구)로 UNFIT인 공고는 expired=false여야 화면이 마감 공고 영역으로 잘못 분리하지 않는다.
+    @Test
+    void check_failsForNonDeadlineReason_isNotExpired() {
+        JobPosting jobPosting = jobPosting(
+                "Backend Engineer (Agent Platform)", "경력 5년 이상(또는 이에 준하는 실력)", "2026-08-15T23:59:59");
+
+        ConditionCheckResult result = checker.check(newGraduateFullTimeUser(), jobPosting, defaultExtraction());
+
+        assertThat(result.passed()).isFalse();
+        assertThat(result.expired()).isFalse();
     }
 
     static Stream<Arguments> seedJobPostings() {
