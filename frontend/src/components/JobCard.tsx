@@ -10,12 +10,6 @@ interface ScoreItem {
   detail?: string
 }
 
-// "2026-11-02T11:40:00" 같은 서버 시각 문자열을 시간대 변환 없이 "11/2"로 표시한다.
-function formatAppliedDate(appliedAt: string | null): string {
-  const match = appliedAt?.match(/^\d{4}-(\d{2})-(\d{2})/)
-  return match ? `${Number(match[1])}/${Number(match[2])}` : ''
-}
-
 interface JobCardProps {
   result: EvaluationResponse
   rank?: number
@@ -74,7 +68,7 @@ function JobCard({ result, rank, onToggleApplied, isApplyPending, applyError }: 
         <div className="job-card-heading">
           <p className="job-card-company">
             {result.companyName}
-            {result.applied && <span className="applied-tag">지원함 · {formatAppliedDate(result.appliedAt)}</span>}
+            {result.applied && <span className="applied-tag">지원함</span>}
           </p>
           <h3 className="job-card-title">{result.title}</h3>
         </div>
