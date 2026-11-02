@@ -66,10 +66,7 @@ function JobCard({ result, rank, onToggleApplied, isApplyPending, applyError }: 
       <header className="job-card-header">
         {rank !== undefined && <span className="job-card-rank">{rank}</span>}
         <div className="job-card-heading">
-          <p className="job-card-company">
-            {result.companyName}
-            {result.applied && <span className="applied-tag">지원함</span>}
-          </p>
+          <p className="job-card-company">{result.companyName}</p>
           <h3 className="job-card-title">{result.title}</h3>
         </div>
         <div className="job-card-side">
