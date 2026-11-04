@@ -28,6 +28,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -147,14 +148,14 @@ public class EvaluationReasoningGenerator {
                                          List<UserProject> projects,
                                          List<UserCertificate> certificates) {
         // 근거 프롬프트에 들어가는 프로필 값을 해시해, 프롬프트 내용에 영향을 주는 변경만 캐시를 무효화한다.
-        // 기술·자격증은 목록 순서만 바뀐 경우 근거 내용이 달라질 이유가 없으므로 이름을 정렬해 해시한다
-        // (프롬프트에는 사용자가 입력한 순서 그대로 넣는다).
+        // 보유 기술·프로젝트별 사용 기술·자격증은 목록 순서만 바뀐 경우 근거 내용이 달라질 이유가 없으므로 정렬해 해시한다
+        // (프롬프트에는 사용자가 입력한 순서 그대로 넣는다). 프로젝트 자체의 순서는 그대로 반영한다.
         String profileSnapshot = String.join("\n",
                 nullToEmpty(userProfile.getDesiredJob()),
                 String.valueOf(userProfile.getCareerLevel()),
                 nullToText(userProfile.getYearsOfExperience()),
                 sortedJoin(skills.stream().map(UserSkill::getSkillName).toList()),
-                describeProjects(projects),
+                describeProjects(projects, this::sortedJoin),
                 sortedJoin(certificates.stream().map(UserCertificate::getCertificateName).toList()));
         return new CheckPointsCacheKey(
                 jobPosting.getId(),
@@ -276,13 +277,18 @@ public class EvaluationReasoningGenerator {
     }
 
     private String describeProjects(List<UserProject> projects) {
+        return describeProjects(projects, techStack -> String.join(", ", techStack));
+    }
+
+    // 프롬프트용과 해시용이 같은 형식을 쓰되, 사용 기술을 이어 붙이는 방식만 바꿀 수 있게 한다.
+    private String describeProjects(List<UserProject> projects, Function<List<String>, String> techStackJoiner) {
         if (projects.isEmpty()) {
             return "없음";
         }
         return projects.stream()
                 .map(project -> "- %s (%s): %s".formatted(
                         project.getProjectName(),
-                        String.join(", ", project.getTechStack()),
+                        techStackJoiner.apply(project.getTechStack()),
                         nullToEmpty(project.getDescription())
                 ))
                 .collect(Collectors.joining("\n"));

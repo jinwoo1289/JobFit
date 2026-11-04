@@ -23,6 +23,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -91,6 +92,35 @@ class EvaluationReasoningCacheTest {
                 skills("AWS", "Java", "Kotlin"), List.of(), certificates("SQLD", "정보처리기사"), scoreResult());
 
         assertThat(llmCalls.get()).isEqualTo(1);
+    }
+
+    // 프로젝트별 사용 기술도 순서만 바뀌면 캐시를 재사용하고, 프롬프트에는 입력 순서 그대로 들어간다.
+    @Test
+    void generate_projectTechStackReordered_reusesCacheAndKeepsInputOrderInPrompt() {
+        List<String> prompts = new ArrayList<>();
+        EvaluationReasoningGenerator recordingGenerator = generatorWith((systemPrompt, userPrompt) -> {
+            llmCalls.incrementAndGet();
+            prompts.add(userPrompt);
+            return LLM_RESPONSE;
+        });
+
+        recordingGenerator.generate(jobPosting(), extraction(List.of("Java")), userProfile(), skills("Java"),
+                projects(List.of("Spring Boot", "JPA", "Redis")), List.of(), scoreResult());
+        recordingGenerator.generate(jobPosting(), extraction(List.of("Java")), userProfile(), skills("Java"),
+                projects(List.of("Redis", "Spring Boot", "JPA")), List.of(), scoreResult());
+
+        assertThat(llmCalls.get()).isEqualTo(1);
+        assertThat(prompts).singleElement().asString().contains("JobFit (spring boot, jpa, redis)");
+    }
+
+    @Test
+    void generate_projectTechStackChanged_regenerates() {
+        generator.generate(jobPosting(), extraction(List.of("Java")), userProfile(), skills("Java"),
+                projects(List.of("Spring Boot", "JPA")), List.of(), scoreResult());
+        generator.generate(jobPosting(), extraction(List.of("Java")), userProfile(), skills("Java"),
+                projects(List.of("Spring Boot", "JPA", "Redis")), List.of(), scoreResult());
+
+        assertThat(llmCalls.get()).isEqualTo(2);
     }
 
     // 정렬은 순서만 무시할 뿐, 자격증이 실제로 바뀌면 근거를 다시 만든다.
@@ -198,6 +228,10 @@ class EvaluationReasoningCacheTest {
     private List<UserSkill> skills(String... names) {
         UserProfile profile = userProfile();
         return Arrays.stream(names).map(name -> new UserSkill(profile, name)).toList();
+    }
+
+    private List<UserProject> projects(List<String> techStack) {
+        return List.of(new UserProject(userProfile(), "JobFit", "공고 적합도 평가", techStack));
     }
 
     private List<UserCertificate> certificates(String... names) {
