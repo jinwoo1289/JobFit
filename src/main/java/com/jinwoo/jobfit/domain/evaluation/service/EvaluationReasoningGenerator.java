@@ -146,14 +146,16 @@ public class EvaluationReasoningGenerator {
                                          List<UserSkill> skills,
                                          List<UserProject> projects,
                                          List<UserCertificate> certificates) {
-        // 근거 프롬프트에 들어가는 프로필 값과 같은 표현을 해시해, 프롬프트에 영향을 주는 변경만 캐시를 무효화한다.
+        // 근거 프롬프트에 들어가는 프로필 값을 해시해, 프롬프트 내용에 영향을 주는 변경만 캐시를 무효화한다.
+        // 기술·자격증은 목록 순서만 바뀐 경우 근거 내용이 달라질 이유가 없으므로 이름을 정렬해 해시한다
+        // (프롬프트에는 사용자가 입력한 순서 그대로 넣는다).
         String profileSnapshot = String.join("\n",
                 nullToEmpty(userProfile.getDesiredJob()),
                 String.valueOf(userProfile.getCareerLevel()),
                 nullToText(userProfile.getYearsOfExperience()),
-                describeSkills(skills),
+                sortedJoin(skills.stream().map(UserSkill::getSkillName).toList()),
                 describeProjects(projects),
-                describeCertificates(certificates));
+                sortedJoin(certificates.stream().map(UserCertificate::getCertificateName).toList()));
         return new CheckPointsCacheKey(
                 jobPosting.getId(),
                 userProfile.getId(),
@@ -260,6 +262,10 @@ public class EvaluationReasoningGenerator {
                 scoreResult.skillScore(), scoreResult.experienceScore(),
                 scoreResult.preferenceScore(), scoreResult.certificateScore()
         );
+    }
+
+    private String sortedJoin(List<String> names) {
+        return names.stream().sorted().collect(Collectors.joining(", "));
     }
 
     private String describeSkills(List<UserSkill> skills) {

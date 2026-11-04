@@ -582,3 +582,267 @@
   width: 100%;
   height: 12px;
 }
+
+/* View tabs */
+
+.view-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e2e4e8;
+}
+
+.view-tab {
+  padding: 8px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #666;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+}
+
+.view-tab:hover {
+  color: #1a1a1a;
+}
+
+.view-tab-active {
+  color: #2f6feb;
+  border-bottom-color: #2f6feb;
+}
+
+/* Profile editor */
+
+.profile-fieldset {
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.profile-section {
+  background: #fff;
+  border: 1px solid #e2e4e8;
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+
+.profile-section h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.profile-editor input,
+.profile-editor select,
+.profile-editor textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  color: inherit;
+  background: #fff;
+  border: 1px solid #d0d4da;
+  border-radius: 8px;
+}
+
+.profile-editor input:disabled,
+.profile-editor select:disabled,
+.profile-editor textarea:disabled {
+  background: #f7f8fa;
+  color: #444;
+}
+
+.profile-editor textarea {
+  resize: vertical;
+}
+
+.profile-hint {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #666;
+}
+
+.profile-section .profile-hint:last-child {
+  margin: 10px 0 0;
+}
+
+.profile-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.profile-project {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  border: 1px solid #eceef1;
+  border-radius: 10px;
+  background: #fafbfc;
+}
+
+.profile-project-header {
+  display: flex;
+  gap: 8px;
+}
+
+.profile-row-remove {
+  padding: 6px 12px;
+  font-size: 13px;
+  color: #c0392b;
+  background: #fff;
+  border: 1px solid #f5c6c0;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.profile-add-button {
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2f6feb;
+  background: #fff;
+  border: 1px dashed #a7b8d8;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.profile-readonly-notice,
+.profile-saved-notice {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.profile-readonly-notice {
+  background: #f1f3f6;
+  border: 1px solid #e2e4e8;
+  color: #444;
+}
+
+.profile-saved-notice {
+  background: #fff8e6;
+  border: 1px solid #f3dca2;
+  color: #7a5a00;
+}
+
+.profile-editor .profile-saved-notice {
+  margin-top: -12px;
+}
+
+/* Tag input */
+
+.tag-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: #fff;
+  border: 1px solid #d0d4da;
+  border-radius: 8px;
+}
+
+.tag-input-disabled {
+  background: #f7f8fa;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 13px;
+  background: #eaf1fe;
+  color: #1f4fb0;
+  border-radius: 999px;
+}
+
+.tag-remove {
+  padding: 0;
+  font-size: 11px;
+  line-height: 1;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.profile-editor .tag-input-field {
+  flex: 1;
+  min-width: 120px;
+  padding: 4px;
+  border: none;
+}
+
+.profile-editor .tag-input-field:focus {
+  outline: none;
+}
+
+.tag-input-empty {
+  font-size: 13px;
+  color: #888;
+}
+
+@media (max-width: 600px) {
+  .profile-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .profile-section {
+    padding: 16px;
+  }
+}
+
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 6px 0;
+}
+
+.profile-editor .checkbox-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.profile-editor .checkbox-option input {
+  width: auto;
+  margin: 0;
+  accent-color: #2f6feb;
+}
+
+.profile-field-note {
+  font-size: 12px;
+  font-weight: 400;
+  color: #666;
+}

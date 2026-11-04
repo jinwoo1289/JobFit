@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -65,13 +66,14 @@ public class RequiredConditionChecker {
     }
 
     private void checkEmploymentType(UserProfile userProfile, JobRequirement requirement, List<String> failedReasons) {
-        EmploymentType desired = userProfile.getEmploymentType();
-        if (desired == EmploymentType.ANY) {
+        // 희망 고용형태를 하나도 고르지 않았으면(무관) 통과, 골랐으면 공고 고용형태가 그 안에 있어야 통과한다.
+        if (userProfile.acceptsEmploymentType(requirement.employmentType())) {
             return;
         }
-        if (desired != requirement.employmentType()) {
-            failedReasons.add("희망 고용형태(%s)와 공고 고용형태(%s) 불일치".formatted(desired, requirement.employmentType()));
-        }
+        String desired = userProfile.getSortedEmploymentTypes().stream()
+                .map(EmploymentType::name)
+                .collect(Collectors.joining(", "));
+        failedReasons.add("희망 고용형태(%s)와 공고 고용형태(%s) 불일치".formatted(desired, requirement.employmentType()));
     }
 
     private boolean checkDeadline(JobPosting jobPosting, List<String> failedReasons) {

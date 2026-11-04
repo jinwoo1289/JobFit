@@ -14,6 +14,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Set;
 import java.util.List;
 
 import java.time.Clock;
@@ -104,6 +105,44 @@ class RequiredConditionCheckerTest {
                 .contains("희망 고용형태(FULL_TIME)와 공고 고용형태(INTERN) 불일치");
     }
 
+    // 복수 선택: 공고 고용형태(누비랩=INTERN)가 선택한 집합에 포함되면 통과한다.
+    @Test
+    void check_multipleEmploymentTypesIncludingPostingType_passes() {
+        UserProfile userProfile = newGraduateUserWith(Set.of(EmploymentType.FULL_TIME, EmploymentType.INTERN));
+        JobPosting internPosting = jobPosting(
+                "[인턴] Product Engineer_Backend (연계형)", "경력무관 / 인턴", "2026-08-15T23:59:59");
+        JobPosting fullTimePosting = jobPosting("Server Developer(여신)", "신입/경력", "2026-08-15T23:59:59");
+
+        assertThat(checker.check(userProfile, internPosting, defaultExtraction()).passed()).isTrue();
+        assertThat(checker.check(userProfile, fullTimePosting, defaultExtraction()).passed()).isTrue();
+    }
+
+    @Test
+    void check_multipleEmploymentTypesExcludingPostingType_failsWithSortedReason() {
+        UserProfile userProfile = newGraduateUserWith(Set.of(EmploymentType.FREELANCE, EmploymentType.CONTRACT));
+        JobPosting internPosting = jobPosting(
+                "[인턴] Product Engineer_Backend (연계형)", "경력무관 / 인턴", "2026-08-15T23:59:59");
+
+        ConditionCheckResult result = checker.check(userProfile, internPosting, defaultExtraction());
+
+        assertThat(result.passed()).isFalse();
+        // 사유 문구는 Set 순회 순서와 무관하게 enum 선언 순서로 고정된다.
+        assertThat(result.failedReasons())
+                .containsExactly("희망 고용형태(CONTRACT, FREELANCE)와 공고 고용형태(INTERN) 불일치");
+    }
+
+    // 아무것도 선택하지 않으면 무관(기존 ANY)으로 보고 어떤 고용형태 공고든 통과한다.
+    @Test
+    void check_noEmploymentTypeSelected_passesAnyPostingType() {
+        UserProfile userProfile = newGraduateUserWith(Set.of());
+        JobPosting internPosting = jobPosting(
+                "[인턴] Product Engineer_Backend (연계형)", "경력무관 / 인턴", "2026-08-15T23:59:59");
+        JobPosting fullTimePosting = jobPosting("Server Developer(여신)", "신입/경력", "2026-08-15T23:59:59");
+
+        assertThat(checker.check(userProfile, internPosting, defaultExtraction()).failedReasons()).isEmpty();
+        assertThat(checker.check(userProfile, fullTimePosting, defaultExtraction()).failedReasons()).isEmpty();
+    }
+
     @Test
     void check_yearsOfExperienceExceedsMaxYears_failsOnMaxYears() {
         UserProfile userProfile = experiencedFullTimeUser(4);
@@ -162,7 +201,7 @@ class RequiredConditionCheckerTest {
 
     @Test
     void check_jobCategoryItGeneralWithNonDevelopmentDesiredJob_fails() {
-        UserProfile userProfile = new UserProfile("마케팅 기획자", CareerLevel.NEW_GRADUATE, null, "서울", EmploymentType.FULL_TIME);
+        UserProfile userProfile = new UserProfile("마케팅 기획자", CareerLevel.NEW_GRADUATE, null, "서울", Set.of(EmploymentType.FULL_TIME));
         JobPosting jobPosting = jobPosting(
                 "2026년 2차 정규직 신입사원 채용 공고 (IT)", "신입", "2026-08-26T23:59:59");
         JobRequirementExtraction extraction = extractionOf(null, null, JobCategory.IT_GENERAL);
@@ -234,8 +273,12 @@ class RequiredConditionCheckerTest {
                 CareerLevel.NEW_GRADUATE,
                 null,
                 "서울",
-                EmploymentType.FULL_TIME
+                Set.of(EmploymentType.FULL_TIME)
         );
+    }
+
+    private static UserProfile newGraduateUserWith(Set<EmploymentType> employmentTypes) {
+        return new UserProfile("백엔드 개발자", CareerLevel.NEW_GRADUATE, null, "서울", employmentTypes);
     }
 
     private static UserProfile experiencedFullTimeUser(int yearsOfExperience) {
@@ -244,7 +287,7 @@ class RequiredConditionCheckerTest {
                 CareerLevel.EXPERIENCED,
                 yearsOfExperience,
                 "서울",
-                EmploymentType.FULL_TIME
+                Set.of(EmploymentType.FULL_TIME)
         );
     }
 

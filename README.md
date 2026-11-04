@@ -182,12 +182,16 @@ JobRequirementExtraction (1:1 with JobPosting)
 | POST | `/api/jobs` | 공고 등록 (중복 시 409) |
 | GET | `/api/jobs` | 공고 목록 조회 |
 | GET | `/api/jobs/{id}` | 공고 단건 조회 (없으면 404) |
-| POST | `/api/users/profile` | 프로필 등록 (기술·프로젝트·자격증·가중치 포함) |
+| POST | `/api/users/profile` | 프로필 등록 (기술·프로젝트·자격증·가중치 포함)\* |
 | GET | `/api/users/profile/{id}` | 프로필 조회 |
+| PUT | `/api/users/profile/{id}` | 프로필 수정 (가중치 제외, 기술은 lowercase·중복 제거)\* |
+| GET | `/api/users/profile/settings` | 프로필 수정 가능 여부 (`editEnabled`) |
 | PUT | `/api/users/profile/{id}/weights` | 가중치 수정 |
-| DELETE | `/api/users/profile/{id}` | 프로필 삭제 |
+| DELETE | `/api/users/profile/{id}` | 프로필 삭제\* |
 | POST | `/api/evaluations` | 전체 공고 평가 (적합도순 정렬) |
 | GET | `/api/evaluations/{userProfileId}/jobs/{jobPostingId}` | 단건 평가 |
+
+\* `PROFILE_EDIT_ENABLED=true`일 때만 허용되며, 미설정(기본값)이면 403을 반환합니다. 공개 배포 환경에서는 설정하지 않습니다.
 
 ## 테스트
 

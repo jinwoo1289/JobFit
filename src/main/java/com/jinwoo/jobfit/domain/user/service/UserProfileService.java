@@ -3,7 +3,9 @@ package com.jinwoo.jobfit.domain.user.service;
 import com.jinwoo.jobfit.domain.user.dto.EvaluationWeightResponse;
 import com.jinwoo.jobfit.domain.user.dto.EvaluationWeightUpdateRequest;
 import com.jinwoo.jobfit.domain.user.dto.UserProfileCreateRequest;
+import com.jinwoo.jobfit.domain.user.dto.ProfileSettingsResponse;
 import com.jinwoo.jobfit.domain.user.dto.UserProfileResponse;
+import com.jinwoo.jobfit.domain.user.dto.UserProfileUpdateRequest;
 import com.jinwoo.jobfit.domain.user.entity.EvaluationWeight;
 import com.jinwoo.jobfit.domain.user.entity.UserCertificate;
 import com.jinwoo.jobfit.domain.user.entity.UserProfile;
@@ -33,9 +35,11 @@ public class UserProfileService {
     private final UserCertificateRepository userCertificateRepository;
     private final EvaluationWeightRepository evaluationWeightRepository;
     private final JobApplicationRepository jobApplicationRepository;
+    private final ProfileEditPolicy profileEditPolicy;
 
     @Transactional
     public UserProfileResponse create(UserProfileCreateRequest request) {
+        profileEditPolicy.assertEditable();
         UserProfile userProfile = userProfileRepository.save(request.toEntity());
 
         List<UserSkill> skills = userSkillRepository.saveAll(
@@ -76,50 +80,44 @@ public class UserProfileService {
     }
 
     @Transactional
-    public UserProfileResponse update(Long id, UserProfileCreateRequest request) {
+    public UserProfileResponse update(Long id, UserProfileUpdateRequest request) {
+        profileEditPolicy.assertEditable();
         UserProfile userProfile = getUserProfile(id);
         userProfile.updateBasicInfo(
-            request.desiredJob(),
-            request.careerLevel(),
-            request.yearsOfExperience(),
-            request.desiredLocation(),
-            request.employmentType()
-         );
-
-        userSkillRepository.deleteAllByUserProfileId(id);
-        List<UserSkill> skills = userSkillRepository.saveAll(
-            request.skills().stream()
-                    .map(skill -> skill.toEntity(userProfile))
-                    .toList()
+                request.desiredJob(),
+                request.careerLevel(),
+                request.yearsOfExperience(),
+                request.desiredLocation(),
+                request.employmentTypes()
         );
 
-         userProjectRepository.deleteAllByUserProfileId(id);
+        userSkillRepository.deleteAllByUserProfileId(id);
+        List<UserSkill> skills = userSkillRepository.saveAll(request.toSkillEntities(userProfile));
+
+        userProjectRepository.deleteAllByUserProfileId(id);
         List<UserProject> projects = request.projects() == null
-            ? List.of()
-            : userProjectRepository.saveAll(
-                    request.projects().stream()
-                            .map(project -> project.toEntity(userProfile))
-                            .toList()
-            );
+                ? List.of()
+                : userProjectRepository.saveAll(
+                        request.projects().stream()
+                                .map(project -> project.toEntity(userProfile))
+                                .toList()
+                );
 
         userCertificateRepository.deleteAllByUserProfileId(id);
         List<UserCertificate> certificates = request.certificates() == null
-            ? List.of()
-            : userCertificateRepository.saveAll(
-                    request.certificates().stream()
-                            .map(certificate -> certificate.toEntity(userProfile))
-                            .toList()
-            );
+                ? List.of()
+                : userCertificateRepository.saveAll(
+                        request.certificates().stream()
+                                .map(certificate -> certificate.toEntity(userProfile))
+                                .toList()
+                );
 
-    EvaluationWeight evaluationWeight = getEvaluationWeight(id);
-    evaluationWeight.changeWeights(
-            request.weights().skillWeight(),
-            request.weights().experienceWeight(),
-            request.weights().preferenceWeight(),
-            request.weights().certificateWeight()
-    );
+        // 가중치는 PUT .../weights에서만 바꾸므로 기존 값을 그대로 응답에 담는다.
+        return UserProfileResponse.from(userProfile, skills, projects, certificates, getEvaluationWeight(id));
+    }
 
-    return UserProfileResponse.from(userProfile, skills, projects, certificates, evaluationWeight);
+    public ProfileSettingsResponse settings() {
+        return new ProfileSettingsResponse(profileEditPolicy.isEditEnabled());
     }
 
     @Transactional
@@ -139,6 +137,7 @@ public class UserProfileService {
 
     @Transactional
     public void delete(Long id) {
+        profileEditPolicy.assertEditable();
         UserProfile userProfile = getUserProfile(id);
         // 지원 완료 기록은 프로필 cascade 대상이 아니므로 FK 위반이 나지 않도록 먼저 지운다.
         jobApplicationRepository.deleteAllByUserProfileId(id);

@@ -14,6 +14,7 @@ import com.jinwoo.jobfit.domain.user.entity.UserProject;
 import com.jinwoo.jobfit.domain.user.entity.UserSkill;
 import org.junit.jupiter.api.Test;
 
+import java.util.Set;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -211,6 +212,6 @@ class ScoreCalculatorTest {
     }
 
     private UserProfile profile() {
-        return new UserProfile("백엔드 개발자", CareerLevel.NEW_GRADUATE, null, "서울", EmploymentType.FULL_TIME);
+        return new UserProfile("백엔드 개발자", CareerLevel.NEW_GRADUATE, null, "서울", Set.of(EmploymentType.FULL_TIME));
     }
 }

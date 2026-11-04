@@ -22,6 +22,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -79,6 +80,28 @@ class EvaluationReasoningCacheTest {
 
         assertThat(llmCalls.get()).isEqualTo(2);
         assertThat(storedRow.get()).isSameAs(firstRow);
+    }
+
+    // 기술·자격증은 순서만 바뀌면 같은 프로필로 보고 캐시를 재사용한다.
+    @Test
+    void generate_skillsAndCertificatesReordered_reusesCache() {
+        generator.generate(jobPosting(), extraction(List.of("Java")), userProfile(),
+                skills("Java", "Kotlin", "AWS"), List.of(), certificates("정보처리기사", "SQLD"), scoreResult());
+        generator.generate(jobPosting(), extraction(List.of("Java")), userProfile(),
+                skills("AWS", "Java", "Kotlin"), List.of(), certificates("SQLD", "정보처리기사"), scoreResult());
+
+        assertThat(llmCalls.get()).isEqualTo(1);
+    }
+
+    // 정렬은 순서만 무시할 뿐, 자격증이 실제로 바뀌면 근거를 다시 만든다.
+    @Test
+    void generate_certificateChanged_regenerates() {
+        generator.generate(jobPosting(), extraction(List.of("Java")), userProfile(),
+                skills("Java"), List.of(), certificates("정보처리기사"), scoreResult());
+        generator.generate(jobPosting(), extraction(List.of("Java")), userProfile(),
+                skills("Java"), List.of(), certificates("정보처리기사", "SQLD"), scoreResult());
+
+        assertThat(llmCalls.get()).isEqualTo(2);
     }
 
     // 프롬프트 버전 변경이든 강제 재추출이든, 추출 결과 내용이 바뀌면 근거도 다시 만든다.
@@ -167,7 +190,7 @@ class EvaluationReasoningCacheTest {
     }
 
     private UserProfile userProfile() {
-        UserProfile userProfile = new UserProfile("백엔드 개발자", CareerLevel.NEW_GRADUATE, null, "서울", EmploymentType.FULL_TIME);
+        UserProfile userProfile = new UserProfile("백엔드 개발자", CareerLevel.NEW_GRADUATE, null, "서울", Set.of(EmploymentType.FULL_TIME));
         ReflectionTestUtils.setField(userProfile, "id", 11L);
         return userProfile;
     }
@@ -175,6 +198,11 @@ class EvaluationReasoningCacheTest {
     private List<UserSkill> skills(String... names) {
         UserProfile profile = userProfile();
         return Arrays.stream(names).map(name -> new UserSkill(profile, name)).toList();
+    }
+
+    private List<UserCertificate> certificates(String... names) {
+        UserProfile profile = userProfile();
+        return Arrays.stream(names).map(name -> new UserCertificate(profile, name, null, null)).toList();
     }
 
     private JobRequirementExtraction extraction(List<String> requiredSkills) {

@@ -28,6 +28,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.LocalDate;
+import java.util.Set;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,7 +41,7 @@ import static org.mockito.Mockito.when;
 // 추출·checkPoints 캐시 저장이 REQUIRES_NEW 트랜잭션에서 일어나 테스트 트랜잭션 롤백으로는 정리되지 않으므로,
 // 테스트 전용 공고·프로필을 커밋해 쓰고 @AfterEach에서 직접 지운다. 시드 공고의 캐시를 건드리지 않도록
 // evaluateAll은 호출하지 않는다(evaluateAll의 applied 반영은 EvaluationQueryServiceTest에서 mock으로 검증).
-@SpringBootTest
+@SpringBootTest(properties = "jobfit.profile.edit-enabled=true")
 class JobApplicationServiceTest {
 
     private static final String EXTRACTION_JSON = """
@@ -148,7 +149,7 @@ class JobApplicationServiceTest {
                 CareerLevel.NEW_GRADUATE,
                 null,
                 "서울",
-                EmploymentType.FULL_TIME,
+                Set.of(EmploymentType.FULL_TIME),
                 List.of(new UserSkillRequest("Java")),
                 List.of(new UserProjectRequest("JobFit", "채용 적합도 서비스", List.of("Java"))),
                 List.of(new UserCertificateRequest("OPIc", "IH", LocalDate.of(2024, 3, 15))),

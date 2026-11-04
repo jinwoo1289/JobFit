@@ -9,6 +9,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Set;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -136,6 +137,6 @@ class ExperienceScoreCalculatorTest {
     }
 
     private static UserProfile profile() {
-        return new UserProfile("백엔드 개발자", CareerLevel.NEW_GRADUATE, null, "서울", EmploymentType.FULL_TIME);
+        return new UserProfile("백엔드 개발자", CareerLevel.NEW_GRADUATE, null, "서울", Set.of(EmploymentType.FULL_TIME));
     }
 }

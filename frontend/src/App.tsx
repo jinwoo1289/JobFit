@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { evaluateAll, markApplied, unmarkApplied, updateWeights } from './api'
 import JobCard from './components/JobCard'
 import JobCardSkeleton from './components/JobCardSkeleton'
+import ProfileEditor from './components/ProfileEditor'
 import WeightSliders from './components/WeightSliders'
 import type { EvaluationResponse, EvaluationVerdict, Weights } from './types'
 import './App.css'
@@ -44,7 +45,12 @@ function parseUserProfileId(value: string | undefined): number | null {
   return value && Number.isInteger(id) && id > 0 ? id : null
 }
 
+type View = 'evaluate' | 'profile'
+
 function App() {
+  const [view, setView] = useState<View>('evaluate')
+  // 마지막 평가 이후 프로필을 저장했는지. 저장과 재평가를 분리했으므로 결과가 이전 프로필 기준임을 알린다.
+  const [isProfileChangedSinceEvaluation, setIsProfileChangedSinceEvaluation] = useState(false)
   const [weights, setWeights] = useState<Weights>(DEFAULT_WEIGHTS)
   const [results, setResults] = useState<EvaluationResponse[]>([])
   // 한 번이라도 평가에 성공했는지. 버튼 문구를 "평가" → "재평가"로 바꾸는 데 쓴다.
@@ -83,6 +89,7 @@ function App() {
       const evaluations = await evaluateAll(USER_PROFILE_ID)
       setResults(evaluations)
       setHasEvaluated(true)
+      setIsProfileChangedSinceEvaluation(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : '평가 요청 중 오류가 발생했습니다.')
     } finally {
@@ -168,8 +175,29 @@ function App() {
     <div className="app">
       <header className="app-header">
         <h1>JobFit</h1>
-        <p>가중치를 조정하고 재평가하여 추천 공고를 확인하세요.</p>
+        <p>
+          {view === 'evaluate'
+            ? '가중치를 조정하고 재평가하여 추천 공고를 확인하세요.'
+            : '평가에 쓰이는 프로필을 확인하고 수정하세요.'}
+        </p>
       </header>
+
+      <nav className="view-tabs" aria-label="화면 전환">
+        <button
+          className={`view-tab ${view === 'evaluate' ? 'view-tab-active' : ''}`}
+          onClick={() => setView('evaluate')}
+          aria-current={view === 'evaluate' ? 'page' : undefined}
+        >
+          평가
+        </button>
+        <button
+          className={`view-tab ${view === 'profile' ? 'view-tab-active' : ''}`}
+          onClick={() => setView('profile')}
+          aria-current={view === 'profile' ? 'page' : undefined}
+        >
+          프로필
+        </button>
+      </nav>
 
       {!isNoticeDismissed && (
         <div className="cold-start-notice">
@@ -189,58 +217,73 @@ function App() {
         </div>
       )}
 
-      <WeightSliders weights={weights} onChange={handleWeightChange} />
+      {view === 'profile' && USER_PROFILE_ID !== null && (
+        <ProfileEditor userProfileId={USER_PROFILE_ID} onSaved={() => setIsProfileChangedSinceEvaluation(true)} />
+      )}
 
-      <div className="evaluate-bar">
-        <button className="evaluate-button" onClick={handleEvaluate} disabled={USER_PROFILE_ID === null || !isWeightValid || isLoading}>
-          {isLoading ? (
-            <>
-              <span className="button-spinner" />
-              평가 중...
-            </>
-          ) : hasEvaluated ? (
-            '재평가'
-          ) : (
-            '평가'
-          )}
-        </button>
-        {!isWeightValid && <span className="evaluate-warning">가중치 합계가 100이 되어야 합니다.</span>}
-        {error && <span className="evaluate-error">{error}</span>}
-      </div>
-
-      <section className="results">
-        {results.length === 0 && !isLoading && (
-          <p className="results-empty">{hasEvaluated ? '평가할 공고가 없습니다.' : '평가 버튼을 눌러 추천 공고를 확인하세요.'}</p>
-        )}
-        {results.length > 0 && !isLoading && (
-          <div className="results-toolbar">
-            <label className="applied-filter">
-              <input
-                type="checkbox"
-                checked={showAppliedOnly}
-                onChange={(event) => setShowAppliedOnly(event.target.checked)}
-              />
-              지원한 공고만 보기
-            </label>
+      {view === 'evaluate' && (
+        <>
+        {isProfileChangedSinceEvaluation && hasEvaluated && (
+          <div className="profile-saved-notice" role="status">
+            프로필이 변경되어 아래 결과는 이전 프로필 기준입니다. 재평가하면 반영되며, 근거 생성 LLM 호출이 공고 수만큼
+            발생할 수 있습니다.
           </div>
         )}
-        {showAppliedOnly && !isLoading && results.length > 0 &&
-          visibleActiveResults.length === 0 && visibleExpiredResults.length === 0 && (
-            <p className="results-empty">지원 완료로 체크한 공고가 없습니다.</p>
-          )}
-        <div className="results-grid">
-          {isLoading
-            ? Array.from({ length: SKELETON_COUNT }).map((_, i) => <JobCardSkeleton key={i} />)
-            : visibleActiveResults.map((result) => renderCard(result, fitRanks.get(result.jobPostingId)))}
+
+        <WeightSliders weights={weights} onChange={handleWeightChange} />
+
+        <div className="evaluate-bar">
+          <button className="evaluate-button" onClick={handleEvaluate} disabled={USER_PROFILE_ID === null || !isWeightValid || isLoading}>
+            {isLoading ? (
+              <>
+                <span className="button-spinner" />
+                평가 중...
+              </>
+            ) : hasEvaluated ? (
+              '재평가'
+            ) : (
+              '평가'
+            )}
+          </button>
+          {!isWeightValid && <span className="evaluate-warning">가중치 합계가 100이 되어야 합니다.</span>}
+          {error && <span className="evaluate-error">{error}</span>}
         </div>
 
-        {!isLoading && visibleExpiredResults.length > 0 && (
-          <details className="expired-section">
-            <summary className="expired-section-summary">마감된 공고 {visibleExpiredResults.length}개</summary>
-            <div className="results-grid">{visibleExpiredResults.map((result) => renderCard(result))}</div>
-          </details>
-        )}
-      </section>
+        <section className="results">
+          {results.length === 0 && !isLoading && (
+            <p className="results-empty">{hasEvaluated ? '평가할 공고가 없습니다.' : '평가 버튼을 눌러 추천 공고를 확인하세요.'}</p>
+          )}
+          {results.length > 0 && !isLoading && (
+            <div className="results-toolbar">
+              <label className="applied-filter">
+                <input
+                  type="checkbox"
+                  checked={showAppliedOnly}
+                  onChange={(event) => setShowAppliedOnly(event.target.checked)}
+                />
+                지원한 공고만 보기
+              </label>
+            </div>
+          )}
+          {showAppliedOnly && !isLoading && results.length > 0 &&
+            visibleActiveResults.length === 0 && visibleExpiredResults.length === 0 && (
+              <p className="results-empty">지원 완료로 체크한 공고가 없습니다.</p>
+            )}
+          <div className="results-grid">
+            {isLoading
+              ? Array.from({ length: SKELETON_COUNT }).map((_, i) => <JobCardSkeleton key={i} />)
+              : visibleActiveResults.map((result) => renderCard(result, fitRanks.get(result.jobPostingId)))}
+          </div>
+
+          {!isLoading && visibleExpiredResults.length > 0 && (
+            <details className="expired-section">
+              <summary className="expired-section-summary">마감된 공고 {visibleExpiredResults.length}개</summary>
+              <div className="results-grid">{visibleExpiredResults.map((result) => renderCard(result))}</div>
+            </details>
+          )}
+        </section>
+        </>
+      )}
     </div>
   )
 }

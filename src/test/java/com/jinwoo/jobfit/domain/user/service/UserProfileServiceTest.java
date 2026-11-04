@@ -22,11 +22,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Set;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+@SpringBootTest(properties = "jobfit.profile.edit-enabled=true")
 @Transactional
 class UserProfileServiceTest {
 
@@ -88,7 +89,7 @@ class UserProfileServiceTest {
                 CareerLevel.NEW_GRADUATE,
                 null,
                 "서울",
-                EmploymentType.FULL_TIME,
+                Set.of(EmploymentType.FULL_TIME),
                 List.of(new UserSkillRequest("Java")),
                 List.of(new UserProjectRequest("JobFit", "채용 적합도 서비스", List.of("spring", "jpa"))),
                 List.of(new UserCertificateRequest("OPIc", "IH", LocalDate.of(2024, 3, 15))),

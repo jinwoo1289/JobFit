@@ -64,3 +64,50 @@ export interface JobApplicationResponse {
   jobPostingId: number
   appliedAt: string
 }
+
+export type CareerLevel = 'NEW_GRADUATE' | 'EXPERIENCED'
+
+// 희망 고용형태는 복수 선택이며, 빈 배열이면 무관으로 평가한다.
+export type EmploymentType = 'FULL_TIME' | 'CONTRACT' | 'INTERN' | 'FREELANCE'
+
+export interface UserProject {
+  projectName: string
+  description: string | null
+  techStack: string[]
+}
+
+export interface UserCertificate {
+  certificateName: string
+  grade: string | null
+  // yyyy-MM-dd
+  acquiredAt: string | null
+}
+
+export interface UserProfile {
+  id: number
+  desiredJob: string
+  careerLevel: CareerLevel
+  yearsOfExperience: number | null
+  desiredLocation: string | null
+  employmentTypes: EmploymentType[]
+  skills: { id: number; skillName: string }[]
+  projects: (UserProject & { id: number })[]
+  certificates: (UserCertificate & { id: number })[]
+  weights: Weights & { id: number }
+}
+
+// 가중치는 PUT .../weights에서 따로 다루므로 프로필 수정 요청에는 넣지 않는다.
+export interface UserProfileUpdateRequest {
+  desiredJob: string
+  careerLevel: CareerLevel
+  yearsOfExperience: number | null
+  desiredLocation: string | null
+  employmentTypes: EmploymentType[]
+  skills: string[]
+  projects: UserProject[]
+  certificates: UserCertificate[]
+}
+
+export interface ProfileSettings {
+  editEnabled: boolean
+}

@@ -24,6 +24,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Set;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -243,7 +244,7 @@ class EvaluationServiceTest {
     }
 
     private static UserProfile userProfile() {
-        return new UserProfile("백엔드 개발자", CareerLevel.NEW_GRADUATE, null, "서울", EmploymentType.FULL_TIME);
+        return new UserProfile("백엔드 개발자", CareerLevel.NEW_GRADUATE, null, "서울", Set.of(EmploymentType.FULL_TIME));
     }
 
     private static JobPosting jobPosting(String title, String experienceLevel, String keywords,

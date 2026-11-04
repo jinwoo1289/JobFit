@@ -19,6 +19,7 @@ import org.mockito.Mockito;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -214,7 +215,7 @@ class EvaluationReasoningGeneratorTest {
     }
 
     private UserProfile userProfile() {
-        return new UserProfile("백엔드 개발자", CareerLevel.NEW_GRADUATE, null, "서울", EmploymentType.FULL_TIME);
+        return new UserProfile("백엔드 개발자", CareerLevel.NEW_GRADUATE, null, "서울", Set.of(EmploymentType.FULL_TIME));
     }
 
     private List<UserSkill> skills() {
