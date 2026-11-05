@@ -34,6 +34,11 @@ public record EvaluationResponse(
         int experienceMatchedCount,
         List<MatchedSkill> matchedSkills,
         List<String> missingSkills,
+        // 우대 점수 근거: 우대 기술 preferredSkillCount개 중 preferredMatchedCount개 보유 (점수 분모 상한과 무관한 실제 개수)
+        int preferredSkillCount,
+        int preferredMatchedCount,
+        // 필수 요건이 적어 기술·경험 가중치 일부를 우대로 옮겨 총점을 계산한 공고
+        boolean thinRequired,
         // 지원 완료 체크 여부와 체크 시각(미체크면 null). 평가 결과·캐시와 무관하게 응답을 만들 때만 합친다.
         boolean applied,
         LocalDateTime appliedAt,
@@ -69,6 +74,9 @@ public record EvaluationResponse(
                 skillMatch.experienceMatchedCount(),
                 skillMatch.matchedSkills(),
                 skillMatch.missingSkills(),
+                result.preferredSkillCount(),
+                result.preferredMatchedCount(),
+                result.thinRequired(),
                 appliedAt != null,
                 appliedAt,
                 jobPosting.getExpirationAt(),

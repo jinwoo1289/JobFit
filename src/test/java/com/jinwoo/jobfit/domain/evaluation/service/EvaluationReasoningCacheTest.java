@@ -245,6 +245,6 @@ class EvaluationReasoningCacheTest {
     }
 
     private ScoreResult scoreResult() {
-        return new ScoreResult(100.0, false, 0.0, false, 0.0, false, 0.0, false);
+        return new ScoreResult(100.0, false, 0.0, false, 0.0, false, 0.0, false, 0, 0, 0, false);
     }
 }

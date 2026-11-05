@@ -220,6 +220,42 @@ class SkillScoreCalculatorTest {
         assertThat(actual.value()).isEqualTo(0.0);
     }
 
+    // 토스페이먼츠(54905826)처럼 우대 기술이 상한(5개)보다 많으면 분모를 5로 둔다.
+    // Java·Spring Framework(별칭)·Redis(스킬+프로젝트, 100) + Kotlin(스킬만, 60) = 360 → 360/5 (상한 미적용 시 360/9 = 40)
+    @Test
+    void calculatePreference_moreThanCap_dividesByCap() {
+        List<String> preferredSkills = List.of(
+                "Java", "Kotlin", "Spring Framework", "MSA", "Kubernetes", "Istio", "Redis", "Kafka", "ELK");
+
+        SkillScore actual = calculator.calculatePreference(skills(), projects(), preferredSkills);
+
+        assertThat(SkillScoreCalculator.PREFERRED_SCORE_CAP).isEqualTo(5);
+        assertThat(actual.excluded()).isFalse();
+        assertThat(actual.value()).isCloseTo(360.0 / 5, within(0.001));
+    }
+
+    // 우대 기술이 상한 이하이면 기존처럼 전체 개수로 나눈다.
+    @Test
+    void calculatePreference_atMostCap_dividesByActualCount() {
+        SkillScore actual = calculator.calculatePreference(skills(), projects(), List.of("Java", "Go", "Rust"));
+
+        assertThat(actual.value()).isCloseTo(100.0 / 3, within(0.001));
+    }
+
+    // 상한보다 많이 보유해도 100점을 넘지 않는다. (6개 모두 스킬+프로젝트 일치 → 600/5 = 120 → 100)
+    @Test
+    void calculatePreference_holdsMoreThanCap_isClampedTo100() {
+        SkillScore actual = calculator.calculatePreference(skills(), projects(),
+                List.of("Java", "Spring Boot", "JPA", "Redis", "AWS", "Docker"));
+
+        assertThat(actual.value()).isEqualTo(100.0);
+    }
+
+    @Test
+    void calculatePreference_empty_isExcluded() {
+        assertThat(calculator.calculatePreference(skills(), projects(), List.of()).excluded()).isTrue();
+    }
+
     private static List<UserSkill> skills() {
         UserProfile profile = profile();
         return List.of(

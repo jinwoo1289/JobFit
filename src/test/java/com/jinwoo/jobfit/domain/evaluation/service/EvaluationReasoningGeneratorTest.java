@@ -199,7 +199,7 @@ class EvaluationReasoningGeneratorTest {
     }
 
     private ScoreResult scoreResult() {
-        return new ScoreResult(50.0, false, 0.0, false, 0.0, false, 0.0, false);
+        return new ScoreResult(50.0, false, 0.0, false, 0.0, false, 0.0, false, 0, 0, 0, false);
     }
 
     private EvaluationReasoningCacheRepository emptyReasoningCache() {

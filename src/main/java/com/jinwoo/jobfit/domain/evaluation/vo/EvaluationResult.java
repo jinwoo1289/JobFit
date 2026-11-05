@@ -14,7 +14,11 @@ public record EvaluationResult(
         List<String> notices,
         EvaluationReasoning reasoning,
         boolean expired,
-        RequiredSkillMatch skillMatch
+        RequiredSkillMatch skillMatch,
+        int preferredSkillCount,
+        int preferredMatchedCount,
+        // 필수 요건이 적어 우대 비중을 높여 총점을 계산했는지 여부. 총점이 계산되는 FIT일 때만 true일 수 있다.
+        boolean thinRequired
 ) {
     public static EvaluationResult unfit(Long jobPostingId, ScoreResult scoreResult, List<String> failedReasons,
                                           List<String> notices, EvaluationReasoning reasoning,
@@ -25,7 +29,8 @@ public record EvaluationResult(
                 scoreResult.experienceScore(), scoreResult.experienceExcluded(),
                 scoreResult.preferenceScore(), scoreResult.preferenceExcluded(),
                 scoreResult.certificateScore(), scoreResult.certificateExcluded(),
-                EvaluationVerdict.UNFIT, failedReasons, notices, reasoning, expired, skillMatch
+                EvaluationVerdict.UNFIT, failedReasons, notices, reasoning, expired, skillMatch,
+                scoreResult.preferredSkillCount(), scoreResult.preferredMatchedCount(), false
         );
     }
 
@@ -38,7 +43,8 @@ public record EvaluationResult(
                 scoreResult.experienceScore(), scoreResult.experienceExcluded(),
                 scoreResult.preferenceScore(), scoreResult.preferenceExcluded(),
                 scoreResult.certificateScore(), scoreResult.certificateExcluded(),
-                EvaluationVerdict.INSUFFICIENT_INFO, List.of(), notices, reasoning, false, skillMatch
+                EvaluationVerdict.INSUFFICIENT_INFO, List.of(), notices, reasoning, false, skillMatch,
+                scoreResult.preferredSkillCount(), scoreResult.preferredMatchedCount(), false
         );
     }
 
@@ -51,7 +57,8 @@ public record EvaluationResult(
                 scoreResult.experienceScore(), scoreResult.experienceExcluded(),
                 scoreResult.preferenceScore(), scoreResult.preferenceExcluded(),
                 scoreResult.certificateScore(), scoreResult.certificateExcluded(),
-                EvaluationVerdict.FIT, List.of(), notices, reasoning, false, skillMatch
+                EvaluationVerdict.FIT, List.of(), notices, reasoning, false, skillMatch,
+                scoreResult.preferredSkillCount(), scoreResult.preferredMatchedCount(), scoreResult.thinRequired()
         );
     }
 }

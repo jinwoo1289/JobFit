@@ -1,5 +1,6 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
+import com.jinwoo.jobfit.domain.evaluation.vo.EffectiveWeights;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementExtraction;
 import com.jinwoo.jobfit.domain.evaluation.vo.RequiredSkillMatch;
 import com.jinwoo.jobfit.domain.evaluation.vo.ScoreResult;
@@ -19,6 +20,9 @@ import java.util.List;
 public class ScoreCalculator {
 
     private static final double TOTAL_WEIGHT = 100;
+    // 필수 기술 단위(단일 기술 + 택1 그룹)가 이 개수 미만이면 필수 요건이 적은 공고로 보고,
+    // 기술·경험 가중치에 (단위 수 / THIN_REQUIRED_THRESHOLD)를 곱한 뒤 줄어든 만큼을 우대 가중치로 옮긴다.
+    static final int THIN_REQUIRED_THRESHOLD = 3;
 
     private final SkillScoreCalculator skillScoreCalculator;
     private final ExperienceScoreCalculator experienceScoreCalculator;
@@ -31,7 +35,7 @@ public class ScoreCalculator {
         // 택1 그룹(requiredAnyOf)은 그룹 하나를 필수 기술 1개로 계산한다.
         List<List<String>> requiredSkillGroups = extraction.requiredSkillGroups();
         SkillScore skill = skillScoreCalculator.calculateForGroups(skills, projects, requiredSkillGroups);
-        SkillScore preference = skillScoreCalculator.calculate(skills, projects, extraction.preferredSkills());
+        SkillScore preference = skillScoreCalculator.calculatePreference(skills, projects, extraction.preferredSkills());
         double experienceScore = experienceScoreCalculator.calculateForGroups(projects, requiredSkillGroups);
         double certificateScore = certificateScoreCalculator.calculate(
                 certificates, extraction.requiredCertificates(), extraction.preferredCertificates());
@@ -41,12 +45,28 @@ public class ScoreCalculator {
         // 필수·우대 자격증이 모두 비어 있으면 비교할 자격증 요건 자체가 없는 것이므로 평가 제외한다.
         boolean certificateExcluded = extraction.requiredCertificates().isEmpty() && extraction.preferredCertificates().isEmpty();
 
+        int requiredSkillGroupCount = requiredSkillGroups.size();
+        int preferredMatchedCount = skillScoreCalculator.matchDetail(skills, projects, extraction.preferredSkills())
+                .matchedSkills().size();
+
         return new ScoreResult(
                 skill.value(), skill.excluded(),
                 experienceScore, experienceExcluded,
                 preference.value(), preference.excluded(),
-                certificateScore, certificateExcluded
+                certificateScore, certificateExcluded,
+                requiredSkillGroupCount,
+                extraction.preferredSkills().size(),
+                preferredMatchedCount,
+                isThinRequired(requiredSkillGroupCount, preference.excluded())
         );
+    }
+
+    // 필수 0개는 기술·경험이 평가 제외되어 기존 재배분으로 처리하므로 대상이 아니다.
+    // 우대 기술도 없으면 옮겨 받을 항목이 없으므로 가중치를 이동하지 않는다.
+    private boolean isThinRequired(int requiredSkillGroupCount, boolean preferenceExcluded) {
+        return requiredSkillGroupCount > 0
+                && requiredSkillGroupCount < THIN_REQUIRED_THRESHOLD
+                && !preferenceExcluded;
     }
 
     // 점수 계산과 같은 기준으로 필수 기술 매칭 개수와 일치 기술별 사용 프로젝트를 요약한다. LLM을 호출하지 않는다.
@@ -64,23 +84,43 @@ public class ScoreCalculator {
         );
     }
 
-    // 평가 제외된 항목의 가중치를, 나머지 평가 대상 항목에 비율을 유지한 채로 재분배한다
-    // (예: 우대 기술이 없으면 preferenceWeight를 skill/experience/certificate에 배분).
     public double calculateTotalScore(ScoreResult scoreResult, EvaluationWeight evaluationWeight) {
-        double skillWeight = scoreResult.skillExcluded() ? 0 : evaluationWeight.getSkillWeight();
-        double experienceWeight = scoreResult.experienceExcluded() ? 0 : evaluationWeight.getExperienceWeight();
-        double preferenceWeight = scoreResult.preferenceExcluded() ? 0 : evaluationWeight.getPreferenceWeight();
-        double certificateWeight = scoreResult.certificateExcluded() ? 0 : evaluationWeight.getCertificateWeight();
+        EffectiveWeights weights = effectiveWeights(scoreResult, evaluationWeight);
+        return (scoreResult.skillScore() * weights.skill()
+                + scoreResult.experienceScore() * weights.experience()
+                + scoreResult.preferenceScore() * weights.preference()
+                + scoreResult.certificateScore() * weights.certificate()) / TOTAL_WEIGHT;
+    }
+
+    // 1) 필수 요건이 적은 공고(thinRequired)는 기술·경험 가중치에 (필수 단위 수 / 3)을 곱하고 줄어든 만큼을 우대로 옮긴다.
+    //    (예: 필수 1개, 40/30/20/10 → 13.3/10/66.7/10)
+    // 2) 평가 제외된 항목의 가중치를, 나머지 평가 대상 항목에 비율을 유지한 채로 재분배해 합계를 100으로 맞춘다.
+    //    (예: 우대 기술이 없으면 preferenceWeight를 skill/experience/certificate에 배분)
+    public EffectiveWeights effectiveWeights(ScoreResult scoreResult, EvaluationWeight evaluationWeight) {
+        double skillWeight = evaluationWeight.getSkillWeight();
+        double experienceWeight = evaluationWeight.getExperienceWeight();
+        double preferenceWeight = evaluationWeight.getPreferenceWeight();
+        double certificateWeight = evaluationWeight.getCertificateWeight();
+
+        if (scoreResult.thinRequired()) {
+            double ratio = (double) scoreResult.requiredSkillGroupCount() / THIN_REQUIRED_THRESHOLD;
+            double moved = (skillWeight + experienceWeight) * (1 - ratio);
+            skillWeight *= ratio;
+            experienceWeight *= ratio;
+            preferenceWeight += moved;
+        }
+
+        skillWeight = scoreResult.skillExcluded() ? 0 : skillWeight;
+        experienceWeight = scoreResult.experienceExcluded() ? 0 : experienceWeight;
+        preferenceWeight = scoreResult.preferenceExcluded() ? 0 : preferenceWeight;
+        certificateWeight = scoreResult.certificateExcluded() ? 0 : certificateWeight;
 
         double activeWeightSum = skillWeight + experienceWeight + preferenceWeight + certificateWeight;
         if (activeWeightSum == 0) {
-            return 0;
+            return EffectiveWeights.none();
         }
         double scale = TOTAL_WEIGHT / activeWeightSum;
-
-        return (scoreResult.skillScore() * skillWeight * scale
-                + scoreResult.experienceScore() * experienceWeight * scale
-                + scoreResult.preferenceScore() * preferenceWeight * scale
-                + scoreResult.certificateScore() * certificateWeight * scale) / TOTAL_WEIGHT;
+        return new EffectiveWeights(
+                skillWeight * scale, experienceWeight * scale, preferenceWeight * scale, certificateWeight * scale);
     }
 }

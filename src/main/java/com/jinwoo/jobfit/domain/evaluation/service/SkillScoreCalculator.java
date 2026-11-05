@@ -23,11 +23,30 @@ public class SkillScoreCalculator {
     private static final double NO_MATCH_SCORE = 0;
     // 택1 그룹이 전부 미충족일 때 "Linux 또는 Windows"처럼 묶어 표시한다.
     static final String ANY_OF_DELIMITER = " 또는 ";
+    // 우대 점수 분모의 상한. 우대 기술이 이보다 많아도 이 개수만큼 충족하면 만점이다.
+    static final int PREFERRED_SCORE_CAP = 5;
 
     private final SkillAliasNormalizer skillAliasNormalizer;
 
     public SkillScore calculate(List<UserSkill> skills, List<UserProject> projects, List<String> targetSkills) {
         return calculateForGroups(skills, projects, singletonGroups(targetSkills));
+    }
+
+    // 우대 기술은 회사 기술 스택을 길게 나열한 경우가 많아, 전체 개수로 나누면 몇 개를 보유해도 점수가 낮게 나온다.
+    // (토스페이먼츠 54905826: 우대 9개 중 3개 보유 → 33.3) 분모를 최대 PREFERRED_SCORE_CAP개로 제한하고 100점을 넘지 않게 한다.
+    public SkillScore calculatePreference(List<UserSkill> skills, List<UserProject> projects, List<String> preferredSkills) {
+        if (preferredSkills.isEmpty()) {
+            return SkillScore.notEvaluated();
+        }
+
+        Set<String> userSkillNames = userSkillNames(skills);
+        Set<String> userTechStacks = userTechStacks(projects);
+
+        double sum = preferredSkills.stream()
+                .mapToDouble(skill -> scoreOf(skillAliasNormalizer.normalize(skill), userSkillNames, userTechStacks))
+                .sum();
+        int denominator = Math.min(preferredSkills.size(), PREFERRED_SCORE_CAP);
+        return SkillScore.of(Math.min(FULL_MATCH_SCORE, sum / denominator));
     }
 
     // 그룹 하나를 기술 1개로 보고, 그룹 점수는 그룹 안에서 가장 잘 맞는 기술의 점수로 한다.

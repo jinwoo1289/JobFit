@@ -48,6 +48,11 @@ export interface EvaluationResponse {
   experienceMatchedCount: number
   matchedSkills: MatchedSkill[]
   missingSkills: string[]
+  // 우대 점수 근거: 우대 기술 preferredSkillCount개 중 preferredMatchedCount개 보유 (점수 분모 상한과 무관한 실제 개수)
+  preferredSkillCount: number
+  preferredMatchedCount: number
+  // 필수 요건이 적어 기술·경험 가중치 일부를 우대로 옮겨 총점을 계산한 공고
+  thinRequired: boolean
   // 지원 완료 체크 여부와 체크 시각(서버 로컬 시각 ISO 문자열, 미체크면 null)
   applied: boolean
   appliedAt: string | null

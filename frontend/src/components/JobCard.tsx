@@ -51,7 +51,13 @@ function JobCard({ result, rank, onToggleApplied, isApplyPending, applyError }: 
       excluded: result.experienceExcluded,
       detail: `한 프로젝트에서 필수 기술 ${result.experienceSkillCount}개 중 ${result.experienceMatchedCount}개 사용`,
     },
-    { label: '우대', name: '우대사항', value: result.preferenceScore, excluded: result.preferenceExcluded },
+    {
+      label: '우대',
+      name: '우대사항',
+      value: result.preferenceScore,
+      excluded: result.preferenceExcluded,
+      detail: `우대 ${result.preferredSkillCount}개 중 ${result.preferredMatchedCount}개 보유`,
+    },
     { label: '자격증', name: '자격증', value: result.certificateScore, excluded: result.certificateExcluded },
   ]
   const evaluatedItems = scoreItems.filter((item) => !item.excluded)
@@ -143,6 +149,9 @@ function JobCard({ result, rank, onToggleApplied, isApplyPending, applyError }: 
         <div className="job-card-scores-header">
           <span className="job-card-scores-title">세부 점수</span>
           {isReferenceOnly && <span className="score-reference-label">참고용</span>}
+          {result.thinRequired && (
+            <span className="score-reference-label">필수 요건이 적어 우대 비중을 높여 계산했어요</span>
+          )}
         </div>
         {evaluatedItems.length > 0 && (
           <ul className={`job-card-scores ${isReferenceOnly ? 'job-card-scores-unfit' : ''}`}>

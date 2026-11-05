@@ -119,7 +119,7 @@ class EvaluationQueryServiceTest {
     }
 
     private EvaluationResult fitResult(Long jobPostingId) {
-        ScoreResult scoreResult = new ScoreResult(100.0, false, 100.0, false, 0.0, true, 0.0, true);
+        ScoreResult scoreResult = new ScoreResult(100.0, false, 100.0, false, 0.0, true, 0.0, true, 0, 0, 0, false);
         RequiredSkillMatch skillMatch = new RequiredSkillMatch(0, List.of(), List.of(), 0, 0);
         return EvaluationResult.fit(jobPostingId, 100.0, scoreResult, List.of(), EvaluationReasoning.empty(), skillMatch);
     }

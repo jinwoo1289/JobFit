@@ -1,5 +1,6 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
+import com.jinwoo.jobfit.domain.evaluation.vo.EffectiveWeights;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobCategory;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementExtraction;
 import com.jinwoo.jobfit.domain.evaluation.vo.MatchedSkill;
@@ -123,6 +124,7 @@ class ScoreCalculatorTest {
     // 원테크스탑(55205788)은 [자격요건]에 기술 요구가 없고 [우대사항]에만 핵심 기술 스택이 있으며, 자격증
     // 요구도 전혀 없는 경우를 가정. skill(40)/experience(30)/certificate(10) 가중치가 모두 제외되어
     // preference(20)만 남아, 총점은 preferenceScore 그대로(가중치 100%)가 된다.
+    // 우대 12개 중 Java만 스킬+프로젝트 일치(100) → 분모 상한 5 적용 시 100/5 = 20 (상한 이전 100/12).
     @Test
     void calculateTotalScore_wonTechStop_emptyRequiredSkillsAndCertificates_leavesOnlyPreferenceActive() {
         UserProfile profile = profile();
@@ -144,7 +146,7 @@ class ScoreCalculatorTest {
         assertThat(scoreResult.skillExcluded()).isTrue();
         assertThat(scoreResult.experienceExcluded()).isTrue();
         assertThat(scoreResult.certificateExcluded()).isTrue();
-        assertThat(totalScore).isCloseTo(25.0 / 3, within(0.001));
+        assertThat(totalScore).isCloseTo(20.0, within(0.001));
     }
 
     // CJ ENM(55101818)은 [주요업무]/[자격요건]에 구체적 기술명이 없고 [우대사항]에만 "Java"가 언급되며,
@@ -293,6 +295,130 @@ class ScoreCalculatorTest {
                 new MatchedSkill("Java", List.of("HopeTail-BE")),
                 new MatchedSkill("Spring Framework", List.of("HopeTail-BE")));
         assertThat(match.missingSkills()).isEmpty();
+    }
+
+    // 필수 0개: 기술·경험은 평가 제외되고 기존 재배분만 적용된다(가중치 이동 없음). 40/30/20/10 → 우대 20·자격증 10을 100으로 환산.
+    @Test
+    void effectiveWeights_noRequiredSkills_excludesSkillAndExperienceWithoutShift() {
+        ScoreResult scoreResult = scoreOf(requiredSkills(0), List.of(List.of("OPIC")));
+
+        EffectiveWeights weights = scoreCalculator.effectiveWeights(scoreResult, weight40_30_20_10());
+
+        assertThat(scoreResult.thinRequired()).isFalse();
+        assertWeights(weights, 0, 0, 200.0 / 3, 100.0 / 3);
+    }
+
+    // 필수 1개: 기술·경험 가중치 × 1/3, 줄어든 (40+30)×2/3 = 46.7을 우대로 이동한다.
+    @Test
+    void effectiveWeights_oneRequiredSkill_movesTwoThirdsOfSkillAndExperienceToPreference() {
+        ScoreResult scoreResult = scoreOf(requiredSkills(1), List.of(List.of("OPIC")));
+
+        EffectiveWeights weights = scoreCalculator.effectiveWeights(scoreResult, weight40_30_20_10());
+
+        assertThat(scoreResult.thinRequired()).isTrue();
+        assertWeights(weights, 40.0 / 3, 10, 20 + 140.0 / 3, 10);
+    }
+
+    // 필수 2개(단일 1 + 택1 그룹 1): 기술·경험 가중치 × 2/3, 줄어든 (40+30)×1/3 = 23.3을 우대로 이동한다.
+    @Test
+    void effectiveWeights_twoRequiredUnitsIncludingAnyOfGroup_movesOneThirdToPreference() {
+        JobRequirementExtraction extraction = new JobRequirementExtraction(
+                List.of("Java"), List.of(List.of("Linux", "Windows")), List.of("Redis"),
+                null, null, true, List.of("OPIC"), List.of(), JobCategory.BACKEND_DEVELOPMENT);
+        ScoreResult scoreResult = scoreCalculator.calculate(List.of(), List.of(), List.of(), extraction);
+
+        EffectiveWeights weights = scoreCalculator.effectiveWeights(scoreResult, weight40_30_20_10());
+
+        assertThat(scoreResult.requiredSkillGroupCount()).isEqualTo(2);
+        assertThat(scoreResult.thinRequired()).isTrue();
+        assertWeights(weights, 80.0 / 3, 20, 20 + 70.0 / 3, 10);
+    }
+
+    // 필수 3개 이상(브레인즈컴퍼니 55330482: Java, Git, Linux 또는 Windows)은 가중치를 이동하지 않는다.
+    @Test
+    void effectiveWeights_threeRequiredUnits_keepsOriginalWeights() {
+        ScoreResult scoreResult = scoreOf(requiredSkills(3), List.of(List.of("OPIC")));
+
+        EffectiveWeights weights = scoreCalculator.effectiveWeights(scoreResult, weight40_30_20_10());
+
+        assertThat(scoreResult.thinRequired()).isFalse();
+        assertWeights(weights, 40, 30, 20, 10);
+    }
+
+    // 필수 1개 + 자격증 평가 제외: 이동 후 13.3/10/66.7/0(합 90)을 다시 100으로 환산해도 합계는 100이다.
+    @Test
+    void effectiveWeights_thinRequiredWithCertificateExcluded_sumsTo100() {
+        ScoreResult scoreResult = scoreOf(requiredSkills(1), List.of());
+
+        EffectiveWeights weights = scoreCalculator.effectiveWeights(scoreResult, weight40_30_20_10());
+
+        assertThat(scoreResult.certificateExcluded()).isTrue();
+        assertThat(scoreResult.thinRequired()).isTrue();
+        double scale = 100.0 / 90;
+        assertWeights(weights, 40.0 / 3 * scale, 10 * scale, (20 + 140.0 / 3) * scale, 0);
+    }
+
+    // 우대 기술이 없으면 옮겨 받을 항목이 없으므로 필수가 적어도 가중치를 이동하지 않는다.
+    @Test
+    void effectiveWeights_thinRequiredWithoutPreferredSkills_doesNotShift() {
+        JobRequirementExtraction extraction = new JobRequirementExtraction(
+                List.of("Java"), List.of(), null, null, true, List.of("OPIC"), List.of(), JobCategory.BACKEND_DEVELOPMENT);
+        ScoreResult scoreResult = scoreCalculator.calculate(List.of(), List.of(), List.of(), extraction);
+
+        EffectiveWeights weights = scoreCalculator.effectiveWeights(scoreResult, weight40_30_20_10());
+
+        assertThat(scoreResult.thinRequired()).isFalse();
+        assertWeights(weights, 40 / 0.8, 30 / 0.8, 0, 10 / 0.8);
+    }
+
+    // 토스페이먼츠(54905826) 형태: 필수 1개(Linux) 보유(60) + 우대 9개 중 Java·Redis·Spring Framework 보유.
+    // 우대 점수 300/5 = 60, 가중치 13.3/10/76.7/0(자격증 제외 후 환산) → 총점 = (60×13.3 + 0×10 + 60×76.7)/100.
+    @Test
+    void calculateTotalScore_tossPaymentsShape_appliesPreferredCapAndWeightShift() {
+        UserProfile profile = profile();
+        List<UserSkill> skills = List.of(new UserSkill(profile, "Java"), new UserSkill(profile, "Spring Boot"),
+                new UserSkill(profile, "Redis"), new UserSkill(profile, "Linux"));
+        List<UserProject> projects = List.of(
+                new UserProject(profile, "HopeTail-BE", "채용 매칭 서비스", List.of("Java", "Spring Boot", "Redis")));
+        JobRequirementExtraction extraction = new JobRequirementExtraction(
+                List.of("Linux"),
+                List.of("Java", "Kotlin", "Spring Framework", "Kubernetes", "Istio", "Redis", "Kafka", "ELK", "Go"),
+                null, null, true, List.of(), List.of(), JobCategory.DEVOPS);
+
+        ScoreResult scoreResult = scoreCalculator.calculate(skills, projects, List.of(), extraction);
+        double totalScore = scoreCalculator.calculateTotalScore(scoreResult, weight40_30_20_10());
+
+        assertThat(scoreResult.preferenceScore()).isCloseTo(60.0, within(0.001));
+        assertThat(scoreResult.preferredSkillCount()).isEqualTo(9);
+        assertThat(scoreResult.preferredMatchedCount()).isEqualTo(3);
+        double scale = 100.0 / 90;
+        double expected = (60 * 40.0 / 3 * scale + 0 * 10 * scale + 60 * (20 + 140.0 / 3) * scale) / 100;
+        assertThat(totalScore).isCloseTo(expected, within(0.001));
+    }
+
+    private ScoreResult scoreOf(List<String> requiredSkills, List<List<String>> certificates) {
+        List<String> requiredCertificates = certificates.isEmpty() ? List.of() : certificates.getFirst();
+        JobRequirementExtraction extraction = new JobRequirementExtraction(
+                requiredSkills, List.of("Redis", "Kafka"), null, null, true,
+                requiredCertificates, List.of(), JobCategory.BACKEND_DEVELOPMENT);
+        return scoreCalculator.calculate(List.of(), List.of(), List.of(), extraction);
+    }
+
+    private static List<String> requiredSkills(int count) {
+        return List.of("Java", "Spring Boot", "MySQL", "Kotlin").subList(0, count);
+    }
+
+    private EvaluationWeight weight40_30_20_10() {
+        return new EvaluationWeight(profile(), 40, 30, 20, 10);
+    }
+
+    private static void assertWeights(EffectiveWeights weights, double skill, double experience,
+                                      double preference, double certificate) {
+        assertThat(weights.skill()).isCloseTo(skill, within(0.001));
+        assertThat(weights.experience()).isCloseTo(experience, within(0.001));
+        assertThat(weights.preference()).isCloseTo(preference, within(0.001));
+        assertThat(weights.certificate()).isCloseTo(certificate, within(0.001));
+        assertThat(weights.sum()).isCloseTo(100.0, within(0.001));
     }
 
     private static JobRequirementExtraction extractionWithAnyOf(List<String> requiredSkills, List<List<String>> requiredAnyOf) {
