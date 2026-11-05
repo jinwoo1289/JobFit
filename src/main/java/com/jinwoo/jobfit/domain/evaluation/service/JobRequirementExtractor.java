@@ -41,6 +41,7 @@ public class JobRequirementExtractor {
 
             {
               "requiredSkills": string[],
+              "requiredAnyOf": string[][],
               "preferredSkills": string[],
               "minYears": number | null,
               "maxYears": number | null,
@@ -88,9 +89,8 @@ public class JobRequirementExtractor {
               [주요업무]·[자격요건] 문장 안에서 "~ 기반", "~로 전환"처럼 언급된 기술은 위 규칙대로 requiredSkills로 분류하라.
               (requiredCertificates의 "필수 표기 시 섹션 무관하게 필수로 판단" 규칙은 자격증·어학성적에만 적용되며, 스킬 분류에는 적용하지 않는다.)
               예: "[자격 및 우대사항]" 섹션에 "GitHub Copilot, Claude Code, Jira, Bitbucket, Confluence" 도구 목록과 "OPIC 제출 필수" 문구가 함께 있어도, 도구 목록은 preferredSkills로 분류하고 requiredSkills로 옮기지 마라.
-            - [자격요건]에 명시된 기술은 위 섹션 위치 규칙대로 모두 requiredSkills에 넣어라.
-              "또는"으로 묶인 기술은 하나만 고르지 말고 모두 넣어라. "기본 이해", "경험"처럼 요구 수준이 낮은 표현이어도 마찬가지다.
-              예: "[자격요건]" 섹션의 "Python 또는 Java 개발 경험" → requiredSkills: ["Python", "Java"]
+            - [자격요건]에 명시된 기술은 위 섹션 위치 규칙대로 모두 필수로 넣어라. "기본 이해", "경험"처럼 요구 수준이 낮은 표현이어도 마찬가지다.
+              단, "또는"처럼 그중 하나만 갖추면 되는 기술은 requiredSkills가 아니라 아래 [requiredAnyOf 규칙]대로 그룹으로 넣어라.
               예: "[자격요건]" 섹션의 "SQL 및 관계형 데이터베이스 기본 이해" → requiredSkills: ["SQL"]
               [담당업무]·[주요업무]에 더 구체적인 기술(예: SQL에 대한 PostgreSQL)이 나와도 [자격요건]의 기술을 중복으로 보지 말고 그대로 넣어라.
               예: [담당업무]에 "PostgreSQL 데이터 조회", [자격요건]에 "SQL 및 관계형 데이터베이스 기본 이해"
@@ -105,8 +105,7 @@ public class JobRequirementExtractor {
             - 반드시 기술·도구·언어·프레임워크의 이름만 담아라. 단어 또는 짧은 고유명사여야 한다.
             - 요구사항을 설명하는 문장이나 서술을 절대 넣지 마라.
               예: "Python 또는 백엔드 개발 경험" (X) → "Python" (O)
-                  (서술어인 "백엔드 개발 경험"은 버리고 기술명만 남긴다는 뜻이다. "또는"으로 묶인 것 중 하나만 고르라는 뜻이 아니다.)
-              예: "Python 또는 Java 개발 경험" → "Python", "Java" (기술명이 둘이면 둘 다 넣는다)
+                  (서술어인 "백엔드 개발 경험"은 버리고 기술명만 남긴다는 뜻이다. "또는"의 상대가 기술명이 아니므로 그룹이 아니라 requiredSkills에 "Python"만 넣는다.)
               예: "웹 서비스 및 RESTful API에 대한 기본 이해" (X) → "REST API" (O)
             - 방법론·개념·아키텍처 스타일 용어는 구체적인 기술/도구 이름이 아니므로 절대 포함하지 마라.
               절대 금지 목록(원문에 그대로 등장하더라도 출력에 포함하면 안 됨): MDD, MSA, Microservices, 마이크로서비스, 모놀리식, Monolithic, DDD, 도메인 주도 설계, 이벤트 기반 아키텍처, Event-Driven, TDD, BDD, 애자일, Agile, 스크럼, Scrum, 워터폴, CI/CD, DevOps,
@@ -118,7 +117,7 @@ public class JobRequirementExtractor {
               예: "AI 개발도구" (X) → 제외, "GitHub Copilot" (O) → 포함
             - 범용 프로토콜·데이터 포맷 이름은 절대 포함하지 마라: HTTP, JSON, XML (단, REST API는 실무에서 스킬로 통용되므로 예외적으로 유지한다)
             - 원문이 한글로 표기되어 있어도 기술명은 영문 표기로 통일하라. (예: "스프링 부트" → "Spring Boot", "자바" → "Java")
-            - requiredSkills와 preferredSkills를 채운 뒤, 목록에 방법론/개념어/카테고리 표현/범용 프로토콜이 섞여 있지 않은지 다시 한번 스스로 검토하고 있다면 제거한 뒤 최종 JSON을 출력하라.
+            - requiredSkills·requiredAnyOf·preferredSkills를 채운 뒤, 목록에 방법론/개념어/카테고리 표현/범용 프로토콜이 섞여 있지 않은지 다시 한번 스스로 검토하고 있다면 제거한 뒤 최종 JSON을 출력하라.
             - [주요업무] 섹션 문장 안에 "~로 전환", "~로 이전 예정", "향후 ~ 도입" 같은 로드맵/전환 계획을
               서술하는 문구가 있더라도, 그 문장에 언급된 기술이 [주요업무] 섹션에 있다면 requiredSkills로
               분류하라. 현재/미래 여부와 무관하게 섹션 위치 규칙을 우선한다.
@@ -134,6 +133,29 @@ public class JobRequirementExtractor {
               → requiredSkills: ["Java", "Kotlin", "Spring Boot"] (MDD, 모놀리식, MSA는 제외)
               → 이유: 방법론/아키텍처 용어만 금지 목록이며, 전환 시점과 무관하게 [주요업무]
               섹션에 있는 기술명은 모두 requiredSkills로 분류한다.
+
+            [requiredAnyOf 규칙]
+            - requiredAnyOf는 섹션 위치 규칙상 필수(requiredSkills)로 분류될 기술 중, 그중 하나만 갖추면 되는 기술 묶음을 담는다.
+              바깥 배열의 원소 하나가 그룹 하나이며, 그룹에는 기술명이 2개 이상 들어간다.
+            - "A 또는 B", "A나 B", "A 혹은 B", "A/B 중 하나", "A, B 중 택1"처럼 대안 관계가 명시된 기술은 하나만 고르지 말고
+              모두 같은 그룹에 넣어라. 그룹에 넣은 기술은 requiredSkills에 중복으로 넣지 마라.
+              예: "[자격요건]" 섹션의 "Python 또는 Java 개발 경험" → requiredSkills: [], requiredAnyOf: [["Python", "Java"]]
+              예: "[자격요건]" 섹션의 "Linux 또는 Windows 환경에서의 개발 및 기본 사용 능력" → requiredAnyOf: [["Linux", "Windows"]]
+              예: "[자격요건]" 섹션의 "Java 개발 경험", "MySQL/PostgreSQL 중 하나 이상 사용 경험"
+                  → requiredSkills: ["Java"], requiredAnyOf: [["MySQL", "PostgreSQL"]]
+            - "TCP/IP", "CI/CD"처럼 슬래시가 한 기술명의 일부인 경우는 그룹이 아니다.
+            - 섹션 위치 규칙상 preferredSkills로 분류되는 기술("~면 좋음", 우대사항, 기술 스택 소개 섹션 등)은 "또는"·"/"로 묶여 있어도
+              requiredAnyOf에 넣지 말고 지금처럼 preferredSkills에 모두 넣어라. [자격요건] 섹션 안에 있더라도 문장이 "~면 좋음",
+              "~이면 좋음", "~우대"로 끝나면 우대 표현이므로 그 문장의 기술은 requiredAnyOf가 아니라 preferredSkills다.
+              예: "[자격요건]" 섹션의 "Java/Kotlin, Spring Framework 관련 개발 경험과 문제해결 능력이 있는 분이면 좋음"
+                  → preferredSkills: ["Java", "Kotlin", "Spring Framework"], requiredAnyOf: []
+            - 필수 요건이더라도 "어떤 스택이든 무관", "등 무관", "스택 무관", "언어 무관"처럼 특정 기술을 요구하지 않는다고 밝힌 나열은
+              예시일 뿐이므로, 그 나열에 있는 기술은 requiredSkills·requiredAnyOf·preferredSkills 어디에도 넣지 마라.
+              (같은 기술이 [기술 스택] 같은 다른 섹션에 따로 등장하면 그 섹션의 규칙대로 분류한다.)
+              예: "[필수 요건]" 섹션의 "Django, Spring, Node, Next.js, React 등 어떤 스택이든 무관하나, 하나의 서비스를 끝까지 만들어본 경험"
+                  → 이 문장에서는 아무 기술도 추출하지 않는다.
+            - 해당하는 그룹이 없으면 빈 배열 []로 둬라.
+            - requiredAnyOf의 기술에도 requiredSkills와 같은 기술명 규칙(개념어·카테고리 표현·범용 프로토콜 금지, 영문 표기 통일)을 적용하라.
 
             [requiredCertificates / preferredCertificates 규칙]
             - 이 규칙은 자격증·어학성적에만 적용된다. requiredSkills / preferredSkills 분류에는 영향을 주지 않는다.
@@ -156,10 +178,18 @@ public class JobRequirementExtractor {
               필수 표현이 있으면 requiredCertificates, 없으면 preferredCertificates에 넣어라.
               예: "[자격요건]" 섹션의 "토익 700점에 상응하는 영어공인성적 보유자" → preferredCertificates: ["TOEIC"]
 
-            [minYears / maxYears 규칙]
-            - "경력 N년 이상"처럼 하한만 명시된 경우에만 minYears에 N을 넣어라.
-            - "N년 이하"처럼 상한이 명시된 경우 maxYears에 N을 넣어라. 이 경우 minYears는 null로 둬라.
-            - 범위가 명시되지 않으면 해당 필드를 null로 둬라.
+            [minYears / maxYears / newGraduateAllowed 규칙]
+            - [상세 내용]의 자격요건에 "경력 N년 이상", "N년 이상의 ~ 경력", "N년 이상 ~ 경력자", "~ 경력 N년 이상"처럼
+              경력 하한이 명시되면 minYears에 N을 넣고 newGraduateAllowed는 false로 둬라.
+              [경력 조건]이 "신입/경력"이어도, [상세 내용]에 신입 지원을 허용하는 표현 없이 경력 하한만 있으면 newGraduateAllowed는 false다.
+              예: [경력 조건] "신입/경력", [자격요건] "1년 이상의 서버 개발 경력" → minYears: 1, maxYears: null, newGraduateAllowed: false
+            - "신입 또는 관련 경력 N년 이하", "신입~경력 N년 이하"처럼 신입과 경력 상한이 함께 명시되면 minYears는 null,
+              maxYears에 N, newGraduateAllowed는 true로 둬라.
+              예: "경력: 신입 또는 관련 경력 2년 이하" → minYears: null, maxYears: 2, newGraduateAllowed: true
+            - "N년 이하"처럼 상한만 명시된 경우 maxYears에 N을 넣고 minYears는 null로 둬라.
+            - "신입 또는 경력 N년 이상"처럼 신입 지원이 함께 명시되면 minYears에 N을 넣되 newGraduateAllowed는 true로 둬라.
+            - 연수가 명시되지 않으면 minYears·maxYears를 null로 두고, newGraduateAllowed는 [경력 조건]이 "경력"뿐이면 false,
+              "신입"·"무관"이 포함되어 있으면 true로 둬라.
             """;
 
     // SYSTEM_PROMPT나 EXTRACTION_SCHEMA를 바꾸면 올린다. 캐시 행의 버전과 다르면 재추출해 같은 행을 덮어쓴다.
@@ -167,7 +197,8 @@ public class JobRequirementExtractor {
     // 3: 회사 도메인이 아닌 직무명·주요업무 기준 판단 규칙 추가, AI_ML을 ML 자체가 주 업무일 때로 한정
     // 4: 주요업무의 "~ 기반", "~ 환경에서" 기술을 requiredSkills로, 필수 표현 없는 어학성적 기준을 preferredCertificates로 넣는 예시 추가
     // 5: [자격요건] 기술("또는"·"기본 이해" 포함)을 "~ 기반" 규칙과 별개로 유지하도록 명시, Azure Entra ID·"~에 상응하는" 어학 예시 추가
-    static final int EXTRACTION_PROMPT_VERSION = 5;
+    // 6: requiredAnyOf(택1 필수 그룹) 추가, "어떤 스택이든 무관" 나열 제외, "N년 이상 ~ 경력" → minYears·newGraduateAllowed=false 규칙 추가
+    static final int EXTRACTION_PROMPT_VERSION = 6;
 
     // LLM이 OTHER로 분류했더라도 공고 제목/본문에 이 키워드가 있으면 IT 직무일 가능성이 높아 OTHER를 신뢰하지 않는다.
     // "IT"는 영문 단어 일부(예: GitHub)와 겹치지 않도록 대소문자를 구분해 비교한다.
@@ -185,6 +216,8 @@ public class JobRequirementExtractor {
 
         Map<String, Object> properties = new LinkedHashMap<>();
         properties.put("requiredSkills", stringArray);
+        // 그룹이 없는 공고가 대부분이므로 minItems를 두지 않아 빈 배열을 허용한다.
+        properties.put("requiredAnyOf", Map.of("type", "array", "items", stringArray));
         properties.put("preferredSkills", stringArray);
         properties.put("minYears", nullableInteger);
         properties.put("maxYears", nullableInteger);
@@ -363,7 +396,7 @@ public class JobRequirementExtractor {
         if (extraction.jobCategory() != JobCategory.OTHER) {
             return extraction;
         }
-        boolean hasSkills = !extraction.requiredSkills().isEmpty() || !extraction.preferredSkills().isEmpty();
+        boolean hasSkills = extraction.hasRequiredSkills() || !extraction.preferredSkills().isEmpty();
         if (!hasSkills && !containsItKeyword(jobPosting)) {
             return extraction;
         }
@@ -380,6 +413,7 @@ public class JobRequirementExtractor {
     private JobRequirementExtraction withJobCategory(JobRequirementExtraction extraction, JobCategory jobCategory) {
         return new JobRequirementExtraction(
                 extraction.requiredSkills(),
+                extraction.requiredAnyOf(),
                 extraction.preferredSkills(),
                 extraction.minYears(),
                 extraction.maxYears(),
@@ -390,9 +424,33 @@ public class JobRequirementExtractor {
         );
     }
 
+    // 택1 그룹 안의 기술에도 같은 개념어 필터를 적용한다. 필터 후 기술이 하나만 남은 그룹은 사실상 단일 필수 기술이므로
+    // requiredSkills로 옮기고, 하나도 남지 않은 그룹은 버린다. 그룹에 있는 기술이 requiredSkills에도 중복으로 들어오면
+    // 그 기술만 따로 필수로 계산돼 택1 의미가 사라지므로 requiredSkills에서 뺀다.
     private JobRequirementExtraction removeConceptSkills(JobRequirementExtraction extraction) {
+        List<List<String>> anyOfGroups = new ArrayList<>();
+        List<String> promotedSkills = new ArrayList<>();
+        for (List<String> group : extraction.requiredAnyOf()) {
+            List<String> filtered = filterConceptSkills(group).stream().distinct().toList();
+            if (filtered.size() >= 2) {
+                anyOfGroups.add(filtered);
+            } else if (filtered.size() == 1) {
+                promotedSkills.add(filtered.getFirst());
+            }
+        }
+        Set<String> groupedSkills = anyOfGroups.stream()
+                .flatMap(List::stream)
+                .map(JobRequirementExtractor::normalizeForBlocklist)
+                .collect(Collectors.toSet());
+        List<String> requiredSkills = Stream.concat(
+                        filterConceptSkills(extraction.requiredSkills()).stream(), promotedSkills.stream())
+                .filter(skill -> !groupedSkills.contains(normalizeForBlocklist(skill)))
+                .distinct()
+                .toList();
+
         return new JobRequirementExtraction(
-                filterConceptSkills(extraction.requiredSkills()),
+                requiredSkills,
+                List.copyOf(anyOfGroups),
                 filterConceptSkills(extraction.preferredSkills()),
                 extraction.minYears(),
                 extraction.maxYears(),

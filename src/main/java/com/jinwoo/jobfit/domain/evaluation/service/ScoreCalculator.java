@@ -28,14 +28,16 @@ public class ScoreCalculator {
                                   List<UserProject> projects,
                                   List<UserCertificate> certificates,
                                   JobRequirementExtraction extraction) {
-        SkillScore skill = skillScoreCalculator.calculate(skills, projects, extraction.requiredSkills());
+        // 택1 그룹(requiredAnyOf)은 그룹 하나를 필수 기술 1개로 계산한다.
+        List<List<String>> requiredSkillGroups = extraction.requiredSkillGroups();
+        SkillScore skill = skillScoreCalculator.calculateForGroups(skills, projects, requiredSkillGroups);
         SkillScore preference = skillScoreCalculator.calculate(skills, projects, extraction.preferredSkills());
-        double experienceScore = experienceScoreCalculator.calculate(projects, extraction.requiredSkills());
+        double experienceScore = experienceScoreCalculator.calculateForGroups(projects, requiredSkillGroups);
         double certificateScore = certificateScoreCalculator.calculate(
                 certificates, extraction.requiredCertificates(), extraction.preferredCertificates());
 
-        // 경험 점수는 requiredSkills를 기준으로 계산하므로 skill과 동일한 조건으로 평가 제외된다.
-        boolean experienceExcluded = extraction.requiredSkills().isEmpty();
+        // 경험 점수는 필수 기술(택1 그룹 포함)을 기준으로 계산하므로 skill과 동일한 조건으로 평가 제외된다.
+        boolean experienceExcluded = !extraction.hasRequiredSkills();
         // 필수·우대 자격증이 모두 비어 있으면 비교할 자격증 요건 자체가 없는 것이므로 평가 제외한다.
         boolean certificateExcluded = extraction.requiredCertificates().isEmpty() && extraction.preferredCertificates().isEmpty();
 
@@ -51,14 +53,14 @@ public class ScoreCalculator {
     public RequiredSkillMatch requiredSkillMatch(List<UserSkill> skills,
                                                  List<UserProject> projects,
                                                  JobRequirementExtraction extraction) {
-        List<String> requiredSkills = extraction.requiredSkills();
-        SkillMatchResult matchResult = skillScoreCalculator.matchDetail(skills, projects, requiredSkills);
+        List<List<String>> requiredSkillGroups = extraction.requiredSkillGroups();
+        SkillMatchResult matchResult = skillScoreCalculator.matchDetailForGroups(skills, projects, requiredSkillGroups);
         return new RequiredSkillMatch(
-                requiredSkills.size(),
+                requiredSkillGroups.size(),
                 skillScoreCalculator.matchedWithProjects(matchResult.matchedSkills(), projects),
                 matchResult.unmatchedSkills(),
-                experienceScoreCalculator.requiredSkillCount(requiredSkills),
-                experienceScoreCalculator.bestMatchedCount(projects, requiredSkills)
+                experienceScoreCalculator.requiredSkillCount(requiredSkillGroups),
+                experienceScoreCalculator.bestMatchedCount(projects, requiredSkillGroups)
         );
     }
 

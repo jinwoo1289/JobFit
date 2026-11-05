@@ -80,6 +80,33 @@ class RequiredConditionCheckerTest {
         assertThat(result.failedReasons().getFirst().split("지원 불가", -1)).hasSize(2);
     }
 
+    // 카카오페이(55144102): experienceLevel은 "신입/경력"이지만 본문 자격요건이 "1년 이상의 서버 개발 경력"이면 신입 지원 불가다.
+    @Test
+    void check_newOrExperiencedLabelButBodyRequiresYears_failsWithYearsReason() {
+        UserProfile userProfile = newGraduateFullTimeUser();
+        JobPosting jobPosting = jobPosting("서버 개발자 - 데이터 플랫폼", "신입/경력", "2026-08-15T23:59:59");
+        JobRequirementExtraction extraction = new JobRequirementExtraction(
+                List.of(), List.of(), 1, null, false, List.of(), List.of(), JobCategory.BACKEND_DEVELOPMENT);
+
+        ConditionCheckResult result = checker.check(userProfile, jobPosting, extraction);
+
+        assertThat(result.passed()).isFalse();
+        assertThat(result.failedReasons()).containsExactly("경력 1년 이상 요구, 신입 지원 불가");
+    }
+
+    // 연수 근거 없이 newGraduateAllowed=false만 추출된 경우는 experienceLevel("신입/경력") 판정을 그대로 따른다.
+    @Test
+    void check_newOrExperiencedLabelAndNewGraduateNotAllowedWithoutYears_passes() {
+        UserProfile userProfile = newGraduateFullTimeUser();
+        JobPosting jobPosting = jobPosting("서버 개발자", "신입/경력", "2026-08-15T23:59:59");
+        JobRequirementExtraction extraction = new JobRequirementExtraction(
+                List.of(), List.of(), null, null, false, List.of(), List.of(), JobCategory.BACKEND_DEVELOPMENT);
+
+        ConditionCheckResult result = checker.check(userProfile, jobPosting, extraction);
+
+        assertThat(result.passed()).isTrue();
+    }
+
     @Test
     void check_newGraduateAllowed_hasNoCareerReason() {
         UserProfile userProfile = newGraduateFullTimeUser();

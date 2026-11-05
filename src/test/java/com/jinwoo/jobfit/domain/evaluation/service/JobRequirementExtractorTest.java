@@ -425,6 +425,65 @@ class JobRequirementExtractorTest {
         Mockito.verify(repository, Mockito.never()).save(Mockito.any());
     }
 
+    // 택1 그룹 안의 기술에도 개념어 필터를 적용한다. 필터 후 하나만 남은 그룹은 단일 필수 기술로 옮기고,
+    // 그룹에 들어간 기술이 requiredSkills에도 중복으로 있으면 requiredSkills에서 뺀다. (브레인즈컴퍼니 55330482)
+    @Test
+    void extract_requiredAnyOf_appliesConceptFilterAndRemovesDuplicatesFromRequiredSkills() {
+        String llmResponse = """
+                {"requiredSkills": ["Java", "Windows", "Git"], "requiredAnyOf": [["Linux", "Windows"], ["HTTP", "gRPC"], ["AI", "LLM"]], "preferredSkills": [], "minYears": null, "maxYears": 2, "newGraduateAllowed": true, "requiredCertificates": [], "preferredCertificates": [], "jobCategory": "BACKEND_DEVELOPMENT"}
+                """;
+        JobRequirementExtractionRepository repository = neverCachedExtractionRepository();
+        JobRequirementExtractor extractor = extractorWith(llmResponse, repository);
+
+        JobRequirementExtraction extraction = extractor.extract(pasuAiJobPosting());
+
+        assertThat(extraction.requiredSkills()).containsExactly("Java", "Git", "gRPC");
+        assertThat(extraction.requiredAnyOf()).containsExactly(List.of("Linux", "Windows"));
+        JobRequirementExtractionEntity saved = savedEntity(repository);
+        assertThat(saved.getRequiredAnyOf()).isEqualTo("Linux|Windows");
+        assertThat(saved.toExtraction().requiredAnyOf()).containsExactly(List.of("Linux", "Windows"));
+    }
+
+    // requiredAnyOf 컬럼 추가 이전에 저장된 행(null)은 그룹이 없는 것으로 읽는다.
+    @Test
+    void entity_withoutRequiredAnyOfColumnValue_readsAsEmptyGroups() {
+        JobRequirementExtractionEntity legacyEntity = new JobRequirementExtractionEntity(pasuAiJobPosting(),
+                new JobRequirementExtraction(List.of("Java"), List.of(), null, null, true, List.of(), List.of(), JobCategory.BACKEND_DEVELOPMENT),
+                5);
+        ReflectionTestUtils.setField(legacyEntity, "requiredAnyOf", null);
+
+        assertThat(legacyEntity.toExtraction().requiredAnyOf()).isEmpty();
+        assertThat(legacyEntity.toExtraction().requiredSkills()).containsExactly("Java");
+    }
+
+    // 택1 그룹만 추출된 IT 공고가 OTHER로 나와도, 기술이 있는 것으로 보고 null로 낮춘다.
+    @Test
+    void extract_otherWithOnlyRequiredAnyOf_savesNullJobCategory() {
+        JobRequirementExtractionRepository repository = neverCachedExtractionRepository();
+        String llmResponse = """
+                {"requiredSkills": [], "requiredAnyOf": [["Python", "Java"]], "preferredSkills": [], "minYears": null, "maxYears": null, "newGraduateAllowed": true, "requiredCertificates": [], "preferredCertificates": [], "jobCategory": "OTHER"}
+                """;
+        JobRequirementExtractor extractor = extractorWith(llmResponse, repository);
+
+        JobRequirementExtraction extraction = extractor.extract(shillaStayJobPosting());
+
+        assertThat(extraction.jobCategory()).isNull();
+    }
+
+    // requiredAnyOf는 문자열 배열의 배열이며, 그룹이 없는 공고를 위해 빈 배열을 허용해야 한다(minItems 없음).
+    @Test
+    @SuppressWarnings("unchecked")
+    void extractionSchema_requiredAnyOfIsArrayOfStringArraysAllowingEmpty() {
+        Map<String, Object> properties = (Map<String, Object>) JobRequirementExtractor.EXTRACTION_SCHEMA.schema().get("properties");
+        Map<String, Object> requiredAnyOf = (Map<String, Object>) properties.get("requiredAnyOf");
+        Map<String, Object> group = (Map<String, Object>) requiredAnyOf.get("items");
+
+        assertThat(requiredAnyOf.get("type")).isEqualTo("array");
+        assertThat(requiredAnyOf).doesNotContainKey("minItems");
+        assertThat(group.get("type")).isEqualTo("array");
+        assertThat(group.get("items")).isEqualTo(Map.of("type", "string"));
+    }
+
     // strict 모드는 모든 프로퍼티가 required여야 하고, jobCategory는 enum 값 또는 null로 제한되어야 한다.
     @Test
     @SuppressWarnings("unchecked")

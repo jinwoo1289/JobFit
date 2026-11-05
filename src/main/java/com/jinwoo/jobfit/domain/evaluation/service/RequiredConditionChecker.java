@@ -51,7 +51,7 @@ public class RequiredConditionChecker {
 
     private void checkCareer(UserProfile userProfile, JobRequirement requirement,
                              JobRequirementExtraction extraction, List<String> failedReasons) {
-        if (userProfile.getCareerLevel() != CareerLevel.NEW_GRADUATE || requirement.newGraduateAllowed()) {
+        if (userProfile.getCareerLevel() != CareerLevel.NEW_GRADUATE || isNewGraduateAllowed(requirement, extraction)) {
             return;
         }
 
@@ -63,6 +63,16 @@ public class RequiredConditionChecker {
         } else {
             failedReasons.add("경력직 채용 공고, 신입 지원 불가");
         }
+    }
+
+    // experienceLevel이 "신입/경력"이어도 본문 자격요건이 "1년 이상의 서버 개발 경력"처럼 경력 하한만 요구하면 신입은 지원할 수 없다.
+    // (카카오페이 55144102) 추출 결과에 연수 근거(minYears)가 있고 신입 불가로 추출된 경우에만 experienceLevel 판정을 뒤집는다.
+    // 연수 없이 newGraduateAllowed=false만 나온 경우는 근거가 약해 experienceLevel 판정을 그대로 따른다.
+    private boolean isNewGraduateAllowed(JobRequirement requirement, JobRequirementExtraction extraction) {
+        if (!requirement.newGraduateAllowed()) {
+            return false;
+        }
+        return extraction.minYears() == null || extraction.newGraduateAllowed();
     }
 
     private void checkEmploymentType(UserProfile userProfile, JobRequirement requirement, List<String> failedReasons) {

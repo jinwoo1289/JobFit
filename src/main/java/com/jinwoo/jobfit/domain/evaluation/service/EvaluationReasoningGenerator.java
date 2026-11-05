@@ -108,7 +108,7 @@ public class EvaluationReasoningGenerator {
                                          List<UserCertificate> certificates,
                                          ScoreResult scoreResult,
                                          LlmCallBreaker breaker) {
-        SkillMatchResult matchResult = skillScoreCalculator.matchDetail(skills, projects, extraction.requiredSkills());
+        SkillMatchResult matchResult = skillScoreCalculator.matchDetailForGroups(skills, projects, extraction.requiredSkillGroups());
         EvaluationReasoning ruleBased = ruleBasedReasoning(projects, matchResult);
 
         CheckPointsCacheKey key = cacheKey(jobPosting, extraction, userProfile, skills, projects, certificates);
@@ -225,6 +225,7 @@ public class EvaluationReasoningGenerator {
 
                 [추출된 요구사항]
                 - 필수 기술: %s
+                - 필수 기술(그룹 중 하나만 충족하면 됨): %s
                 - 우대 기술: %s
                 - 요구 경력: %s ~ %s 년 (신입 지원 가능: %s)
                 - 필수 자격증: %s
@@ -252,6 +253,7 @@ public class EvaluationReasoningGenerator {
                 nullToEmpty(jobPosting.getTitle()),
                 nullToEmpty(jobPosting.getDescription()),
                 joinOrNone(extraction.requiredSkills()),
+                describeAnyOfGroups(extraction.requiredAnyOf()),
                 joinOrNone(extraction.preferredSkills()),
                 nullToText(extraction.minYears()), nullToText(extraction.maxYears()), extraction.newGraduateAllowed(),
                 joinOrNone(extraction.requiredCertificates()),
@@ -263,6 +265,15 @@ public class EvaluationReasoningGenerator {
                 scoreResult.skillScore(), scoreResult.experienceScore(),
                 scoreResult.preferenceScore(), scoreResult.certificateScore()
         );
+    }
+
+    private String describeAnyOfGroups(List<List<String>> groups) {
+        if (groups.isEmpty()) {
+            return "없음";
+        }
+        return groups.stream()
+                .map(group -> "(" + String.join(" 또는 ", group) + ")")
+                .collect(Collectors.joining(", "));
     }
 
     private String sortedJoin(List<String> names) {

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -20,19 +21,30 @@ public class SkillScoreCalculator {
     private static final double FULL_MATCH_SCORE = 100;
     private static final double SKILL_ONLY_SCORE = 60;
     private static final double NO_MATCH_SCORE = 0;
+    // 택1 그룹이 전부 미충족일 때 "Linux 또는 Windows"처럼 묶어 표시한다.
+    static final String ANY_OF_DELIMITER = " 또는 ";
 
     private final SkillAliasNormalizer skillAliasNormalizer;
 
     public SkillScore calculate(List<UserSkill> skills, List<UserProject> projects, List<String> targetSkills) {
-        if (targetSkills.isEmpty()) {
+        return calculateForGroups(skills, projects, singletonGroups(targetSkills));
+    }
+
+    // 그룹 하나를 기술 1개로 보고, 그룹 점수는 그룹 안에서 가장 잘 맞는 기술의 점수로 한다.
+    // 단일 기술은 원소 1개짜리 그룹이므로 기존 계산과 같다.
+    public SkillScore calculateForGroups(List<UserSkill> skills, List<UserProject> projects, List<List<String>> targetGroups) {
+        if (targetGroups.isEmpty()) {
             return SkillScore.notEvaluated();
         }
 
         Set<String> userSkillNames = userSkillNames(skills);
         Set<String> userTechStacks = userTechStacks(projects);
 
-        double average = targetSkills.stream()
-                .mapToDouble(targetSkill -> scoreOf(skillAliasNormalizer.normalize(targetSkill), userSkillNames, userTechStacks))
+        double average = targetGroups.stream()
+                .mapToDouble(group -> group.stream()
+                        .mapToDouble(skill -> scoreOf(skillAliasNormalizer.normalize(skill), userSkillNames, userTechStacks))
+                        .max()
+                        .orElse(NO_MATCH_SCORE))
                 .average()
                 .orElse(NO_MATCH_SCORE);
         return SkillScore.of(average);
@@ -41,17 +53,21 @@ public class SkillScoreCalculator {
     // EvaluationReasoningGenerator가 LLM에게 일치/불일치 여부를 직접 판단하게 하지 않고,
     // 이미 계산된 결과를 그대로 문장 작성에만 사용하도록 하기 위한 상세 매칭 결과.
     public SkillMatchResult matchDetail(List<UserSkill> skills, List<UserProject> projects, List<String> targetSkills) {
+        return matchDetailForGroups(skills, projects, singletonGroups(targetSkills));
+    }
+
+    // 그룹 중 하나라도 보유하면 일치로 보고, 일치 목록에는 실제로 보유한 기술(여럿이면 점수가 가장 높은 기술)을 넣는다.
+    // 그룹 전체를 보유하지 않았을 때만 불일치 목록에 "A 또는 B" 형태로 넣는다.
+    public SkillMatchResult matchDetailForGroups(List<UserSkill> skills, List<UserProject> projects, List<List<String>> targetGroups) {
         Set<String> userSkillNames = userSkillNames(skills);
+        Set<String> userTechStacks = userTechStacks(projects);
 
         List<String> matchedSkills = new ArrayList<>();
         List<String> unmatchedSkills = new ArrayList<>();
-        for (String targetSkill : targetSkills) {
-            String normalized = skillAliasNormalizer.normalize(targetSkill);
-            if (skillAliasNormalizer.matches(normalized, userSkillNames)) {
-                matchedSkills.add(targetSkill);
-            } else {
-                unmatchedSkills.add(targetSkill);
-            }
+        for (List<String> group : targetGroups) {
+            bestMatchedMember(group, userSkillNames, userTechStacks).ifPresentOrElse(
+                    matchedSkills::add,
+                    () -> unmatchedSkills.add(String.join(ANY_OF_DELIMITER, group)));
         }
         return new SkillMatchResult(matchedSkills, unmatchedSkills);
     }
@@ -63,6 +79,19 @@ public class SkillScoreCalculator {
                 .toList();
     }
 
+    private Optional<String> bestMatchedMember(List<String> group, Set<String> userSkillNames, Set<String> userTechStacks) {
+        String best = null;
+        double bestScore = NO_MATCH_SCORE;
+        for (String skill : group) {
+            double score = scoreOf(skillAliasNormalizer.normalize(skill), userSkillNames, userTechStacks);
+            if (score > bestScore) {
+                best = skill;
+                bestScore = score;
+            }
+        }
+        return Optional.ofNullable(best);
+    }
+
     private List<String> projectsUsing(String normalizedSkill, List<UserProject> projects) {
         return projects.stream()
                 .filter(project -> skillAliasNormalizer.matches(normalizedSkill, project.getTechStack().stream()
@@ -70,6 +99,10 @@ public class SkillScoreCalculator {
                         .collect(Collectors.toSet())))
                 .map(UserProject::getProjectName)
                 .toList();
+    }
+
+    private static List<List<String>> singletonGroups(List<String> skills) {
+        return skills.stream().map(List::of).toList();
     }
 
     private Set<String> userSkillNames(List<UserSkill> skills) {

@@ -10,12 +10,16 @@ import lombok.NoArgsConstructor;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "job_requirement_extractions")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class JobRequirementExtractionEntity {
+
+    private static final String GROUP_MEMBER_DELIMITER = "|";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,6 +31,10 @@ public class JobRequirementExtractionEntity {
 
     @Column(name = "required_skills", length = 1000)
     private String requiredSkills;
+
+    // 그룹은 ","로, 그룹 안의 기술은 "|"로 구분한다. 예: "Linux|Windows,Java|Kotlin"
+    @Column(name = "required_any_of", length = 1000)
+    private String requiredAnyOf;
 
     @Column(name = "preferred_skills", length = 1000)
     private String preferredSkills;
@@ -62,6 +70,7 @@ public class JobRequirementExtractionEntity {
     // 재추출 결과로 같은 행을 갱신한다. job_posting_id 유니크 제약이 있어 새 행을 INSERT하면 충돌하기 때문이다.
     public void overwrite(JobRequirementExtraction extraction, int promptVersion) {
         this.requiredSkills = join(extraction.requiredSkills());
+        this.requiredAnyOf = joinGroups(extraction.requiredAnyOf());
         this.preferredSkills = join(extraction.preferredSkills());
         this.minYears = extraction.minYears();
         this.maxYears = extraction.maxYears();
@@ -79,6 +88,7 @@ public class JobRequirementExtractionEntity {
     public JobRequirementExtraction toExtraction() {
         return new JobRequirementExtraction(
                 split(requiredSkills),
+                splitGroups(requiredAnyOf),
                 split(preferredSkills),
                 minYears,
                 maxYears,
@@ -91,6 +101,23 @@ public class JobRequirementExtractionEntity {
 
     private static String join(List<String> values) {
         return String.join(",", values);
+    }
+
+    private static String joinGroups(List<List<String>> groups) {
+        return groups.stream()
+                .map(group -> String.join(GROUP_MEMBER_DELIMITER, group))
+                .collect(Collectors.joining(","));
+    }
+
+    // 컬럼 추가 이전에 저장된 행은 null이며, 택1 그룹이 없는 것으로 읽는다.
+    private static List<List<String>> splitGroups(String value) {
+        return split(value).stream()
+                .map(group -> Arrays.stream(group.split(Pattern.quote(GROUP_MEMBER_DELIMITER)))
+                        .map(String::trim)
+                        .filter(member -> !member.isEmpty())
+                        .toList())
+                .filter(group -> !group.isEmpty())
+                .toList();
     }
 
     private static List<String> split(String csv) {
