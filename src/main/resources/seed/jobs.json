@@ -362,5 +362,61 @@
     "description": "[직무: AI Engineer Internship - Agentic AI (Backend)]\n\n[주요업무]\n[Agentic AI 서비스의 Backend 개발 및 운용]\n- LLM의 reasoning, planning 및 tool use를 활용한 제품 설계 과정 자동화용 MCP 서버 및 시스템 구축\n- 설계·최적화 알고리즘의 API 모듈화, tool call 연동 및 인터페이스 구현\n- 다중 사용자 접속 및 작업 실행을 위한 컴퓨팅 자원(CPU, GPU 등) 할당 및 스케줄링\n- 서비스 운영을 위한 서버·데이터베이스 설계 및 구현, API 명세와 기술 문서 작성\n- 사용자 피드백 수집 및 개선 사항 관리를 위한 시스템 구현\n\n[자격요건]\n- 유관 전공 (컴퓨터공학, 전자 전기공학, 인공지능 등) 학/석사 재학생 및 졸업생\n- Python 기반 Backend 서버 개발 경험 보유 (참여 프로젝트 포트폴리오 제출 필요)\n- API 및 Database에 대한 이해와 설계·구현·문서화 역량 보유\n- Git, Docker 등의 개발 도구에 대한 이해 보유\n- Linux 환경에서의 개발 및 작업 경험 보유\n- Machine Learning 기법 및 모델의 기본 원리에 대한 이해 보유\n- AI 코딩 도구를 효율적이고 책임감 있게 활용할 수 있는 역량 보유\n- 하기 기술 스택 활용 가능\n  - Backend: REST API 설계·구현, 비동기 처리, 인증·권한 관리 (FastAPI 등)\n  - LLM / Agent: LLM API 연동, Tool calling 및 MCP, Agent 프레임워크 활용\n  - Data: RDBMS·NoSQL 설계 및 운영, 캐시·메시지 큐 (Redis 등)\n  - Infra: 컨테이너 (Docker), 오케스트레이션 (Kubernetes), GPU 자원 관리, CI/CD\n  - Collaboration: Git 기반 협업, 코드 리뷰 및 기술 문서화\n- 전공: 인공지능, 컴퓨터공학, 전자공학, 전기공학 등",
     "closeType": "FIXED_DATE",
     "expirationAt": "2026-10-31T23:59:59"
+  },
+   {
+    "source": "SARAMIN",
+    "externalId": "54905826",
+    "companyName": "토스페이먼츠(주)",
+    "title": "Server Developer(SRE)",
+    "originalUrl": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=54905826",
+    "location": null,
+    "experienceLevel": "신입/경력",
+    "educationLevel": "학력무관",
+    "keywords": "Java,Kotlin,Spring,Linux,Network,MSA,Kubernetes,Istio,Redis,Kafka,ELK,성능테스트,모니터링",
+    "description": "[직무: Server Developer(SRE)]\n\n[주요업무]\n- 장애 발생 시 문제를 해결하고, 재발 방지를 위한 개발과 설계를 주도하고 해법을 마련\n- 전사 시스템을 대상으로 한 모니터링, 장애 대응, 트러블슈팅, 알림시스템 개선을 통해 서비스 안정성 고도화\n- 요청 생성부터 응답까지 관련된 모든 기술적 구성요소에 관심을 가지고 서비스 품질 개선\n- 서비스 안정성 및 성능 개선이 필요한 부분을 개발팀과 협업해 식별하고 개선\n- 대규모 트래픽 환경에서 빠르게 원인을 분석할 수 있도록 모니터링 시스템 지속 개선\n\n[자격요건]\n- Java/Kotlin, Spring Framework 관련 개발 경험과 문제해결 능력이 있는 분이면 좋음\n- 성능 테스트를 통해 시스템의 가용성을 확인하고, 병목 지점을 해결할 수 있는 분이면 좋음\n- 리눅스 및 네트워크 시스템에 대한 깊은 이해가 있는 분\n- MSA, Kubernetes, Istio, Redis, Kafka, ELK 기반의 인프라 운영 경험이 있는 분이면 좋음\n- Mission-Critical한 서비스 운영 환경에서 높은 책임감으로 탄탄한 서비스를 만들어 갈 분\n- 새로운 기술에 빠르게 적응하며 지속적인 성장을 원하는 분",
+    "closeType": "FIXED_DATE",
+    "expirationAt": "2026-11-15T23:59:59"
+  },
+  {
+    "source": "SARAMIN",
+    "externalId": "55144102",
+    "companyName": "(주)카카오페이",
+    "title": "서버 개발자 - 데이터 플랫폼",
+    "originalUrl": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=55144102",
+    "location": null,
+    "experienceLevel": "신입/경력",
+    "educationLevel": "대학졸업(2,3년)이상",
+    "keywords": "Kotlin,Spring Boot,MySQL,RDBMS,쿼리튜닝,Redis,캐시,데이터서빙API,대용량데이터,분산시스템",
+    "description": "[직무: 서버 개발자 - 데이터 플랫폼]\n\n[주요업무]\n- 카카오페이의 다양한 서비스를 위한 데이터 플랫폼 개발 및 운영\n- 데이터 수집부터 저장, 처리, 분석, 서빙까지 전체 데이터 라이프사이클을 관리하는 시스템 구축\n- 고성능 데이터 서빙 API를 설계·구현하여 다양한 서비스에 데이터 제공\n- 서비스 안정성과 성능 개선을 위한 기술적 과제를 주도적으로 발굴하고 해결\n- 시스템의 문제를 스스로 발견하고 개선 방향을 제안하며, 설계·개발·운영 전 단계에서 기술적 의견 제시\n\n[자격요건]\n- 컴퓨터공학 또는 관련 전공 학위 (또는 이에 준하는 전공)\n- 1년 이상의 서버 개발 경력\n- Kotlin, Spring Framework(Spring Boot) 기반 백엔드 개발 능력\n- 고성능 데이터 서빙 API 설계 및 개발 경험\n- MySQL 등 RDBMS 설계 및 쿼리 튜닝 능력\n- Redis 등 캐시 활용 경험\n- 대용량 데이터 처리 및 분산 시스템에 대한 이해도",
+    "closeType": "FIXED_DATE",
+    "expirationAt": "2026-11-15T23:59:59"
+  },
+  {
+    "source": "SARAMIN",
+    "externalId": "55330482",
+    "companyName": "브레인즈컴퍼니(주)",
+    "title": "Application성능관리솔루션개발자(신입)",
+    "originalUrl": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=55330482",
+    "location": null,
+    "experienceLevel": "신입",
+    "educationLevel": "대학교졸업(4년)이상",
+    "keywords": ".NET,C#,C++,Java,JavaScript,Linux,Python,Spring,Spring Boot,TCP/IP",
+    "description": "[직무: Application 성능관리 솔루션 개발자(신입)]\n\n[주요업무]\n- Java 기반 APM(Application Performance Monitoring) 제품 개발\n- 애플리케이션의 성능 데이터 수집 및 모니터링 기능 개발 (Transaction / Trace, JVM 및 System Metrics)\n- 애플리케이션 및 주요 Framework / Library에 대한 모니터링 기능 개발\n- 애플리케이션 성능 문제 분석 및 장애 원인 분석을 위한 기능 개발\n- 대용량 모니터링 데이터의 수집, 처리 및 분석 기능 개발\n\n[자격요건]\n- 학력: 대졸(4년제) 졸업 이상 또는 졸업 예정자\n- 경력: 신입 또는 관련 경력 2년 이하\n- Java 프로그래밍 가능 또는 개발 경험자 (ClassLoader, Multi-Thread, GC 등)\n- 객체지향 프로그래밍과 자료구조, 알고리즘에 대한 기본 이해\n- Thread, Network, Memory 등 기본적인 컴퓨터 시스템 동작 원리에 대한 이해\n- Linux 또는 Windows 환경에서의 개발 및 기본 사용 능력\n- HTTP, TCP/IP 등 기본적인 네트워크 프로토콜에 대한 이해\n- 형상관리 도구 사용 경험자\n\n[기술 Stack]\n- Language: Java (Jakarta EE)/C#(.NET), JavaScript / C/C++, C#, Python 가능자 (우대)\n- DB: JDBC, SQL, RDBMS, NoSQL\n- Network: HTTP, TCP/IP, WebSocket, REST\n- Framework: Spring, SpringBoot\n- System: Linux, Windows, Thread, Process\n- Dev: Git, Maven / Gradle\n\n[우대사항]\n- 전산관련 전공자\n- APM, Observability, Profiling 제품 또는 Agent 개발 경험자\n- Runtime Instrumentation / Bytecode Instrumentation 관련 기술 경험자\n- Java 외 C/C++, .NET(C#), Python, Node.js 등 하나 이상 가능/경험자\n- JVM, .NET CLR, Python Runtime, Node.js / V8 등 Runtime 내부 구조 이해\n- OpenSource 기반 Trace / Metric / Log 개발 또는 연동 경험자\n- 성능 분석 및 장애 원인 분석 경험자\n- 대용량 데이터 수집 및 처리 시스템 개발 경험자\n- Linux / Windows 환경에서 시스템 성능 분석 경험자\n- WAS 구축 및 운영 또는 지원 경험자\n- AI Assistance 경험자",
+    "closeType": "FIXED_DATE",
+    "expirationAt": "2026-11-17T23:59:59"
+  },
+  {
+    "source": "SARAMIN",
+    "externalId": "55073485",
+    "companyName": "모두닥(주)",
+    "title": "[채용전환형] 모두닥 Problem Solver (Engineering Focused)",
+    "originalUrl": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=55073485",
+    "location": null,
+    "experienceLevel": "신입",
+    "educationLevel": "대학교졸업(4년)이상",
+    "keywords": "Python,JavaScript,Django,Next.js,PostgreSQL,ElasticSearch,AWS,Claude,GitHub Copilot",
+    "description": "[직무: Problem Solver (Engineering Focused), 채용전환형]\n\n[필수 요건]\n- 불가능한 문제를 해결하기 위해 Work = Life이신 분\n- 웹 서비스 개발 경험이 있는 분\n- Django, Spring, Node, Next.js, React 등 어떤 스택이든 무관하나, 하나의 서비스를 끝까지 만들어본 경험\n- AI 개발 도구 활용에 거부감이 없고, 직접 워크플로우를 설계해보고 싶은 분\n- Claude, GitHub Copilot 등 LLM 기반 개발 도구 사용 경험 또는 강한 관심\n- 단순 코드 구현이 아니라 문제 정의 → 가설 설정 → 실험 → 검증의 전체 프로세스에 주도적으로 참여할 준비가 된 분\n- 기획·마케팅·유저 인터뷰 등 개발 외 영역에도 필요하다면 기꺼이 뛰어들 수 있는 분\n- 끝까지 파고들어 답을 찾아내는 집요함과, 반복적인 실패 후에도 다시 시도하는 끈기가 있는 분\n\n[우대 사항]\n- 헬스케어 또는 시니어 타겟 서비스를 만들어보았거나, 해당 도메인에 관심이 있는 분\n- 실제 유저 트래픽이 발생한 서비스를 운영·고도화해 본 경험\n- AI 개발 도구를 활용한 개인·사이드 프로젝트나 실서비스 개선 경험\n- 스타트업 등 작은 팀에서 긴밀하게 일해본 경험\n- 세일즈·CS·마케팅 등 비개발 직군과의 협업 경험\n\n[기술 스택 및 환경]\n- Language: Python, JavaScript\n- Framework: Django, Next.js\n- Database: PostgreSQL\n- Search: ElasticSearch\n- Infra: AWS (EC2, Beanstalk, S3, RDS, CloudFront 등)\n- AI: Claude 등 LLM 기반 개발 도구의 일상적 활용",
+    "closeType": "FIXED_DATE",
+    "expirationAt": "2026-11-17T23:59:59"
   }
 ]
