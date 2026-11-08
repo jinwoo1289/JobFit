@@ -3,7 +3,7 @@ package com.jinwoo.jobfit.domain.job.controller;
 import com.jinwoo.jobfit.domain.job.dto.JobPostingCreateRequest;
 import com.jinwoo.jobfit.domain.job.dto.JobPostingResponse;
 import com.jinwoo.jobfit.domain.job.service.JobPostingService;
-import com.jinwoo.jobfit.domain.user.service.ProfileEditPolicy;
+import com.jinwoo.jobfit.global.policy.EditPolicy;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,11 +18,11 @@ import java.util.List;
 public class JobPostingController {
 
     private final JobPostingService jobPostingService;
-    private final ProfileEditPolicy profileEditPolicy;
+    private final EditPolicy editPolicy;
 
     @PostMapping
     public ResponseEntity<JobPostingResponse> create(@Valid @RequestBody JobPostingCreateRequest request) {
-        profileEditPolicy.assertJobDataEditable();
+        editPolicy.assertJobDataEditable();
         JobPostingResponse response = jobPostingService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

@@ -1,6 +1,6 @@
-package com.jinwoo.jobfit.domain.user.service;
+package com.jinwoo.jobfit.global.policy;
 
-import com.jinwoo.jobfit.domain.user.exception.ProfileEditDisabledException;
+import com.jinwoo.jobfit.global.exception.EditDisabledException;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.core.io.ClassPathResource;
@@ -14,10 +14,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * 공개 배포에서 env를 빠뜨려도 프로필 수정이 열리지 않도록 기본값이 차단(false)인지 고정한다.
+ * 공개 배포에서 env를 빠뜨려도 쓰기 API(프로필 편집·공고 등록·재추출)가 열리지 않도록 기본값이 차단(false)인지 고정한다.
  * 로컬 .env(PROFILE_EDIT_ENABLED=true)의 영향을 받지 않도록 Spring Boot 전체 컨텍스트 대신 설정 파일과 빈만 따로 확인한다.
  */
-class ProfileEditPolicyTest {
+class EditPolicyTest {
 
     @Test
     void applicationProperties_defaultsToDisabledWhenEnvMissing() throws IOException {
@@ -34,19 +34,19 @@ class ProfileEditPolicyTest {
     @Test
     void bean_withoutProperty_isDisabled() {
         new ApplicationContextRunner()
-                .withBean(ProfileEditPolicy.class)
+                .withBean(EditPolicy.class)
                 .run(context -> {
-                    ProfileEditPolicy policy = context.getBean(ProfileEditPolicy.class);
+                    EditPolicy policy = context.getBean(EditPolicy.class);
                     assertThat(policy.isEditEnabled()).isFalse();
-                    assertThatThrownBy(policy::assertEditable).isInstanceOf(ProfileEditDisabledException.class);
+                    assertThatThrownBy(policy::assertProfileEditable).isInstanceOf(EditDisabledException.class);
                 });
     }
 
     @Test
     void bean_withPropertyTrue_isEnabled() {
         new ApplicationContextRunner()
-                .withBean(ProfileEditPolicy.class)
+                .withBean(EditPolicy.class)
                 .withPropertyValues("jobfit.profile.edit-enabled=true")
-                .run(context -> assertThat(context.getBean(ProfileEditPolicy.class).isEditEnabled()).isTrue());
+                .run(context -> assertThat(context.getBean(EditPolicy.class).isEditEnabled()).isTrue());
     }
 }

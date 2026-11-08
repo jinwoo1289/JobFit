@@ -4,7 +4,6 @@ import com.jinwoo.jobfit.domain.evaluation.exception.LlmResponseException;
 import com.jinwoo.jobfit.domain.job.exception.DuplicateJobPostingException;
 import com.jinwoo.jobfit.domain.job.exception.JobPostingNotFoundException;
 import com.jinwoo.jobfit.domain.user.exception.InvalidEvaluationWeightException;
-import com.jinwoo.jobfit.domain.user.exception.ProfileEditDisabledException;
 import com.jinwoo.jobfit.domain.user.exception.UserProfileNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,8 +33,8 @@ public class GlobalExceptionHandler {
                 .body(ErrorResponse.of(HttpStatus.BAD_REQUEST, "요청 본문을 읽을 수 없습니다. 값의 형식을 확인해 주세요."));
     }
 
-    @ExceptionHandler(ProfileEditDisabledException.class)
-    public ResponseEntity<ErrorResponse> handleProfileEditDisabled(ProfileEditDisabledException e) {
+    @ExceptionHandler(EditDisabledException.class)
+    public ResponseEntity<ErrorResponse> handleEditDisabled(EditDisabledException e) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ErrorResponse.of(HttpStatus.FORBIDDEN, e.getMessage()));
     }

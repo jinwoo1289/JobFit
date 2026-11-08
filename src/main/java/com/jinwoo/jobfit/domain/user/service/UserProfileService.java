@@ -18,6 +18,7 @@ import com.jinwoo.jobfit.domain.user.repository.UserCertificateRepository;
 import com.jinwoo.jobfit.domain.user.repository.UserProfileRepository;
 import com.jinwoo.jobfit.domain.user.repository.UserProjectRepository;
 import com.jinwoo.jobfit.domain.user.repository.UserSkillRepository;
+import com.jinwoo.jobfit.global.policy.EditPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,11 +36,11 @@ public class UserProfileService {
     private final UserCertificateRepository userCertificateRepository;
     private final EvaluationWeightRepository evaluationWeightRepository;
     private final JobApplicationRepository jobApplicationRepository;
-    private final ProfileEditPolicy profileEditPolicy;
+    private final EditPolicy editPolicy;
 
     @Transactional
     public UserProfileResponse create(UserProfileCreateRequest request) {
-        profileEditPolicy.assertEditable();
+        editPolicy.assertProfileEditable();
         UserProfile userProfile = userProfileRepository.save(request.toEntity());
 
         List<UserSkill> skills = userSkillRepository.saveAll(
@@ -81,7 +82,7 @@ public class UserProfileService {
 
     @Transactional
     public UserProfileResponse update(Long id, UserProfileUpdateRequest request) {
-        profileEditPolicy.assertEditable();
+        editPolicy.assertProfileEditable();
         UserProfile userProfile = getUserProfile(id);
         userProfile.updateBasicInfo(
                 request.desiredJob(),
@@ -117,7 +118,7 @@ public class UserProfileService {
     }
 
     public ProfileSettingsResponse settings() {
-        return new ProfileSettingsResponse(profileEditPolicy.isEditEnabled());
+        return new ProfileSettingsResponse(editPolicy.isEditEnabled());
     }
 
     @Transactional
@@ -137,7 +138,7 @@ public class UserProfileService {
 
     @Transactional
     public void delete(Long id) {
-        profileEditPolicy.assertEditable();
+        editPolicy.assertProfileEditable();
         UserProfile userProfile = getUserProfile(id);
         // 지원 완료 기록은 프로필 cascade 대상이 아니므로 FK 위반이 나지 않도록 먼저 지운다.
         jobApplicationRepository.deleteAllByUserProfileId(id);
