@@ -109,6 +109,19 @@ UserProfile                    사용자 프로필
 
 JobRequirementExtraction (1:1 with JobPosting)
                                LLM 추출 결과 캐시
+
+JobApplication                 지원 완료 기록 (체크 시 생성, 해제 시 삭제)
+├── userProfile      (N:1)     ┐ (user_profile_id, job_posting_id) 유니크 제약으로
+├── jobPosting       (N:1)     ┘ 프로필·공고 쌍당 1건
+└── appliedAt                  지원 완료 시각
+
+EvaluationReasoningCache       판단 근거(checkPoints) 캐시
+├── jobPostingId               ┐ (job_posting_id, user_profile_id) 유니크 제약으로
+├── userProfileId              ┘ 공고·프로필 쌍당 1건 (연관관계 없이 ID만 저장)
+├── profileHash                프로필 내용 해시      ┐ 하나라도 다르면 무효,
+├── extractionHash             추출 결과 해시        │ 다시 생성해 같은 행을 덮어씀
+├── reasoningPromptVersion     근거 프롬프트 버전    ┘
+└── checkPointsJson            checkPoints (JSON 배열 문자열)
 ```
 
 **보유 기술과 프로젝트 경험을 분리한 이유**
@@ -217,7 +230,7 @@ JobRequirementExtraction (1:1 with JobPosting)
 
 **외부 의존성 격리**
 
-- LLM 호출은 `LlmClient` 인터페이스를 통해 이루어지며, 테스트에서는 고정 응답을 반환하는 구현체로 대체합니다. 실제 API를 호출하는 통합 테스트는 `@Disabled`로 분리했습니다.
+- LLM 호출은 `LlmClient` 인터페이스를 통해 이루어지며, 테스트에서는 고정 응답 구현체(`FakeLlmClient`) 또는 `@MockitoBean`으로 대체합니다. 실제 API를 호출하는 통합 테스트는 `@Disabled`로 분리했습니다.
 - 마감일 판정은 `Clock`을 주입받아 처리하므로, 테스트에서 기준 시각을 고정할 수 있습니다. 시간이 지나도 테스트 결과가 달라지지 않습니다.
 
 ## 실행 방법

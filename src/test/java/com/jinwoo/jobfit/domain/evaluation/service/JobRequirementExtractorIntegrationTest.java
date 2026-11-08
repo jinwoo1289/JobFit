@@ -18,7 +18,7 @@ import com.jinwoo.jobfit.domain.job.repository.JobPostingRepository;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * seed/jobs.json 8건에 대해 실제 OpenAI API를 호출한다.
+ * seed/jobs.json의 전체 공고(현재 29건)에 대해 실제 OpenAI API를 호출한다.
  * 과금이 발생하므로 평소에는 비활성화하고, 필요할 때만 @Disabled를 해제해서 수동으로 돌린다.
  * .env의 OPENAI_API_KEY가 spring.config.import로 자동 로드되어 별도 환경변수 설정이 필요 없다.
  * JobRequirementExtractor가 job_requirement_extractions에 결과를 캐시하므로, seed 공고를 먼저
