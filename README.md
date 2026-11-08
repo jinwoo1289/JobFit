@@ -1,5 +1,3 @@
-
-https://github.com/user-attachments/assets/e188f8ed-0f8e-4f07-aa3f-e66df64e7af9
 # JobFit
 
 사용자 조건과 가중치를 반영해 채용공고 적합도와 추천 근거를 제공하는 AI 기반 맞춤형 채용공고 추천 서비스
