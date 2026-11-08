@@ -30,7 +30,8 @@ import tools.jackson.databind.ObjectMapper;
  * 2. 아래 @Disabled를 잠시 주석 처리한다. (커밋 전에 반드시 되돌린다)
  * 3. ./gradlew test --tests '*JobRequirementExtractorIntegrationTest' -i
  *    (-i를 붙여야 공고별 추출 결과 printf 출력이 보인다)
- * 4. 프롬프트를 바꾼 뒤 다시 추출하려면 job_requirement_extractions에서 해당 공고 행을 먼저 지운다.
+ * 4. 프롬프트를 바꿨다면 JobRequirementExtractor.EXTRACTION_PROMPT_VERSION을 올리거나(옛 버전 캐시는 다음 추출 시 재추출됨),
+ *    공고 하나만 다시 추출하려면 POST /api/jobs/{id}/re-extract를 사용한다.
  */
 @SpringBootTest
 @Disabled("실제 OpenAI API를 호출하는 수동 테스트")

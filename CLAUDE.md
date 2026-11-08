@@ -11,6 +11,7 @@
 
 ```
 domain/{도메인}/{controller,service,repository,entity,dto,exception}
+domain/{도메인}/{client,vo,config}   (필요한 도메인만)
 global/
 ```
 
