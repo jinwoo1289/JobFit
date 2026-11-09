@@ -404,5 +404,33 @@
     "description": "[직무: Problem Solver (Engineering Focused), 채용전환형]\n\n[필수 요건]\n- 불가능한 문제를 해결하기 위해 Work = Life이신 분\n- 웹 서비스 개발 경험이 있는 분\n- Django, Spring, Node, Next.js, React 등 어떤 스택이든 무관하나, 하나의 서비스를 끝까지 만들어본 경험\n- AI 개발 도구 활용에 거부감이 없고, 직접 워크플로우를 설계해보고 싶은 분\n- Claude, GitHub Copilot 등 LLM 기반 개발 도구 사용 경험 또는 강한 관심\n- 단순 코드 구현이 아니라 문제 정의 → 가설 설정 → 실험 → 검증의 전체 프로세스에 주도적으로 참여할 준비가 된 분\n- 기획·마케팅·유저 인터뷰 등 개발 외 영역에도 필요하다면 기꺼이 뛰어들 수 있는 분\n- 끝까지 파고들어 답을 찾아내는 집요함과, 반복적인 실패 후에도 다시 시도하는 끈기가 있는 분\n\n[우대 사항]\n- 헬스케어 또는 시니어 타겟 서비스를 만들어보았거나, 해당 도메인에 관심이 있는 분\n- 실제 유저 트래픽이 발생한 서비스를 운영·고도화해 본 경험\n- AI 개발 도구를 활용한 개인·사이드 프로젝트나 실서비스 개선 경험\n- 스타트업 등 작은 팀에서 긴밀하게 일해본 경험\n- 세일즈·CS·마케팅 등 비개발 직군과의 협업 경험\n\n[기술 스택 및 환경]\n- Language: Python, JavaScript\n- Framework: Django, Next.js\n- Database: PostgreSQL\n- Search: ElasticSearch\n- Infra: AWS (EC2, Beanstalk, S3, RDS, CloudFront 등)\n- AI: Claude 등 LLM 기반 개발 도구의 일상적 활용",
     "closeType": "FIXED_DATE",
     "expirationAt": "2026-11-17T23:59:59"
+  },
+  {
+    "source": "LINKAREER",
+    "externalId": "352865",
+    "companyName": "링커리어",
+    "title": "백엔드개발 채용전환형 인턴",
+    "originalUrl": "https://linkareer.com/activity/352865",
+    "location": "서울 강남구",
+    "experienceLevel": "인턴",
+    "educationLevel": "대학졸업(4년) 이상",
+    "keywords": "Spring,NestJS,Node.js,Django,RESTful API,MySQL,PostgreSQL,AWS,Docker,GraphQL,Git,테스트코드,코드리뷰",
+    "description": "[직무: 백엔드개발 채용전환형 인턴]\n\n[주요업무]\n- 멘토와 함께 프로덕트 기능 개발 및 유지보수 참여\n- RESTful API 설계·구현 및 테스트 코드 작성\n- RDB(MySQL, PostgreSQL) 기반 데이터 모델링 및 쿼리 작성\n- AWS 기반 인프라의 기본 운영 보조(배포, 모니터링, 로그 확인)\n- 코드 리뷰 참여 및 작업 내용의 문서화·공유\n\n[자격요건]\n- 정규직전환 후 계속 근무가 가능하신 분 (졸업자 or 졸업예정자)\n\n[우대사항]\n- 하나 이상의 백엔드 프레임워크(NestJS, Spring, Django 등)로 개인·팀 프로젝트를 완성해 본 경험\n- RDB의 기본 개념(정규화, 인덱스, 트랜잭션)에 대한 이해와 SQL 작성 경험\n- Git을 이용한 협업 경험\n- 모르는 것을 명확히 질문하고, 배운 내용을 정리해 공유할 수 있는 커뮤니케이션 능력\n- 새로운 기술을 스스로 학습하고 프로그래밍에 대한 열정을 가지신 분\n- Node.js 및 NestJS 기반 프로젝트 경험\n- AWS 등 클라우드 환경에서 서비스를 직접 배포·운영해 본 경험\n- Docker 등 컨테이너 환경 사용 경험\n- GraphQL API 개발 경험\n- 코드 품질과 가독성(좋은 함수·변수 이름, 클린 코드)에 대한 관심\n- 기술 블로그, 스터디, 오픈소스 기여 등 학습 내용을 공유해 본 경험\n- 비개발자에게도 기술적 내용을 쉽게 설명할 수 있는 분\n- AI 도구(Claude, Copilot 등)를 활용해 학습이나 개발 생산성을 높여 본 경험\n- 컴퓨터공학 기초(자료구조, 네트워크, OS)에 대한 이해가 있으신 분\n\n[근무조건]\n- 주 5일(월~금) 09:00~18:00 (시차출퇴근제 운영)\n- 인턴 3개월 후 평가를 통해 정규직 전환 가능\n\n[전형절차]\n- 서류전형 → 코딩테스트 → 인터뷰 → 처우협의 및 최종합격",
+    "closeType": "FIXED_DATE",
+    "expirationAt": "2026-11-30T23:59:59"
+  },
+  {
+    "source": "LINKAREER",
+    "externalId": "360096",
+    "companyName": "IBK기업은행",
+    "title": "2027년 동계 체험형 청년인턴 채용",
+    "originalUrl": "https://linkareer.com/activity/360096",
+    "location": "서울 중구",
+    "experienceLevel": "인턴",
+    "educationLevel": "학력무관",
+    "keywords": "금융,은행,디지털,IT,체험형인턴,청년인턴",
+    "description": "[직무: 금융일반, 디지털, IT]\n\n[주요업무]\n- 각 소재 영업점, 지역본부 근무\n- 영업점 및 지역본부 및 본부부서 업무지원\n- 디지털 및 IT관련 본부부서 업무지원\n\n[자격요건]\n- 19세 이상 34세 이하인 자\n- 학력, 전공 제한 없음\n- 당행 청년인턴 경험 없는 자\n\n[전형절차]\n- 서류전형 → 실기시험 → 최종합격",
+    "closeType": "FIXED_DATE",
+    "expirationAt": "2026-11-16T23:59:59"
   }
 ]
