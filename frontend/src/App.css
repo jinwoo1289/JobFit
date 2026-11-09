@@ -284,6 +284,53 @@
   font-size: 20px;
 }
 
+.job-card-total-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 부분 평가: 전체 평가 공고 점수와 같은 무게로 보이지 않도록 점수를 흐리게 하고 점선 테두리로 구분한다. */
+.job-card-total-partial {
+  background: #fafafa;
+  border: 1px dashed #d6d9de;
+}
+
+.job-card-total-partial strong {
+  color: #8a9099;
+  font-weight: 600;
+}
+
+.job-card-total-scope {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.job-card-total-empty {
+  color: #9aa0a8;
+}
+
+.score-partial-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef0f3;
+  color: #5f6670;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.scope-limited-hint {
+  margin: -6px 0 0;
+  font-size: 12px;
+  color: #8a6d1a;
+}
+
+.score-empty-notice {
+  margin: 0;
+  font-size: 13px;
+  color: #6c757d;
+}
+
 .job-card-scores-header {
   display: flex;
   align-items: center;
@@ -358,7 +405,6 @@
   font-size: 14px;
 }
 
-.scope-limited-notice,
 .job-notice {
   padding: 8px 12px;
   background: #fff8e6;

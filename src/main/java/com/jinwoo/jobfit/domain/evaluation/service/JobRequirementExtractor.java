@@ -21,6 +21,7 @@ import com.jinwoo.jobfit.domain.evaluation.entity.JobRequirementExtractionEntity
 import com.jinwoo.jobfit.domain.evaluation.exception.LlmResponseException;
 import com.jinwoo.jobfit.domain.evaluation.repository.JobRequirementExtractionRepository;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobCategory;
+import com.jinwoo.jobfit.domain.evaluation.vo.ExperienceLevelType;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirement;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementExtraction;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementReExtraction;
@@ -384,7 +385,8 @@ public class JobRequirementExtractor {
                 List.of(),
                 requirement.minYears(),
                 requirement.maxYears(),
-                requirement.newGraduateAllowed(),
+                // 판정 불가(UNKNOWN)는 본문 근거가 아니므로 기존 fallback처럼 false로 두고, 신입 가능으로 분류된 경우만 true로 둔다.
+                requirement.experienceLevelType() == ExperienceLevelType.NEW_GRADUATE_ALLOWED,
                 List.of(),
                 List.of(),
                 null

@@ -107,6 +107,70 @@ class RequiredConditionCheckerTest {
         assertThat(result.passed()).isTrue();
     }
 
+    // experienceLevel 경력 판정: 신입·인턴·무관이 포함되면 통과한다.
+    @ParameterizedTest(name = "[{index}] \"{0}\" → 통과")
+    @MethodSource("newGraduateAllowedLevels")
+    void checkCareer_newGraduateAllowedLevel_passes(String experienceLevel) {
+        ConditionCheckResult result = checker.check(
+                newGraduateUserWith(Set.of()), jobPosting("백엔드 개발자", experienceLevel, "2026-08-15T23:59:59"),
+                defaultExtraction());
+
+        assertThat(result.passed()).isTrue();
+        assertThat(result.failedReasons()).isEmpty();
+    }
+
+    static Stream<String> newGraduateAllowedLevels() {
+        return Stream.of("신입", "인턴", "신입/경력", "경력무관");
+    }
+
+    // 경력 전용: 연차를 파싱할 수 있으면 연차 문구, 없으면 경력직 문구로 UNFIT 처리한다.
+    @ParameterizedTest(name = "[{index}] \"{0}\" → {1}")
+    @MethodSource("experiencedOnlyLevels")
+    void checkCareer_experiencedOnlyLevel_failsWithReason(String experienceLevel, String expectedReason) {
+        ConditionCheckResult result = checker.check(
+                newGraduateUserWith(Set.of()), jobPosting("백엔드 개발자", experienceLevel, "2026-08-15T23:59:59"),
+                defaultExtraction());
+
+        assertThat(result.passed()).isFalse();
+        assertThat(result.failedReasons()).containsExactly(expectedReason);
+    }
+
+    static Stream<Arguments> experiencedOnlyLevels() {
+        return Stream.of(
+                Arguments.of("경력", "경력직 채용 공고, 신입 지원 불가"),
+                Arguments.of("경력 3년↑", "경력 3년 이상 요구, 신입 지원 불가")
+        );
+    }
+
+    // 판정 불가(null·빈 값·인식 못한 값)는 jobCategory null과 같이 UNFIT 사유로 쓰지 않는다.
+    @ParameterizedTest(name = "[{index}] \"{0}\" → UNFIT 아님")
+    @MethodSource("unknownLevels")
+    void checkCareer_unknownLevel_isNotUnfit(String experienceLevel) {
+        ConditionCheckResult result = checker.check(
+                newGraduateUserWith(Set.of()), jobPosting("백엔드 개발자", experienceLevel, "2026-08-15T23:59:59"),
+                defaultExtraction());
+
+        assertThat(result.passed()).isTrue();
+        assertThat(result.failedReasons()).isEmpty();
+    }
+
+    static Stream<String> unknownLevels() {
+        return Stream.of(null, "", "알수없음");
+    }
+
+    // experienceLevel이 경력 전용이면 본문 추출 결과가 신입 가능이어도 experienceLevel 판정을 따른다.
+    @Test
+    void checkCareer_experiencedOnlyLevel_winsOverExtractionAllowingNewGraduate() {
+        JobRequirementExtraction extraction = new JobRequirementExtraction(
+                List.of(), List.of(), null, null, true, List.of(), List.of(), JobCategory.BACKEND_DEVELOPMENT);
+
+        ConditionCheckResult result = checker.check(
+                newGraduateFullTimeUser(), jobPosting("백엔드 개발자", "경력", "2026-08-15T23:59:59"), extraction);
+
+        assertThat(result.passed()).isFalse();
+        assertThat(result.failedReasons()).containsExactly("경력직 채용 공고, 신입 지원 불가");
+    }
+
     @Test
     void check_newGraduateAllowed_hasNoCareerReason() {
         UserProfile userProfile = newGraduateFullTimeUser();

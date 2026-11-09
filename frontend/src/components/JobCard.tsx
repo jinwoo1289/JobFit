@@ -67,10 +67,12 @@ function JobCard({ result, rank, onToggleApplied, isApplyPending, applyError }: 
   const isInsufficientInfo = result.verdict === 'INSUFFICIENT_INFO'
   // 총점에 반영되지 않는(UNFIT) 또는 비교할 정보 자체가 부족한(INSUFFICIENT_INFO) 경우, 세부 점수는 참고용임을 표시한다.
   const isReferenceOnly = isUnfit || isInsufficientInfo
-  // 기술·경험이 모두 평가 제외되면 우대사항·자격증만으로 총점이 계산되므로, 다른 공고와 기준이 다름을 안내한다.
+  // 부분 평가: 기술·경험이 모두 평가 제외되면 우대사항·자격증만으로 총점이 계산되므로, 다른 공고 점수와 기준이 다르다.
+  // 자격증만 제외된 경우는 자격증 요건이 없는 흔한 공고라 전체 평가로 본다.
   // 백엔드의 제외 규칙(현재는 둘 다 필수 기술·택1 그룹 기준)에 기대지 않도록 두 플래그를 직접 확인한다.
   // 4개 항목이 모두 제외된 경우는 INSUFFICIENT_INFO로 판정되므로 FIT일 때만 표시한다.
   const isScopeLimited = result.verdict === 'FIT' && result.skillExcluded && result.experienceExcluded
+  const evaluatedScopeLabel = `${evaluatedItems.map((item) => item.label).join('·')}만 평가`
 
   const hiddenMissingCount = result.missingSkills.length - MISSING_SKILLS_VISIBLE_COUNT
   const shouldCollapseMissing = result.missingSkills.length > MISSING_SKILLS_VISIBLE_COUNT
@@ -130,29 +132,45 @@ function JobCard({ result, rank, onToggleApplied, isApplyPending, applyError }: 
         </div>
       ))}
 
-      {isScopeLimited && (
-        <div className="scope-limited-notice">
-          평가 범위 제한: {evaluatedItems.map((item) => item.name).join('·')}만 평가됨 — 기술·경험 요건은 자동 평가되지
-          않았으니 공고 원문을 확인하세요
+      {/* UNFIT은 종합 점수가 계산되지 않으므로(항상 0) 영역 자체를 숨긴다.
+          INSUFFICIENT_INFO도 0점이지만 0점짜리 공고로 오해하지 않도록 숫자 대신 "-"를 보여준다. */}
+      {!isUnfit && (
+        <div className={`job-card-total ${isScopeLimited ? 'job-card-total-partial' : ''}`}>
+          <span className="job-card-total-label">
+            종합 점수
+            {isScopeLimited && <span className="score-partial-badge">부분 평가</span>}
+          </span>
+          {isInsufficientInfo ? (
+            <strong className="job-card-total-empty" aria-label="종합 점수 없음">
+              -
+            </strong>
+          ) : (
+            <strong>
+              {result.totalScore.toFixed(1)}
+              {isScopeLimited && <span className="job-card-total-scope"> · {evaluatedScopeLabel}</span>}
+            </strong>
+          )}
         </div>
       )}
-
-      {/* UNFIT은 종합 점수가 계산되지 않으므로(항상 0) 영역 자체를 숨긴다. */}
-      {!isUnfit && (
-        <div className="job-card-total">
-          <span>종합 점수</span>
-          <strong>{result.totalScore.toFixed(1)}</strong>
-        </div>
+      {isScopeLimited && (
+        <p className="scope-limited-hint">
+          기술·경험 요건은 평가하지 못해서 다른 공고 점수와 바로 비교하기 어려워요. 원문에서 직접 확인하세요.
+        </p>
       )}
 
       <div>
-        <div className="job-card-scores-header">
-          <span className="job-card-scores-title">세부 점수</span>
-          {isReferenceOnly && <span className="score-reference-label">참고용</span>}
-          {result.thinRequired && (
-            <span className="score-reference-label">필수 요건이 적어 우대 비중을 높여 계산했어요</span>
-          )}
-        </div>
+        {/* 평가된 항목이 없으면(정보 부족) 비어 있는 세부 점수 영역과 "참고용" 배지 대신 한 줄 안내만 보여준다. */}
+        {evaluatedItems.length > 0 ? (
+          <div className="job-card-scores-header">
+            <span className="job-card-scores-title">세부 점수</span>
+            {isReferenceOnly && <span className="score-reference-label">참고용</span>}
+            {result.thinRequired && (
+              <span className="score-reference-label">필수 요건이 적어 우대 비중을 높여 계산했어요</span>
+            )}
+          </div>
+        ) : (
+          <p className="score-empty-notice">공고에 평가할 요건 정보가 부족해요. 원문에서 직접 확인하세요.</p>
+        )}
         {evaluatedItems.length > 0 && (
           <ul className={`job-card-scores ${isReferenceOnly ? 'job-card-scores-unfit' : ''}`}>
             {evaluatedItems.map((item) => (

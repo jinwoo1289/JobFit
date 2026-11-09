@@ -1,5 +1,6 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
+import com.jinwoo.jobfit.domain.evaluation.vo.ExperienceLevelType;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirement;
 import com.jinwoo.jobfit.domain.job.entity.CloseType;
 import com.jinwoo.jobfit.domain.job.entity.JobPosting;
@@ -75,6 +76,33 @@ class JobRequirementParserTest {
                 Arguments.of("신입", true),
                 Arguments.of("경력무관(신입포함)", true)
         );
+    }
+
+    @ParameterizedTest(name = "[{index}] \"{0}\" → {1}")
+    @MethodSource("experienceLevelTypeCases")
+    void parse_classifiesExperienceLevel(String experienceLevel, ExperienceLevelType expectedType) {
+        JobRequirement requirement = parser.parse(jobPosting("백엔드 개발자", experienceLevel));
+
+        assertThat(requirement.experienceLevelType()).isEqualTo(expectedType);
+    }
+
+    static Stream<Arguments> experienceLevelTypeCases() {
+        return Stream.of(
+                Arguments.of("신입", ExperienceLevelType.NEW_GRADUATE_ALLOWED),
+                Arguments.of("인턴", ExperienceLevelType.NEW_GRADUATE_ALLOWED),
+                Arguments.of("신입/경력", ExperienceLevelType.NEW_GRADUATE_ALLOWED),
+                Arguments.of("경력무관", ExperienceLevelType.NEW_GRADUATE_ALLOWED),
+                Arguments.of("경력", ExperienceLevelType.EXPERIENCED_ONLY),
+                Arguments.of("경력 3년↑", ExperienceLevelType.EXPERIENCED_ONLY),
+                Arguments.of(null, ExperienceLevelType.UNKNOWN),
+                Arguments.of("", ExperienceLevelType.UNKNOWN),
+                Arguments.of("알수없음", ExperienceLevelType.UNKNOWN)
+        );
+    }
+
+    @Test
+    void parse_arrowMinYears_extractsMinYears() {
+        assertThat(parser.parse(jobPosting("백엔드 개발자", "경력 3년↑")).minYears()).isEqualTo(3);
     }
 
     @Test

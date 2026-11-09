@@ -1,6 +1,7 @@
 package com.jinwoo.jobfit.domain.evaluation.service;
 
 import com.jinwoo.jobfit.domain.evaluation.vo.ConditionCheckResult;
+import com.jinwoo.jobfit.domain.evaluation.vo.ExperienceLevelType;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobCategory;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirement;
 import com.jinwoo.jobfit.domain.evaluation.vo.JobRequirementExtraction;
@@ -65,11 +66,14 @@ public class RequiredConditionChecker {
         }
     }
 
-    // experienceLevel이 "신입/경력"이어도 본문 자격요건이 "1년 이상의 서버 개발 경력"처럼 경력 하한만 요구하면 신입은 지원할 수 없다.
-    // (카카오페이 55144102) 추출 결과에 연수 근거(minYears)가 있고 신입 불가로 추출된 경우에만 experienceLevel 판정을 뒤집는다.
-    // 연수 없이 newGraduateAllowed=false만 나온 경우는 근거가 약해 experienceLevel 판정을 그대로 따른다.
+    // experienceLevel 분류가 우선이다.
+    // - 경력 전용(EXPERIENCED_ONLY): 본문 추출 결과가 신입 가능이라고 해도 신입 불가로 본다.
+    // - 신입 가능(NEW_GRADUATE_ALLOWED)·판정 불가(UNKNOWN): experienceLevel로는 막지 않는다.
+    //   다만 experienceLevel이 "신입/경력"이어도 본문 자격요건이 "1년 이상의 서버 개발 경력"처럼 경력 하한만 요구하면 신입은 지원할 수 없다.
+    //   (카카오페이 55144102) 추출 결과에 연수 근거(minYears)가 있고 신입 불가로 추출된 경우에만 판정을 뒤집는다.
+    //   연수 없이 newGraduateAllowed=false만 나온 경우는 근거가 약해 통과시킨다.
     private boolean isNewGraduateAllowed(JobRequirement requirement, JobRequirementExtraction extraction) {
-        if (!requirement.newGraduateAllowed()) {
+        if (requirement.experienceLevelType() == ExperienceLevelType.EXPERIENCED_ONLY) {
             return false;
         }
         return extraction.minYears() == null || extraction.newGraduateAllowed();
