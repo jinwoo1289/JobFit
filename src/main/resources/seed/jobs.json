@@ -474,5 +474,47 @@
     "description": "[직무: AI, IT개발 (신입 및 경력)]\n\n[주요업무]\n- AI툴 활용한 개발 (backend, frontend, 앱 등)\n- 팀 내 행정, 결재 업무 지원\n- 클라우드 서버 운영 관리\n- 사내 업무 시스템 개발/운영관리\n- 외부 개발사, 솔루션 벤더 협업 및 일정/품질관리\n\n[자격요건]\n[신입]\n- 개발 역량 보유자 (학습 등 통한)\n- 하기 공통 자격 요건 확인\n[경력]\n- 관련 업무 4년 이상\n- AI기반 업무 혁신 경험자\n- 최신 AI트렌드에 대한 기술적 이해 보유자\n- 다양한 유관부서와의 협업 경험 보유자\n\n[우대사항]\n[신입]\n- 관련 자격증 소지자\n- 컴퓨터 공학 등 개발/IT 전공\n[경력]\n- 자바/파이썬 등의 백엔드/풀스택 제품 경험자\n- 클라우드 인프라 운영 경험자\n- LLM API를 활용한 서비스 개발 경험자\n",
     "closeType": "FIXED_DATE",
     "expirationAt": "2026-11-22T23:59:59"
+  },
+  {
+    "source": "SARAMIN",
+    "externalId": "55536506",
+    "companyName": "(주)현대이지웰",
+    "title": "(주)현대이지웰 개발직 채용 - 서비스 개발",
+    "originalUrl": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=55536506",
+    "location": "서울 서대문구",
+    "experienceLevel": "신입/경력",
+    "educationLevel": "대학교졸업(4년)이상",
+    "keywords": "Java,JavaScript,RDBMS,SQL,JIRA",
+    "description": "[직무: 서비스 개발 (00명)]\n\n[주요업무]\n- 복지몰 시스템 개발 및 운영 (PC, Mobile Web)\n- 주문, 결제, 상품, 회원 포인트, SSO, 복지제도 도메인 관리\n- 신규 서비스 구축 및 성능 개선, 장애 대응 등\n\n[자격요건]\n- 학력: 대졸 이상\n- 경력 무관 (신입 지원 가능)\n- Java, Javascript, RDBMS 및 SQL 활용 가능자\n- 웹 개발(Front-End / Back-End) 및 API 연동에 대한 기본적인 이해를 보유한 자\n\n[우대사항]\n- 온라인 쇼핑몰 개발 및 외부 API 연동 개발 경험자\n- JIRA 등 프로젝트 관리 도구 사용 경험자\n- 컴퓨터공학 또는 관련 전공자\n- 능동적이고 원활한 커뮤니케이션 역량 보유자\n\n[근무조건]\n- 고용형태: 정규직\n- 연봉: 면접 후 결정\n- 근무: 주 5일(월~금), 09:00~18:00 (시차출퇴근제)\n- 근무지: 서울 서대문구 충정로 23, 풍산빌딩\n",
+    "closeType": "FIXED_DATE",
+    "expirationAt": "2026-11-15T23:00:00"
+  },
+  {
+    "source": "SARAMIN",
+    "externalId": "55523190",
+    "companyName": "(주)인이지",
+    "title": "[INEEJI] 하반기 분야별 인재 채용 - 소프트웨어 엔지니어 신입/주니어",
+    "originalUrl": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=55523190",
+    "location": null,
+    "experienceLevel": "신입/경력",
+    "educationLevel": "대학교졸업(4년)이상",
+    "keywords": "FastAPI,Django,Docker,CI/CD",
+    "description": "[직무: 소프트웨어 엔지니어 신입/주니어 (00명)]\n\n[주요업무]\n- 산업 AI 플랫폼의 백엔드 API와 서비스 기능 개발\n- 데이터베이스 연동·데이터 처리·테스트·오류 수정 수행\n- 동료 개발자와 협력하여 배포·성능·안정성 개선\n\n[자격요건]\n- 경력: 신입 및 백엔드 개발 경력 5년 이하\n- 학력: 4년제 학사 이상 (관련 전공 우대)\n- 한 가지 이상의 백엔드 프로그래밍 언어를 사용한 실제 구현 능력\n- 자료구조·알고리즘·데이터베이스·HTTP/API에 대한 기본 이해\n- 자신의 코드를 테스트하고 문제의 원인을 파악·수정할 수 있는 능력\n- 프로그래밍·자료구조·DB·웹의 기초 역량을 평가하며, FastAPI·Django·Docker·CI/CD 등 개별 개발 도구는 실제 업무에 따라 학습 가능\n\n[우대사항]\n- 컴퓨터공학·소프트웨어공학 등 관련 분야의 기초 지식\n- 개인·팀 프로젝트에서 웹 서비스 구현·배포 경험\n",
+    "closeType": "FIXED_DATE",
+    "expirationAt": "2026-11-30T23:59:59"
+  },
+  {
+    "source": "SARAMIN",
+    "externalId": "55529273",
+    "companyName": "(주)펄어비스",
+    "title": "[겨울 인턴십] 엔지니어링_웹개발(백엔드)",
+    "originalUrl": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=55529273",
+    "location": "경기 과천시",
+    "experienceLevel": "신입",
+    "educationLevel": "학력무관",
+    "keywords": "API",
+    "description": "[직무: 엔지니어링_웹개발(백엔드) 겨울 인턴십]\n\n[주요업무]\n- 게임 서비스 웹사이트, API, 플랫폼 개발\n- 웹 기반 회사 내부 툴 개발\n- 게임 내 웹 콘텐츠 개발\n- 개발된 프로젝트 운영 및 유지 보수\n\n[자격요건]\n- 웹 애플리케이션 또는 관련 개발 경험이 있으신 분\n- 논리적인 사고와 문제 해결 능력을 갖추신 분\n- 원활한 커뮤니케이션과 협업이 가능하신 분\n- 웹 개발에 대한 관심과 배우고자 하는 의지가 있으신 분\n- 포트폴리오 필수 제출\n\n[근무조건]\n- 고용형태: 인턴직 (정규직 전환 가능, 2027.01.11(월) ~ 2027.03.05(금), 8주)\n",
+    "closeType": "FIXED_DATE",
+    "expirationAt": "2026-11-23T23:59:59"
   }
 ]
