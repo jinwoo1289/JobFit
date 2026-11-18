@@ -1,0 +1,164 @@
+# 추출 평가 결과: v0_raw
+
+| 항목 | 값 |
+|---|---|
+| promptVersion | 6 |
+| model | gpt-4o |
+| runAt | 2026-11-18T14:27:18.453270800+09:00 |
+| postings | 31 |
+| failed | 0 |
+
+## 요약
+
+| 범위 | 공고 수 | 구분 | Precision | Recall | F1 | TP | FP | FN |
+|---|---|---|---|---|---|---|---|---|
+| 전체 | 31 | 필수+우대 통합 | 0.871 | 0.882 | 0.877 | 210 | 31 | 28 |
+| 전체 | 31 | 필수 | 0.649 | 0.818 | 0.724 | 72 | 39 | 16 |
+| 전체 | 31 | 우대 | 0.854 | 0.740 | 0.793 | 111 | 19 | 39 |
+| ambiguous 제외 | 27 | 필수+우대 통합 | 0.860 | 0.881 | 0.871 | 185 | 30 | 25 |
+| ambiguous 제외 | 27 | 필수 | 0.636 | 0.919 | 0.751 | 68 | 39 | 6 |
+| ambiguous 제외 | 27 | 우대 | 0.917 | 0.728 | 0.811 | 99 | 9 | 37 |
+
+- 필수/우대 구분 정확도 (맞춘 기술 중 레벨까지 맞은 비율): **0.871**
+- 별칭 정규화 없이 채점한 통합 F1: 0.835 (정규화 후 0.877)
+
+## 오류 원인 분류
+
+| 유형 | 원인 | 건수 | 뜻 |
+|---|---|---|---|
+| FP | CONCEPT_WORD | 20 | 개념어를 기술로 뽑음 |
+| FP | RULE_EXCLUDED | 9 | 본문엔 있지만 라벨링 규칙상 제외한 기술 |
+| FP | NOT_IN_TEXT | 2 | 본문 어디에도 없는 기술 (환각 또는 별칭 누락) |
+| FN | MISSED_DUTY_STACK | 20 | 주요업무/기술스택에만 있는 기술을 못 뽑음 |
+| FN | MISSED_REQ_SECTION | 5 | 자격요건에 있는 기술을 못 뽑음 |
+| FN | MISSED_PREF_SECTION | 3 | 우대사항에 있는 기술을 못 뽑음 |
+| SWAP | PREF_AS_REQ | 16 | 우대를 필수로 넣음 |
+| SWAP | REQ_AS_PREF | 11 | 필수를 우대로 넣음 |
+| NORM | ALIAS_MATCH | 10 | 표기가 달라 별칭으로 맞춤 (오류 아님) |
+
+## 공고별 결과 (통합 F1 낮은 순)
+
+| id | 회사 | amb | P | R | F1 | FP | FN | SWAP |
+|---|---|---|---|---|---|---|---|---|
+| 20 | 한국투자증권(주) |  | 1.000 | 1.000 | 1.000 | 0 | 0 | 0 |
+| 74 | IBK기업은행 |  | 1.000 | 1.000 | 1.000 | 0 | 0 | 0 |
+| 79 | (주)나눔기술 |  | 1.000 | 1.000 | 1.000 | 0 | 0 | 0 |
+| 83 | (주)인이지 |  | 0.000 | 0.000 | 0.000 | 4 | 0 | 0 |
+| 84 | (주)펄어비스 |  | 1.000 | 1.000 | 1.000 | 0 | 0 | 0 |
+| 16 | 셀트리온 |  | 0.800 | 0.500 | 0.615 | 1 | 4 | 4 |
+| 22 | (주)케이티디에스 |  | 0.500 | 1.000 | 0.667 | 3 | 0 | 0 |
+| 45 | 브레인즈컴퍼니(주) |  | 0.909 | 0.625 | 0.741 | 1 | 6 | 0 |
+| 29 | (주)엘지경영개발원 |  | 0.778 | 0.778 | 0.778 | 2 | 2 | 0 |
+| 23 | (주)파수에이아이 |  | 0.857 | 0.750 | 0.800 | 1 | 2 | 5 |
+| 81 | (주)제너시스비비큐 | Y | 0.667 | 1.000 | 0.800 | 1 | 0 | 0 |
+| 44 | (주)카카오페이 |  | 0.800 | 0.800 | 0.800 | 1 | 1 | 0 |
+| 26 | (주)안랩 |  | 0.722 | 0.929 | 0.813 | 5 | 1 | 0 |
+| 4 | OCI정보통신(주) | Y | 1.000 | 0.750 | 0.857 | 0 | 2 | 0 |
+| 5 | (주)링크알파코리아 |  | 0.833 | 0.909 | 0.870 | 2 | 1 | 2 |
+| 18 | 한솔PNS |  | 0.778 | 1.000 | 0.875 | 2 | 0 | 0 |
+| 8 | (주)누비랩 |  | 0.889 | 0.889 | 0.889 | 2 | 2 | 0 |
+| 3 | 킨코스코리아(주) |  | 0.929 | 0.867 | 0.897 | 1 | 2 | 0 |
+| 28 | (주)인이지 |  | 0.938 | 0.882 | 0.909 | 1 | 2 | 0 |
+| 2 | (주)위드네트웍스 |  | 0.923 | 0.923 | 0.923 | 1 | 1 | 0 |
+| 27 | (주)한싹 |  | 0.938 | 0.938 | 0.938 | 1 | 1 | 0 |
+| 46 | 모두닥(주) | Y | 1.000 | 0.889 | 0.941 | 0 | 1 | 1 |
+| 80 | (주)안랩 |  | 0.900 | 1.000 | 0.947 | 1 | 0 | 0 |
+| 73 | 링커리어 |  | 0.929 | 1.000 | 0.963 | 1 | 0 | 3 |
+| 9 | 토스뱅크(주) |  | 1.000 | 1.000 | 1.000 | 0 | 0 | 3 |
+| 11 | (주)엘지씨엔에스 |  | 1.000 | 1.000 | 1.000 | 0 | 0 | 0 |
+| 12 | 토스페이먼츠(주) | Y | 1.000 | 1.000 | 1.000 | 0 | 0 | 8 |
+| 17 | (주)씨제이이엔엠 |  | 1.000 | 1.000 | 1.000 | 0 | 0 | 1 |
+| 19 | 원테크스탑 한국지점 |  | 1.000 | 1.000 | 1.000 | 0 | 0 | 0 |
+| 21 | 한국언론진흥재단 |  | 1.000 | 1.000 | 1.000 | 0 | 0 | 0 |
+| 82 | (주)현대이지웰 |  | 1.000 | 1.000 | 1.000 | 0 | 0 | 0 |
+
+## 오류 목록
+
+| id | 회사 | 유형 | 원인 | 기술 | 상세 |
+|---|---|---|---|---|---|
+| 2 | (주)위드네트웍스 | FN | MISSED_PREF_SECTION | Git | preferred |
+| 2 | (주)위드네트웍스 | FP | CONCEPT_WORD | REST API |  |
+| 3 | 킨코스코리아(주) | FN | MISSED_DUTY_STACK | Next.js | duty_stack |
+| 3 | 킨코스코리아(주) | FN | MISSED_DUTY_STACK | SQLAlchemy | duty_stack |
+| 3 | 킨코스코리아(주) | FP | CONCEPT_WORD | REST API |  |
+| 4 | OCI정보통신(주) | FN | MISSED_DUTY_STACK | Claude Code | duty_stack |
+| 4 | OCI정보통신(주) | FN | MISSED_DUTY_STACK | GitHub Copilot | duty_stack |
+| 5 | (주)링크알파코리아 | FN | MISSED_DUTY_STACK | MCP | duty_stack |
+| 5 | (주)링크알파코리아 | FP | CONCEPT_WORD | AI Agent |  |
+| 5 | (주)링크알파코리아 | FP | CONCEPT_WORD | LLM |  |
+| 5 | (주)링크알파코리아 | SWAP | REQ_AS_PREF | Claude Code | duty_stack,required |
+| 5 | (주)링크알파코리아 | SWAP | REQ_AS_PREF | Cursor | duty_stack,required |
+| 8 | (주)누비랩 | FN | MISSED_DUTY_STACK | Git | duty_stack |
+| 8 | (주)누비랩 | FN | MISSED_DUTY_STACK | JIRA | duty_stack |
+| 8 | (주)누비랩 | FP | NOT_IN_TEXT | Backend Development | 본문·keywords 어디에도 없음 |
+| 8 | (주)누비랩 | FP | NOT_IN_TEXT | Fullstack Development | 본문·keywords 어디에도 없음 |
+| 9 | 토스뱅크(주) | SWAP | PREF_AS_REQ | Java | duty_stack |
+| 9 | 토스뱅크(주) | SWAP | PREF_AS_REQ | Kotlin | duty_stack |
+| 9 | 토스뱅크(주) | SWAP | PREF_AS_REQ | Spring Boot | duty_stack |
+| 12 | 토스페이먼츠(주) | SWAP | REQ_AS_PREF | ELK | required |
+| 12 | 토스페이먼츠(주) | SWAP | REQ_AS_PREF | Istio | required |
+| 12 | 토스페이먼츠(주) | SWAP | REQ_AS_PREF | Java | required |
+| 12 | 토스페이먼츠(주) | SWAP | REQ_AS_PREF | Kafka | required |
+| 12 | 토스페이먼츠(주) | SWAP | REQ_AS_PREF | Kotlin | required |
+| 12 | 토스페이먼츠(주) | SWAP | REQ_AS_PREF | Kubernetes | required |
+| 12 | 토스페이먼츠(주) | SWAP | REQ_AS_PREF | Redis | required |
+| 12 | 토스페이먼츠(주) | SWAP | REQ_AS_PREF | Spring | required |
+| 16 | 셀트리온 | FN | MISSED_DUTY_STACK | CentOS | duty_stack |
+| 16 | 셀트리온 | FN | MISSED_DUTY_STACK | Entra ID | duty_stack |
+| 16 | 셀트리온 | FN | MISSED_DUTY_STACK | RHEL | duty_stack |
+| 16 | 셀트리온 | FN | MISSED_DUTY_STACK | Ubuntu | duty_stack |
+| 16 | 셀트리온 | FP | RULE_EXCLUDED | Azure | 본문에는 있으나 정답 규칙상 제외 (섹션: duty_stack,preferred) |
+| 16 | 셀트리온 | SWAP | PREF_AS_REQ | Active Directory | duty_stack |
+| 16 | 셀트리온 | SWAP | PREF_AS_REQ | AWS | duty_stack,preferred |
+| 16 | 셀트리온 | SWAP | PREF_AS_REQ | Linux | duty_stack |
+| 16 | 셀트리온 | SWAP | PREF_AS_REQ | Windows Server | duty_stack |
+| 17 | (주)씨제이이엔엠 | SWAP | PREF_AS_REQ | AWS | duty_stack |
+| 18 | 한솔PNS | FP | CONCEPT_WORD | NoSQL |  |
+| 18 | 한솔PNS | FP | CONCEPT_WORD | REST API |  |
+| 22 | (주)케이티디에스 | FP | CONCEPT_WORD | AI Agent |  |
+| 22 | (주)케이티디에스 | FP | CONCEPT_WORD | Cloud |  |
+| 22 | (주)케이티디에스 | FP | CONCEPT_WORD | LLM |  |
+| 23 | (주)파수에이아이 | FN | MISSED_DUTY_STACK | Figma | duty_stack |
+| 23 | (주)파수에이아이 | FN | MISSED_DUTY_STACK | Storybook | duty_stack |
+| 23 | (주)파수에이아이 | FP | CONCEPT_WORD | HTTP |  |
+| 23 | (주)파수에이아이 | SWAP | PREF_AS_REQ | Java | duty_stack |
+| 23 | (주)파수에이아이 | SWAP | PREF_AS_REQ | React | duty_stack |
+| 23 | (주)파수에이아이 | SWAP | PREF_AS_REQ | Spring | duty_stack |
+| 23 | (주)파수에이아이 | SWAP | PREF_AS_REQ | SQL | duty_stack |
+| 23 | (주)파수에이아이 | SWAP | PREF_AS_REQ | TypeScript | duty_stack |
+| 26 | (주)안랩 | FN | MISSED_PREF_SECTION | SVN | preferred |
+| 26 | (주)안랩 | FP | CONCEPT_WORD | API |  |
+| 26 | (주)안랩 | FP | RULE_EXCLUDED | Cache DB | 본문에는 있으나 정답 규칙상 제외 (섹션: required) |
+| 26 | (주)안랩 | FP | RULE_EXCLUDED | Document DB | 본문에는 있으나 정답 규칙상 제외 (섹션: required) |
+| 26 | (주)안랩 | FP | RULE_EXCLUDED | Graph DB | 본문에는 있으나 정답 규칙상 제외 (섹션: required) |
+| 26 | (주)안랩 | FP | CONCEPT_WORD | NoSQL |  |
+| 27 | (주)한싹 | FN | MISSED_REQ_SECTION | SQL | required |
+| 27 | (주)한싹 | FP | CONCEPT_WORD | REST API |  |
+| 28 | (주)인이지 | FN | MISSED_DUTY_STACK | Kubernetes | duty_stack |
+| 28 | (주)인이지 | FN | MISSED_DUTY_STACK | Vue.js | duty_stack |
+| 28 | (주)인이지 | FP | CONCEPT_WORD | REST API |  |
+| 29 | (주)엘지경영개발원 | FN | MISSED_REQ_SECTION | MCP | other,required |
+| 29 | (주)엘지경영개발원 | FN | MISSED_REQ_SECTION | SQL | required |
+| 29 | (주)엘지경영개발원 | FP | RULE_EXCLUDED | Machine Learning | 본문에는 있으나 정답 규칙상 제외 (섹션: required) |
+| 29 | (주)엘지경영개발원 | FP | CONCEPT_WORD | REST API |  |
+| 44 | (주)카카오페이 | FN | MISSED_REQ_SECTION | SQL | required |
+| 44 | (주)카카오페이 | FP | RULE_EXCLUDED | Spring | 본문에는 있으나 정답 규칙상 제외 (섹션: required) |
+| 45 | 브레인즈컴퍼니(주) | FN | MISSED_PREF_SECTION | C | duty_stack,preferred |
+| 45 | 브레인즈컴퍼니(주) | FN | MISSED_DUTY_STACK | Git | duty_stack |
+| 45 | 브레인즈컴퍼니(주) | FN | MISSED_DUTY_STACK | Gradle | duty_stack |
+| 45 | 브레인즈컴퍼니(주) | FN | MISSED_DUTY_STACK | JDBC | duty_stack |
+| 45 | 브레인즈컴퍼니(주) | FN | MISSED_DUTY_STACK | Maven | duty_stack |
+| 45 | 브레인즈컴퍼니(주) | FN | MISSED_DUTY_STACK | SQL | duty_stack |
+| 45 | 브레인즈컴퍼니(주) | FP | CONCEPT_WORD | Windows |  |
+| 46 | 모두닥(주) | FN | MISSED_REQ_SECTION | GitHub Copilot | required |
+| 46 | 모두닥(주) | SWAP | REQ_AS_PREF | Claude | duty_stack,required |
+| 73 | 링커리어 | FP | CONCEPT_WORD | REST API |  |
+| 73 | 링커리어 | SWAP | PREF_AS_REQ | AWS | duty_stack,preferred |
+| 73 | 링커리어 | SWAP | PREF_AS_REQ | MySQL | duty_stack |
+| 73 | 링커리어 | SWAP | PREF_AS_REQ | PostgreSQL | duty_stack |
+| 80 | (주)안랩 | FP | CONCEPT_WORD | REST API |  |
+| 81 | (주)제너시스비비큐 | FP | CONCEPT_WORD | LLM API |  |
+| 83 | (주)인이지 | FP | CONCEPT_WORD | CI/CD |  |
+| 83 | (주)인이지 | FP | RULE_EXCLUDED | Django | 본문에는 있으나 정답 규칙상 제외 (섹션: required) |
+| 83 | (주)인이지 | FP | RULE_EXCLUDED | Docker | 본문에는 있으나 정답 규칙상 제외 (섹션: required) |
+| 83 | (주)인이지 | FP | RULE_EXCLUDED | FastAPI | 본문에는 있으나 정답 규칙상 제외 (섹션: required) |
