@@ -199,7 +199,7 @@ public class JobRequirementExtractor {
     // 4: 주요업무의 "~ 기반", "~ 환경에서" 기술을 requiredSkills로, 필수 표현 없는 어학성적 기준을 preferredCertificates로 넣는 예시 추가
     // 5: [자격요건] 기술("또는"·"기본 이해" 포함)을 "~ 기반" 규칙과 별개로 유지하도록 명시, Azure Entra ID·"~에 상응하는" 어학 예시 추가
     // 6: requiredAnyOf(택1 필수 그룹) 추가, "어떤 스택이든 무관" 나열 제외, "N년 이상 ~ 경력" → minYears·newGraduateAllowed=false 규칙 추가
-    static final int EXTRACTION_PROMPT_VERSION = 6;
+    public static final int EXTRACTION_PROMPT_VERSION = 6;
 
     // LLM이 OTHER로 분류했더라도 공고 제목/본문에 이 키워드가 있으면 IT 직무일 가능성이 높아 OTHER를 신뢰하지 않는다.
     // "IT"는 영문 단어 일부(예: GitHub)와 겹치지 않도록 대소문자를 구분해 비교한다.
@@ -338,9 +338,19 @@ public class JobRequirementExtractor {
     }
 
     private JobRequirementExtraction requestExtraction(JobPosting jobPosting) {
+        return postProcess(jobPosting, requestRawExtraction(jobPosting));
+    }
+
+    // 캐시를 읽거나 쓰지 않고 LLM만 호출해 후처리 전 원본을 돌려준다. 실패 시 예외를 그대로 던지며 fallback·breaker를 거치지 않는다.
+    // 추출 정확도 평가(eval 프로필)에서 프롬프트 문제와 후처리 문제를 나눠 보려고 분리했다.
+    public JobRequirementExtraction requestRawExtraction(JobPosting jobPosting) {
         String response = llmClient.complete(SYSTEM_PROMPT, buildUserPrompt(jobPosting), EXTRACTION_SCHEMA);
-        return distrustOtherForItPosting(jobPosting,
-                removeConceptSkills(objectMapper.readValue(response, JobRequirementExtraction.class)));
+        return objectMapper.readValue(response, JobRequirementExtraction.class);
+    }
+
+    // 캐시에 저장하기 전에 적용하는 후처리(개념어 필터 → IT 공고 OTHER 불신). 순서를 바꾸면 IT 가드의 기술 유무 판정이 달라진다.
+    public JobRequirementExtraction postProcess(JobPosting jobPosting, JobRequirementExtraction raw) {
+        return distrustOtherForItPosting(jobPosting, removeConceptSkills(raw));
     }
 
     // 기술이 비어 있거나 jobCategory가 null인 결과도 캐시한다. 캐시하지 않으면 평가마다 LLM을 다시 불러
