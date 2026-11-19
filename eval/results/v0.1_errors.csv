@@ -1,0 +1,72 @@
+﻿id,company,ambiguous,type,skill,cause,detail
+2,(주)위드네트웍스,False,FN,Git,MISSED_PREF_SECTION,preferred
+3,킨코스코리아(주),False,FN,Next.js,MISSED_DUTY_STACK,duty_stack
+3,킨코스코리아(주),False,FN,SQLAlchemy,MISSED_DUTY_STACK,duty_stack
+4,OCI정보통신(주),True,FN,Claude Code,MISSED_DUTY_STACK,duty_stack
+4,OCI정보통신(주),True,FN,GitHub Copilot,MISSED_DUTY_STACK,duty_stack
+5,(주)링크알파코리아,False,FN,MCP,MISSED_DUTY_STACK,duty_stack
+5,(주)링크알파코리아,False,SWAP,Claude Code,REQ_AS_PREF,"duty_stack,required"
+5,(주)링크알파코리아,False,SWAP,Cursor,REQ_AS_PREF,"duty_stack,required"
+8,(주)누비랩,False,FN,Git,MISSED_DUTY_STACK,duty_stack
+8,(주)누비랩,False,FN,JIRA,MISSED_DUTY_STACK,duty_stack
+8,(주)누비랩,False,NORM,Kafka,ALIAS_MATCH,예측 표기: Apache Kafka
+8,(주)누비랩,False,NORM,NestJS,ALIAS_MATCH,예측 표기: Nest.js
+9,토스뱅크(주),False,SWAP,Java,PREF_AS_REQ,duty_stack
+9,토스뱅크(주),False,SWAP,Kotlin,PREF_AS_REQ,duty_stack
+9,토스뱅크(주),False,SWAP,Spring Boot,PREF_AS_REQ,duty_stack
+12,토스페이먼츠(주),True,NORM,Spring,ALIAS_MATCH,예측 표기: Spring Framework
+12,토스페이먼츠(주),True,SWAP,ELK,REQ_AS_PREF,required
+12,토스페이먼츠(주),True,SWAP,Istio,REQ_AS_PREF,required
+12,토스페이먼츠(주),True,SWAP,Java,REQ_AS_PREF,required
+12,토스페이먼츠(주),True,SWAP,Kafka,REQ_AS_PREF,required
+12,토스페이먼츠(주),True,SWAP,Kotlin,REQ_AS_PREF,required
+12,토스페이먼츠(주),True,SWAP,Kubernetes,REQ_AS_PREF,required
+12,토스페이먼츠(주),True,SWAP,Redis,REQ_AS_PREF,required
+12,토스페이먼츠(주),True,SWAP,Spring,REQ_AS_PREF,required
+16,셀트리온,False,FN,CentOS,MISSED_DUTY_STACK,duty_stack
+16,셀트리온,False,FN,Entra ID,MISSED_DUTY_STACK,duty_stack
+16,셀트리온,False,FN,RHEL,MISSED_DUTY_STACK,duty_stack
+16,셀트리온,False,FN,Ubuntu,MISSED_DUTY_STACK,duty_stack
+16,셀트리온,False,FP,Azure,RULE_EXCLUDED,"본문에는 있으나 정답 규칙상 제외 (섹션: duty_stack,preferred)"
+16,셀트리온,False,SWAP,Active Directory,PREF_AS_REQ,duty_stack
+16,셀트리온,False,SWAP,AWS,PREF_AS_REQ,"duty_stack,preferred"
+16,셀트리온,False,SWAP,Linux,PREF_AS_REQ,duty_stack
+16,셀트리온,False,SWAP,Windows Server,PREF_AS_REQ,duty_stack
+17,(주)씨제이이엔엠,False,SWAP,AWS,PREF_AS_REQ,duty_stack
+18,한솔PNS,False,NORM,Go,ALIAS_MATCH,예측 표기: Golang
+18,한솔PNS,False,NORM,SQL,ALIAS_MATCH,예측 표기: RDBMS
+18,한솔PNS,False,NORM,Vue.js,ALIAS_MATCH,예측 표기: Vue
+23,(주)파수에이아이,False,FN,Figma,MISSED_DUTY_STACK,duty_stack
+23,(주)파수에이아이,False,FN,Storybook,MISSED_DUTY_STACK,duty_stack
+23,(주)파수에이아이,False,NORM,Spring,ALIAS_MATCH,예측 표기: Spring Framework
+23,(주)파수에이아이,False,SWAP,Java,PREF_AS_REQ,duty_stack
+23,(주)파수에이아이,False,SWAP,React,PREF_AS_REQ,duty_stack
+23,(주)파수에이아이,False,SWAP,Spring,PREF_AS_REQ,duty_stack
+23,(주)파수에이아이,False,SWAP,SQL,PREF_AS_REQ,duty_stack
+23,(주)파수에이아이,False,SWAP,TypeScript,PREF_AS_REQ,duty_stack
+26,(주)안랩,False,FN,SVN,MISSED_PREF_SECTION,preferred
+26,(주)안랩,False,NORM,Spring,ALIAS_MATCH,예측 표기: Spring Framework
+26,(주)안랩,False,NORM,SQL,ALIAS_MATCH,예측 표기: RDB
+27,(주)한싹,False,FN,SQL,MISSED_REQ_SECTION,required
+28,(주)인이지,False,FN,Kubernetes,MISSED_DUTY_STACK,duty_stack
+28,(주)인이지,False,FN,Vue.js,MISSED_DUTY_STACK,duty_stack
+29,(주)엘지경영개발원,False,FN,MCP,MISSED_REQ_SECTION,"other,required"
+29,(주)엘지경영개발원,False,FN,SQL,MISSED_REQ_SECTION,required
+44,(주)카카오페이,False,FN,SQL,MISSED_REQ_SECTION,required
+44,(주)카카오페이,False,FP,Spring,RULE_EXCLUDED,본문에는 있으나 정답 규칙상 제외 (섹션: required)
+45,브레인즈컴퍼니(주),False,FN,C,MISSED_PREF_SECTION,"duty_stack,preferred"
+45,브레인즈컴퍼니(주),False,FN,Git,MISSED_DUTY_STACK,duty_stack
+45,브레인즈컴퍼니(주),False,FN,Gradle,MISSED_DUTY_STACK,duty_stack
+45,브레인즈컴퍼니(주),False,FN,JDBC,MISSED_DUTY_STACK,duty_stack
+45,브레인즈컴퍼니(주),False,FN,Maven,MISSED_DUTY_STACK,duty_stack
+45,브레인즈컴퍼니(주),False,FN,SQL,MISSED_DUTY_STACK,duty_stack
+45,브레인즈컴퍼니(주),False,FP,Windows,CONCEPT_WORD,
+46,모두닥(주),True,FN,GitHub Copilot,MISSED_REQ_SECTION,required
+46,모두닥(주),True,SWAP,Claude,REQ_AS_PREF,"duty_stack,required"
+73,링커리어,False,NORM,GitHub Copilot,ALIAS_MATCH,예측 표기: Copilot
+73,링커리어,False,SWAP,AWS,PREF_AS_REQ,"duty_stack,preferred"
+73,링커리어,False,SWAP,MySQL,PREF_AS_REQ,duty_stack
+73,링커리어,False,SWAP,PostgreSQL,PREF_AS_REQ,duty_stack
+83,(주)인이지,False,FP,Django,RULE_EXCLUDED,본문에는 있으나 정답 규칙상 제외 (섹션: required)
+83,(주)인이지,False,FP,Docker,RULE_EXCLUDED,본문에는 있으나 정답 규칙상 제외 (섹션: required)
+83,(주)인이지,False,FP,FastAPI,RULE_EXCLUDED,본문에는 있으나 정답 규칙상 제외 (섹션: required)

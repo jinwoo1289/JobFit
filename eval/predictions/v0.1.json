@@ -1,0 +1,350 @@
+{
+  "promptVersion" : 6,
+  "model" : "gpt-4o",
+  "reprocessedFrom" : "eval/predictions/v0.json",
+  "runAt" : "2026-11-19T21:40:38.290260300+09:00",
+  "postings" : 31,
+  "failed" : 0,
+  "items" : [ {
+    "jobPostingId" : 2,
+    "required" : [ "Python", "SQL" ],
+    "preferred" : [ "FastAPI", "Django", "PostgreSQL", "Redis", "Docker", "Linux", "Claude", "ChatGPT", "GitHub Copilot", "Cursor" ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ "FastAPI", "Django", "PostgreSQL", "Redis", "Docker", "Linux", "Claude", "ChatGPT", "GitHub Copilot", "Cursor" ],
+      "requiredAnyOf" : [ ],
+      "required" : [ "Python", "REST API", "SQL" ]
+    },
+    "latencyMs" : 4614
+  }, {
+    "jobPostingId" : 3,
+    "required" : [ "SQL", "Git", "Python", "Java" ],
+    "preferred" : [ "FastAPI", "Django", "Spring Boot", "PostgreSQL", "MySQL", "React", "TypeScript", "Docker", "Linux" ],
+    "requiredAnyOf" : [ [ "Python", "Java" ] ],
+    "raw" : {
+      "preferred" : [ "FastAPI", "Django", "Spring Boot", "PostgreSQL", "MySQL", "React", "TypeScript", "Docker", "Linux" ],
+      "requiredAnyOf" : [ [ "Python", "Java" ] ],
+      "required" : [ "Python", "SQL", "REST API", "Git", "Java" ]
+    },
+    "latencyMs" : 2490
+  }, {
+    "jobPostingId" : 4,
+    "required" : [ "React", "Java", "Spring Boot" ],
+    "preferred" : [ "Jira", "Bitbucket", "Confluence" ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ "Jira", "Bitbucket", "Confluence" ],
+      "requiredAnyOf" : [ ],
+      "required" : [ "React", "Java", "Spring Boot" ]
+    },
+    "latencyMs" : 1475
+  }, {
+    "jobPostingId" : 5,
+    "required" : [ "PostgreSQL", "Python", "TypeScript", "AWS", "Azure", "GCP" ],
+    "preferred" : [ "React", "Next.js", "Claude Code", "Cursor" ],
+    "requiredAnyOf" : [ [ "Python", "TypeScript" ], [ "AWS", "Azure", "GCP" ] ],
+    "raw" : {
+      "preferred" : [ "React", "Next.js", "Claude Code", "Cursor" ],
+      "requiredAnyOf" : [ [ "Python", "TypeScript" ], [ "AWS", "Azure", "GCP" ] ],
+      "required" : [ "Python", "TypeScript", "LLM", "AI Agent", "PostgreSQL", "AWS", "Azure", "GCP" ]
+    },
+    "latencyMs" : 2975
+  }, {
+    "jobPostingId" : 8,
+    "required" : [ ],
+    "preferred" : [ "Kotlin", "Spring Boot", "Spring Batch", "QueryDSL", "JPA", "Node.js", "JavaScript", "Nest.js", "TypeORM", "Python", "PostgreSQL", "MySQL", "Redis", "Apache Kafka", "Airflow", "AWS" ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ "Kotlin", "Spring Boot", "Spring Batch", "QueryDSL", "JPA", "Node.js", "JavaScript", "Nest.js", "TypeORM", "Python", "PostgreSQL", "MySQL", "Redis", "Apache Kafka", "Airflow", "AWS" ],
+      "requiredAnyOf" : [ [ "Backend Development", "Fullstack Development" ] ],
+      "required" : [ "Backend Development", "Fullstack Development" ]
+    },
+    "latencyMs" : 2175
+  }, {
+    "jobPostingId" : 9,
+    "required" : [ "Java", "Kotlin", "Spring Boot" ],
+    "preferred" : [ ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ ],
+      "requiredAnyOf" : [ ],
+      "required" : [ "Java", "Kotlin", "Spring Boot" ]
+    },
+    "latencyMs" : 1631
+  }, {
+    "jobPostingId" : 11,
+    "required" : [ "Java", "Python", "Spring Boot", "SQL", "React", "Vue.js", "TypeScript" ],
+    "preferred" : [ ],
+    "requiredAnyOf" : [ [ "Java", "Python", "Spring Boot", "SQL" ], [ "React", "Vue.js", "TypeScript" ] ],
+    "raw" : {
+      "preferred" : [ ],
+      "requiredAnyOf" : [ [ "Java", "Python", "Spring Boot", "SQL" ], [ "React", "Vue.js", "TypeScript" ] ],
+      "required" : [ "Java", "Python", "Spring Boot", "SQL", "React", "Vue.js", "TypeScript" ]
+    },
+    "latencyMs" : 1561
+  }, {
+    "jobPostingId" : 12,
+    "required" : [ "Linux" ],
+    "preferred" : [ "Java", "Kotlin", "Spring Framework", "Kubernetes", "Istio", "Redis", "Kafka", "ELK" ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ "Java", "Kotlin", "Spring Framework", "Kubernetes", "Istio", "Redis", "Kafka", "ELK" ],
+      "requiredAnyOf" : [ ],
+      "required" : [ "Linux" ]
+    },
+    "latencyMs" : 2436
+  }, {
+    "jobPostingId" : 16,
+    "required" : [ "Windows Server", "Linux", "AWS", "Active Directory", "Azure" ],
+    "preferred" : [ ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ ],
+      "requiredAnyOf" : [ ],
+      "required" : [ "Windows Server", "Linux", "AWS", "Active Directory", "Azure" ]
+    },
+    "latencyMs" : 1355
+  }, {
+    "jobPostingId" : 17,
+    "required" : [ "AWS" ],
+    "preferred" : [ "Java" ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ "Java" ],
+      "requiredAnyOf" : [ ],
+      "required" : [ "AWS" ]
+    },
+    "latencyMs" : 1115
+  }, {
+    "jobPostingId" : 18,
+    "required" : [ "RDBMS", "React", "Vue", "Spring", "Node.js", "Python", "Golang" ],
+    "preferred" : [ ],
+    "requiredAnyOf" : [ [ "React", "Vue" ], [ "Spring", "Node.js", "Python", "Golang" ] ],
+    "raw" : {
+      "preferred" : [ ],
+      "requiredAnyOf" : [ [ "React", "Vue" ], [ "Spring", "Node.js", "Python", "Golang" ], [ "RDBMS", "NoSQL" ] ],
+      "required" : [ "REST API", "React", "Vue", "Spring", "Node.js", "Python", "Golang", "RDBMS", "NoSQL" ]
+    },
+    "latencyMs" : 1256
+  }, {
+    "jobPostingId" : 19,
+    "required" : [ ],
+    "preferred" : [ "Next.js", "React", "JSP", "NestJS", "Node.js", "Java", "Python", "PostgreSQL", "Oracle", "GCP", "Git" ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ "Next.js", "React", "JSP", "NestJS", "Node.js", "Java", "Python", "PostgreSQL", "Oracle", "GCP", "Git" ],
+      "requiredAnyOf" : [ ],
+      "required" : [ ]
+    },
+    "latencyMs" : 1534
+  }, {
+    "jobPostingId" : 20,
+    "required" : [ ],
+    "preferred" : [ ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ ],
+      "requiredAnyOf" : [ ],
+      "required" : [ ]
+    },
+    "latencyMs" : 1395
+  }, {
+    "jobPostingId" : 21,
+    "required" : [ "SQL" ],
+    "preferred" : [ ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ ],
+      "requiredAnyOf" : [ ],
+      "required" : [ "SQL" ]
+    },
+    "latencyMs" : 1109
+  }, {
+    "jobPostingId" : 22,
+    "required" : [ ],
+    "preferred" : [ "Java", "Python", "JavaScript" ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ "Java", "Python", "JavaScript", "LLM", "AI Agent", "Cloud" ],
+      "requiredAnyOf" : [ ],
+      "required" : [ ]
+    },
+    "latencyMs" : 1285
+  }, {
+    "jobPostingId" : 23,
+    "required" : [ "Java", "Spring Framework", "React", "TypeScript", "RDBMS", "SQL" ],
+    "preferred" : [ "Redux" ],
+    "requiredAnyOf" : [ [ "RDBMS", "SQL" ] ],
+    "raw" : {
+      "preferred" : [ "Redux", "HTTP" ],
+      "requiredAnyOf" : [ [ "RDBMS", "SQL" ] ],
+      "required" : [ "Java", "Spring Framework", "React", "TypeScript", "RDBMS", "SQL" ]
+    },
+    "latencyMs" : 1367
+  }, {
+    "jobPostingId" : 26,
+    "required" : [ "Java", "Spring Framework", "RDB" ],
+    "preferred" : [ "Git", "Docker", "Kubernetes", "gRPC", "GraphQL", "AWS", "Redis", "OpenSearch", "ClickHouse", "Keycloak" ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ "Git", "Docker", "Kubernetes", "gRPC", "GraphQL", "AWS", "Redis", "OpenSearch", "ClickHouse", "Keycloak" ],
+      "requiredAnyOf" : [ [ "RDB", "NoSQL", "Cache DB", "Document DB", "Graph DB" ] ],
+      "required" : [ "Java", "Spring Framework", "API", "RDB", "NoSQL", "Cache DB", "Document DB", "Graph DB" ]
+    },
+    "latencyMs" : 1385
+  }, {
+    "jobPostingId" : 27,
+    "required" : [ "Git", "Go", "Java", "Python", "PostgreSQL", "MySQL", "NHN Cloud", "AWS", "OpenStack" ],
+    "preferred" : [ "Go", "NHN Cloud", "AWS", "OpenStack", "KVM", "VMware", "Kubernetes", "NATS", "Kafka", "RabbitMQ" ],
+    "requiredAnyOf" : [ [ "Go", "Java", "Python" ], [ "PostgreSQL", "MySQL" ], [ "NHN Cloud", "AWS", "OpenStack" ] ],
+    "raw" : {
+      "preferred" : [ "Go", "NHN Cloud", "AWS", "OpenStack", "KVM", "VMware", "Kubernetes", "NATS", "Kafka", "RabbitMQ" ],
+      "requiredAnyOf" : [ [ "Go", "Java", "Python" ], [ "PostgreSQL", "MySQL" ], [ "NHN Cloud", "AWS", "OpenStack" ] ],
+      "required" : [ "REST API", "Git", "Go", "Java", "Python", "PostgreSQL", "MySQL", "NHN Cloud", "AWS", "OpenStack" ]
+    },
+    "latencyMs" : 1898
+  }, {
+    "jobPostingId" : 28,
+    "required" : [ "Python", "Node.js", "SQL", "gRPC", "Git", "FastAPI", "Django" ],
+    "preferred" : [ "Java", "React", "MySQL", "MSSQL", "MongoDB", "GCP", "AWS", "Docker" ],
+    "requiredAnyOf" : [ [ "FastAPI", "Django" ] ],
+    "raw" : {
+      "preferred" : [ "Java", "React", "MySQL", "MSSQL", "MongoDB", "GCP", "AWS", "Docker" ],
+      "requiredAnyOf" : [ [ "FastAPI", "Django" ] ],
+      "required" : [ "Python", "Node.js", "SQL", "REST API", "gRPC", "Git", "FastAPI", "Django" ]
+    },
+    "latencyMs" : 1355
+  }, {
+    "jobPostingId" : 29,
+    "required" : [ "Python", "FastAPI", "Git", "Docker", "Linux", "Redis", "Kubernetes" ],
+    "preferred" : [ ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ ],
+      "requiredAnyOf" : [ ],
+      "required" : [ "Python", "REST API", "FastAPI", "Git", "Docker", "Linux", "Machine Learning", "Redis", "Kubernetes" ]
+    },
+    "latencyMs" : 1398
+  }, {
+    "jobPostingId" : 44,
+    "required" : [ "Kotlin", "Spring Framework", "Spring Boot", "MySQL", "Redis" ],
+    "preferred" : [ ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ ],
+      "requiredAnyOf" : [ ],
+      "required" : [ "Kotlin", "Spring Framework", "Spring Boot", "MySQL", "Redis" ]
+    },
+    "latencyMs" : 1163
+  }, {
+    "jobPostingId" : 45,
+    "required" : [ "Java", "Linux", "Windows" ],
+    "preferred" : [ "C#", ".NET", "JavaScript", "C++", "Python", "Spring", "Spring Boot", "Node.js" ],
+    "requiredAnyOf" : [ [ "Linux", "Windows" ] ],
+    "raw" : {
+      "preferred" : [ "C#", ".NET", "JavaScript", "C++", "Python", "Spring", "Spring Boot", "Node.js" ],
+      "requiredAnyOf" : [ [ "Linux", "Windows" ], [ "Java" ] ],
+      "required" : [ "Java", "Linux", "Windows" ]
+    },
+    "latencyMs" : 1426
+  }, {
+    "jobPostingId" : 46,
+    "required" : [ ],
+    "preferred" : [ "Python", "JavaScript", "Django", "Next.js", "PostgreSQL", "ElasticSearch", "AWS", "Claude" ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ "Python", "JavaScript", "Django", "Next.js", "PostgreSQL", "ElasticSearch", "AWS", "Claude" ],
+      "requiredAnyOf" : [ ],
+      "required" : [ ]
+    },
+    "latencyMs" : 1526
+  }, {
+    "jobPostingId" : 73,
+    "required" : [ "MySQL", "PostgreSQL", "AWS" ],
+    "preferred" : [ "NestJS", "Spring", "Django", "SQL", "Git", "Node.js", "Docker", "GraphQL", "Claude", "Copilot" ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ "NestJS", "Spring", "Django", "SQL", "Git", "Node.js", "Docker", "GraphQL", "Claude", "Copilot" ],
+      "requiredAnyOf" : [ ],
+      "required" : [ "REST API", "MySQL", "PostgreSQL", "AWS" ]
+    },
+    "latencyMs" : 1519
+  }, {
+    "jobPostingId" : 74,
+    "required" : [ ],
+    "preferred" : [ ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ ],
+      "requiredAnyOf" : [ ],
+      "required" : [ ]
+    },
+    "latencyMs" : 1123
+  }, {
+    "jobPostingId" : 79,
+    "required" : [ ],
+    "preferred" : [ ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ ],
+      "requiredAnyOf" : [ ],
+      "required" : [ ]
+    },
+    "latencyMs" : 1125
+  }, {
+    "jobPostingId" : 80,
+    "required" : [ "HTML", "CSS", "Git", "Java", "JavaScript", "TypeScript" ],
+    "preferred" : [ "Vue.js", "Nuxt", "React" ],
+    "requiredAnyOf" : [ [ "Java", "JavaScript", "TypeScript" ] ],
+    "raw" : {
+      "preferred" : [ "REST API", "Vue.js", "Nuxt", "React" ],
+      "requiredAnyOf" : [ [ "Java", "JavaScript", "TypeScript" ] ],
+      "required" : [ "HTML", "CSS", "Git", "Java", "JavaScript", "TypeScript" ]
+    },
+    "latencyMs" : 1706
+  }, {
+    "jobPostingId" : 81,
+    "required" : [ ],
+    "preferred" : [ "Java", "Python" ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ "Java", "Python", "LLM API" ],
+      "requiredAnyOf" : [ ],
+      "required" : [ ]
+    },
+    "latencyMs" : 1323
+  }, {
+    "jobPostingId" : 82,
+    "required" : [ "Java", "JavaScript", "SQL" ],
+    "preferred" : [ "JIRA" ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ "JIRA" ],
+      "requiredAnyOf" : [ ],
+      "required" : [ "Java", "JavaScript", "SQL" ]
+    },
+    "latencyMs" : 1367
+  }, {
+    "jobPostingId" : 83,
+    "required" : [ "FastAPI", "Django" ],
+    "preferred" : [ "Docker" ],
+    "requiredAnyOf" : [ [ "FastAPI", "Django" ] ],
+    "raw" : {
+      "preferred" : [ "Docker", "CI/CD" ],
+      "requiredAnyOf" : [ [ "FastAPI", "Django" ] ],
+      "required" : [ "FastAPI", "Django" ]
+    },
+    "latencyMs" : 1124
+  }, {
+    "jobPostingId" : 84,
+    "required" : [ ],
+    "preferred" : [ ],
+    "requiredAnyOf" : [ ],
+    "raw" : {
+      "preferred" : [ ],
+      "requiredAnyOf" : [ ],
+      "required" : [ ]
+    },
+    "latencyMs" : 1092
+  } ]
+}
