@@ -133,9 +133,11 @@ class JobRequirementExtractorTest {
     }
 
     // 링크알파코리아(54428738) [등록된 키워드]: "Python,TypeScript,LLM,AI Agent,MCP,..."
-    // 분야명 "LLM"/"AI"는 제거하되, "AI Agent"처럼 구체적인 제품/개념을 가리키는 복합어는 그대로 둔다.
+    // 분야명 "LLM"/"AI"뿐 아니라 "AI Agent"처럼 복합어여도 개념어 목록에 있으면 제거하고, MCP 같은 구체적인 기술명은 남긴다.
+    // 블록리스트는 여전히 정확히 일치할 때만 제거하므로, 목록에 없는 복합어는 보존된다.
+    // (평가 라벨링 규칙과 같은 기준을 쓰도록 "AI Agent"를 개념어 목록에 추가했다.)
     @Test
-    void extract_linkAlphaPosting_removesGenericLlmAndAiFieldNamesButKeepsCompoundTerms() {
+    void extract_linkAlphaPosting_removesCompoundTermsInConceptList() {
         JobPosting jobPosting = linkAlphaJobPosting();
         String llmResponse = """
                 {"requiredSkills": ["Python","TypeScript","LLM","AI","AI Agent","생성형 AI","MCP","PostgreSQL","AWS"], "preferredSkills": [], "minYears": 5, "maxYears": null, "newGraduateAllowed": false, "requiredCertificates": [], "preferredCertificates": [], "jobCategory": "AI_ML"}
@@ -145,8 +147,24 @@ class JobRequirementExtractorTest {
         JobRequirementExtraction extraction = extractor.extract(jobPosting);
 
         assertThat(extraction.requiredSkills()).containsExactly(
-                "Python", "TypeScript", "AI Agent", "MCP", "PostgreSQL", "AWS"
+                "Python", "TypeScript", "MCP", "PostgreSQL", "AWS"
         );
+    }
+
+    // v0 평가에서 필터를 통과한 오탐 개념어(REST API, NoSQL, Cloud 등)는 대소문자와 무관하게 required/preferred/택1 그룹
+    // 모두에서 제거되어야 한다. "Spring Cloud", "FastAPI"처럼 개념어를 포함한 구체적 기술명과, 블록리스트에 넣지 않은 MSA는 남는다.
+    @Test
+    void extract_removesV0FalsePositiveConceptSkillsIgnoringCase() {
+        String llmResponse = """
+                {"requiredSkills": ["Java","rest api","RESTful API","Api","Spring Cloud","MSA"], "requiredAnyOf": [["MySQL","nosql"],["Cloud","AWS","GCP"]], "preferredSkills": ["FastAPI","NOSQL","CLOUD","Cache DB","graph db","Machine Learning","backend development","Fullstack Development","LLM API","Redis"], "minYears": null, "maxYears": null, "newGraduateAllowed": true, "requiredCertificates": [], "preferredCertificates": [], "jobCategory": "BACKEND_DEVELOPMENT"}
+                """;
+        JobRequirementExtractor extractor = extractorWith(llmResponse);
+
+        JobRequirementExtraction extraction = extractor.extract(pasuAiJobPosting());
+
+        assertThat(extraction.requiredSkills()).containsExactly("Java", "Spring Cloud", "MSA", "MySQL");
+        assertThat(extraction.requiredAnyOf()).containsExactly(List.of("AWS", "GCP"));
+        assertThat(extraction.preferredSkills()).containsExactly("FastAPI", "Redis");
     }
 
     // 블록리스트가 확장되기 전에 캐시된 결과(예: "AI", "웹 보안" 등 개념어가 그대로 저장된 데이터)도

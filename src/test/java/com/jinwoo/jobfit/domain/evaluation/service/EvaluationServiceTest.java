@@ -99,9 +99,9 @@ class EvaluationServiceTest {
         assertThat(result.verdict()).isEqualTo(EvaluationVerdict.UNFIT);
         assertThat(result.failedReasons()).isNotEmpty();
         assertThat(result.totalScore()).isEqualTo(0.0);
-        // requiredSkills에 있던 "LLM"은 분야명 블록리스트로 걸러져 분모가 13→12로 줄어든다.
-        assertThat(result.skillScore()).isCloseTo(100.0 / 12, within(0.001));
-        assertThat(result.experienceScore()).isCloseTo(100.0 / 12, within(0.001));
+        // requiredSkills에 있던 "LLM"(분야명)과 "AI Agent"(개념어)가 블록리스트로 걸러져 분모가 13→11로 줄어든다.
+        assertThat(result.skillScore()).isCloseTo(100.0 / 11, within(0.001));
+        assertThat(result.experienceScore()).isCloseTo(100.0 / 11, within(0.001));
     }
 
     @Test
@@ -175,8 +175,8 @@ class EvaluationServiceTest {
                         "Python,TypeScript,LLM,AI Agent,MCP,Claude Code,Cursor,PostgreSQL,AWS,Azure,GCP,React,Next.js",
                         "[주요업무]\n- AI 에이전트를 설계, 구현, 운영. 멀티스텝 추론, 도구 호출 루프, 컨텍스트와 메모리 관리, 토큰, 비용, 지연 시간 최적화까지 담당\n- 에이전트가 사용하는 도구 레이어를 설계하고 구현. MCP 도구, 실패 처리, 재시도, 관측 가능성까지 책임\n- 멀티 프로바이더 LLM 호출을 스트리밍, 캐싱, 폴백 구조와 함께 안정적으로 운영\n- 에이전트의 품질과 실패를 추적하고 디버깅. 트레이싱, 평가, 재현 가능한 테스트를 통해 프로덕션 회귀 없이 개선\n- 에이전트를 떠받치는 백엔드 API, 비동기 잡, 서비스 간 통신 구조 설계\n- 필요할 경우 React / Next.js 기반 제품 화면까지 직접 다루며 기능을 end-to-end로 완성\n- Claude Code, Cursor 등 coding agent를 적극 활용해 본인과 팀의 개발 속도를 높임\n\n[자격요건]\n- 백엔드 개발 경력 5년 이상 또는 이에 준하는 실력을 갖춘 분\n- Python과 TypeScript를 활용해 백엔드를 만들 수 있는 분\n- Python과 TypeScript 중 하나에 능숙하고, 나머지 언어를 학습하고 사용하는 데 거리낌이 없는 분\n- LLM 또는 AI 에이전트를 실제 프로덕션 환경에서 빌드하고 운영해본 분\n- 데모나 토이 프로젝트가 아니라, 실사용자 트래픽을 받는 에이전트를 운영해본 경험이 있는 분\n- 도구 호출 루프, 컨텍스트 관리, 토큰과 비용, 스트리밍, 실패 모드 등 에이전트 동작 원리를 깊이 이해하는 분\n- Claude Code, Cursor 등 Coding agent를 깊이 사용해본 분\n- 무엇을 에이전트에 위임할 수 있고, 어디서 사람이 개입해야 하는지 체득한 분\n- PostgreSQL 등 RDBMS와 비동기 처리, 큐 기반 아키텍처에 대한 실무 이해가 있는 분\n- AWS, Azure, GCP 중 하나 이상에서 프로덕션 서비스를 배포하고 운영해본 분\n- 문제를 주도적으로 발견하고 해결하며, 타 직군과 원활하게 협업할 수 있는 분",
                         "2026-08-15T23:59:59"
-                        // requiredSkills의 "LLM"은 분야명 블록리스트로 걸러져 분모가 13→12로 줄어든다.
-                ), EvaluationVerdict.UNFIT, 0.0, 100.0 / 12, 100.0 / 12),
+                        // requiredSkills의 "LLM"(분야명)과 "AI Agent"(개념어)는 블록리스트로 걸러져 분모가 13→11로 줄어든다.
+                ), EvaluationVerdict.UNFIT, 0.0, 100.0 / 11, 100.0 / 11),
                 Arguments.of("엔에이치엔클라우드", jobPosting(
                         "[NHN Cloud]스토리지 엔진 개발", "경력무관(신입포함)",
                         "C,C++,Go,Python",

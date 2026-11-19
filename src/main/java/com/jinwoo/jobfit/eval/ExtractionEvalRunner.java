@@ -36,6 +36,10 @@ import tools.jackson.databind.SerializationFeature;
  * 실행 (레포 루트):
  *   ./gradlew bootRun --args='--spring.profiles.active=local,eval --eval.output=eval/predictions/v0.json'
  *
+ * 재처리 모드 (LLM 호출 없이 기존 predictions의 raw에 현재 후처리만 다시 적용):
+ *   ./gradlew bootRun --args='--spring.profiles.active=local,eval --eval.reprocess-from=eval/predictions/v0.json --eval.output=eval/predictions/v0_reprocessed.json'
+ *   후처리(개념어 필터 등)만 바꿨을 때 LLM 출력의 흔들림 없이 효과만 비교하려고 쓴다. raw는 원본 그대로 복사한다.
+ *
  * 지켜야 할 것:
  *   1. 추출 캐시를 읽지도 쓰지도 않는다. 캐시 경로(extract/reExtract)가 아니라 LLM만 부르는 requestRawExtraction을 호출한다.
  *      (캐시에 쓰면 평가 실행이 운영 데이터를 바꾼다.)
@@ -63,6 +67,10 @@ public class ExtractionEvalRunner {
     @Value("${eval.output:eval/predictions/v0.json}")
     private String outputPath;
 
+    // 비어 있으면 LLM을 불러 새로 추출하고, 지정하면 그 predictions 파일의 raw에 후처리만 다시 적용한다.
+    @Value("${eval.reprocess-from:}")
+    private String reprocessFrom;
+
     // 프롬프트 버전과 모델은 설정 키가 아니라 코드 상수라 @Value 대신 상수를 직접 기록한다.
     private final int promptVersion = JobRequirementExtractor.EXTRACTION_PROMPT_VERSION;
     private final String model = OpenAiLlmClient.MODEL;
@@ -84,6 +92,19 @@ public class ExtractionEvalRunner {
             throw new IllegalStateException(out + " 이미 있음. 덮어쓰지 않으려면 버전 이름을 바꿀 것");
         }
 
+        Map<String, Object> result = reprocessFrom.isBlank() ? extractAll() : reprocessAll(Path.of(reprocessFrom));
+
+        Path parent = out.toAbsolutePath().getParent();
+        Files.createDirectories(parent);
+        Files.writeString(out, objectMapper.writer(SerializationFeature.INDENT_OUTPUT).writeValueAsString(result));
+        int failed = (int) result.get("failed");
+        log.info("[eval] 저장 완료: {} (실패 {}건)", out, failed);
+
+        int exitCode = failed == 0 ? 0 : 1;
+        System.exit(SpringApplication.exit(context, () -> exitCode));
+    }
+
+    private Map<String, Object> extractAll() throws Exception {
         JsonNode gt = objectMapper.readTree(Files.readString(Path.of(groundTruthPath)));
         List<Map<String, Object>> items = new ArrayList<>();
         int failed = 0;
@@ -94,24 +115,19 @@ public class ExtractionEvalRunner {
             item.put("jobPostingId", id);
             long start = System.currentTimeMillis();
             try {
-                JobPosting posting = jobPostingRepository.findById(id)
-                        .orElseThrow(() -> new IllegalStateException("공고 없음: " + id));
+                JobPosting posting = findPosting(id);
 
                 JobRequirementExtraction raw = extractor.requestRawExtraction(posting);
                 JobRequirementExtraction processed = extractor.postProcess(posting, raw);
 
-                item.put("required", requiredForScoring(processed));
-                item.put("preferred", processed.preferredSkills());
-                item.put("requiredAnyOf", processed.requiredAnyOf());
+                putProcessed(item, processed);
                 item.put("raw", Map.of(
                         "required", requiredForScoring(raw),
                         "preferred", raw.preferredSkills(),
                         "requiredAnyOf", raw.requiredAnyOf()));
             } catch (Exception e) {
                 failed++;
-                item.put("required", List.of());
-                item.put("preferred", List.of());
-                item.put("error", e.getClass().getSimpleName() + ": " + e.getMessage());
+                putError(item, e);
                 log.warn("[eval] id={} 추출 실패", id, e);
             }
             item.put("latencyMs", System.currentTimeMillis() - start);
@@ -126,14 +142,97 @@ public class ExtractionEvalRunner {
         result.put("postings", items.size());
         result.put("failed", failed);
         result.put("items", items);
+        return result;
+    }
 
-        Path parent = out.toAbsolutePath().getParent();
-        Files.createDirectories(parent);
-        Files.writeString(out, objectMapper.writer(SerializationFeature.INDENT_OUTPUT).writeValueAsString(result));
-        log.info("[eval] 저장 완료: {} (실패 {}건)", out, failed);
+    // raw는 원본 실행의 LLM 출력이므로 promptVersion·model은 현재 상수가 아니라 원본 파일 값을 이어받는다.
+    // latencyMs도 원본 LLM 호출 시간을 그대로 둔다. 원본에서 실패(error)했거나 raw가 없는 항목은
+    // 재처리할 수 없으므로 error를 남기고 실패로 센다.
+    private Map<String, Object> reprocessAll(Path source) throws Exception {
+        JsonNode src = objectMapper.readTree(Files.readString(source));
+        List<Map<String, Object>> items = new ArrayList<>();
+        int failed = 0;
 
-        int exitCode = failed == 0 ? 0 : 1;
-        System.exit(SpringApplication.exit(context, () -> exitCode));
+        for (JsonNode s : src.get("items")) {
+            long id = s.get("jobPostingId").asLong();
+            JsonNode raw = s.get("raw");
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("jobPostingId", id);
+            if (s.hasNonNull("error") || raw == null || raw.isNull()) {
+                failed++;
+                item.put("required", List.of());
+                item.put("preferred", List.of());
+                item.put("error", s.hasNonNull("error") ? s.get("error").asString() : "원본에 raw 없음");
+            } else {
+                try {
+                    JobRequirementExtraction processed = extractor.postProcess(findPosting(id), toRawExtraction(raw));
+                    putProcessed(item, processed);
+                    item.put("raw", raw);
+                } catch (Exception e) {
+                    failed++;
+                    putError(item, e);
+                    log.warn("[eval] id={} 재처리 실패", id, e);
+                }
+            }
+            if (s.has("latencyMs")) {
+                item.put("latencyMs", s.get("latencyMs").asLong());
+            }
+            items.add(item);
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("promptVersion", src.get("promptVersion").asInt());
+        result.put("model", src.get("model").asString());
+        result.put("reprocessedFrom", source.toString().replace('\\', '/'));
+        result.put("runAt", OffsetDateTime.now().toString());
+        result.put("postings", items.size());
+        result.put("failed", failed);
+        result.put("items", items);
+        log.info("[eval] 재처리 완료: {}건 (원본 {})", items.size(), source);
+        return result;
+    }
+
+    // predictions의 raw.required는 requiredSkills와 택1 그룹을 펼쳐 합친 목록이라(requiredForScoring),
+    // 그룹에 든 기술을 빼서 requiredSkills를 복원한다. 후처리는 그룹과 겹치는 requiredSkills를 어차피 제거하므로 결과 기술 집합은 같다.
+    // raw에는 jobCategory·경력·자격증이 없어 비워 둔다. jobCategory가 null이면 IT 가드(OTHER 불신)는 동작하지 않지만
+    // 채점 대상인 기술 목록에는 영향이 없다.
+    private static JobRequirementExtraction toRawExtraction(JsonNode raw) {
+        List<List<String>> anyOf = new ArrayList<>();
+        for (JsonNode group : raw.path("requiredAnyOf")) {
+            anyOf.add(toStringList(group));
+        }
+        List<String> grouped = anyOf.stream().flatMap(List::stream).toList();
+        List<String> required = toStringList(raw.path("required")).stream()
+                .filter(skill -> !grouped.contains(skill))
+                .toList();
+        return new JobRequirementExtraction(
+                required, anyOf, toStringList(raw.path("preferred")),
+                null, null, false, List.of(), List.of(), null);
+    }
+
+    private static List<String> toStringList(JsonNode array) {
+        List<String> values = new ArrayList<>();
+        for (JsonNode v : array) {
+            values.add(v.asString());
+        }
+        return values;
+    }
+
+    private JobPosting findPosting(long id) {
+        return jobPostingRepository.findById(id)
+                .orElseThrow(() -> new IllegalStateException("공고 없음: " + id));
+    }
+
+    private static void putProcessed(Map<String, Object> item, JobRequirementExtraction processed) {
+        item.put("required", requiredForScoring(processed));
+        item.put("preferred", processed.preferredSkills());
+        item.put("requiredAnyOf", processed.requiredAnyOf());
+    }
+
+    private static void putError(Map<String, Object> item, Exception e) {
+        item.put("required", List.of());
+        item.put("preferred", List.of());
+        item.put("error", e.getClass().getSimpleName() + ": " + e.getMessage());
     }
 
     // 라벨링 규칙상 "A 또는 B"는 A·B 모두 필수로 라벨링하므로, 택1 그룹(requiredAnyOf)의 기술도 필수로 펼쳐서 채점한다.

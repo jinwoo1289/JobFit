@@ -259,7 +259,23 @@ public class JobRequirementExtractor {
             "XSS",
             "CORS",
             // CI/CD는 프롬프트 금지어(방법론)인데도 우대 기술 목록에 섞여 다시 추출되는 경우가 있었다. (원테크스탑 55205788)
-            "CI/CD"
+            "CI/CD",
+            // v0 평가(prompt v6, gpt-4o)에서 필터를 통과해 오탐으로 집계된 개념어·분야명·카테고리 표현.
+            // 프롬프트는 REST API를 예외로 유지하라고 하지만, 평가에서 오탐으로 집계돼 후처리에서 제거한다.
+            // MSA는 일부러 넣지 않았다.
+            "REST API",
+            "RESTful API",
+            "API",
+            "NoSQL",
+            "AI Agent",
+            "LLM API",
+            "Cloud",
+            "Cache DB",
+            "Document DB",
+            "Graph DB",
+            "Machine Learning",
+            "Backend Development",
+            "Fullstack Development"
     ).map(JobRequirementExtractor::normalizeForBlocklist).collect(Collectors.toUnmodifiableSet());
 
     private final LlmClient llmClient;
